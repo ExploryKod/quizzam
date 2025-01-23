@@ -1,0 +1,240 @@
+{
+  "version": "6.0",
+  "nxVersion": "20.3.2",
+  "pathMappings": {},
+  "nxJsonPlugins": [
+    {
+      "name": "@nx/webpack/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "serveTargetName": "serve",
+        "previewTargetName": "preview"
+      }
+    },
+    {
+      "name": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    },
+    {
+      "name": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
+      }
+    }
+  ],
+  "fileMap": {
+    "nonProjectFiles": [],
+    "projectFileMap": {
+      "quizzam": [
+        {
+          "file": ".gitignore",
+          "hash": "14932807567974563739"
+        },
+        {
+          "file": ".prettierignore",
+          "hash": "14688272390704683536"
+        },
+        {
+          "file": ".prettierrc",
+          "hash": "16267754514737964994"
+        },
+        {
+          "file": ".vscode/extensions.json",
+          "hash": "4637156562308165301"
+        },
+        {
+          "file": "README.md",
+          "hash": "1182894210191283755"
+        },
+        {
+          "file": "eslint.config.cjs",
+          "hash": "16664870443928212873",
+          "deps": [
+            "npm:@nx/eslint-plugin"
+          ]
+        },
+        {
+          "file": "jest.config.ts",
+          "hash": "11184070063362896482"
+        },
+        {
+          "file": "jest.preset.js",
+          "hash": "13737983450217408137",
+          "deps": [
+            "npm:@nx/jest"
+          ]
+        },
+        {
+          "file": "nx.json",
+          "hash": "17481681843161715505"
+        },
+        {
+          "file": "package-lock.json",
+          "hash": "4761417715371957289"
+        },
+        {
+          "file": "package.json",
+          "hash": "7096225244086556426",
+          "deps": [
+            "npm:@eslint/js",
+            "npm:@nestjs/schematics",
+            "npm:@nestjs/testing",
+            "npm:@nx/eslint",
+            "npm:@nx/eslint-plugin",
+            "npm:@nx/jest",
+            "npm:@nx/js",
+            "npm:@nx/nest",
+            "npm:@nx/node",
+            "npm:@nx/web",
+            "npm:@nx/webpack",
+            "npm:@nx/workspace",
+            "npm:@swc-node/register",
+            "npm:@swc/core",
+            "npm:@swc/helpers",
+            "npm:@types/jest",
+            "npm:@types/node",
+            "npm:eslint",
+            "npm:eslint-config-prettier",
+            "npm:jest",
+            "npm:jest-environment-node",
+            "npm:nx",
+            "npm:prettier",
+            "npm:ts-jest",
+            "npm:ts-node",
+            "npm:tslib",
+            "npm:typescript",
+            "npm:typescript-eslint",
+            "npm:webpack-cli",
+            "npm:@nestjs/common",
+            "npm:@nestjs/core",
+            "npm:@nestjs/platform-express",
+            "npm:axios",
+            "npm:reflect-metadata",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "project.json",
+          "hash": "12274527790386114110"
+        },
+        {
+          "file": "src/app/app.controller.spec.ts",
+          "hash": "16195083839539355803",
+          "deps": [
+            "npm:@nestjs/testing"
+          ]
+        },
+        {
+          "file": "src/app/app.controller.ts",
+          "hash": "15276891910009544695",
+          "deps": [
+            "npm:@nestjs/common"
+          ]
+        },
+        {
+          "file": "src/app/app.module.ts",
+          "hash": "11673476679848632172",
+          "deps": [
+            "npm:@nestjs/common"
+          ]
+        },
+        {
+          "file": "src/app/app.service.spec.ts",
+          "hash": "17298266700909662742",
+          "deps": [
+            "npm:@nestjs/testing"
+          ]
+        },
+        {
+          "file": "src/app/app.service.ts",
+          "hash": "1398463054208547248",
+          "deps": [
+            "npm:@nestjs/common"
+          ]
+        },
+        {
+          "file": "src/assets/.gitkeep",
+          "hash": "3244421341483603138"
+        },
+        {
+          "file": "src/main.ts",
+          "hash": "2001345965177334983",
+          "deps": [
+            "npm:@nestjs/common",
+            "npm:@nestjs/core"
+          ]
+        },
+        {
+          "file": "tsconfig.app.json",
+          "hash": "5310181586711588020"
+        },
+        {
+          "file": "tsconfig.json",
+          "hash": "2531557881897839032"
+        },
+        {
+          "file": "tsconfig.spec.json",
+          "hash": "9005191393236245212"
+        },
+        {
+          "file": "webpack.config.js",
+          "hash": "11221754498378458838",
+          "deps": [
+            "npm:@nx/webpack"
+          ]
+        }
+      ],
+      "e2e": [
+        {
+          "file": "e2e/eslint.config.cjs",
+          "hash": "5712642552473070852",
+          "deps": [
+            "npm:@eslint/eslintrc",
+            "npm:@eslint/js",
+            "npm:@nx/eslint-plugin"
+          ]
+        },
+        {
+          "file": "e2e/jest.config.ts",
+          "hash": "12448968611351621233"
+        },
+        {
+          "file": "e2e/project.json",
+          "hash": "16908529790884055805"
+        },
+        {
+          "file": "e2e/src/server/server.spec.ts",
+          "hash": "4747019362565984448",
+          "deps": [
+            "npm:axios"
+          ]
+        },
+        {
+          "file": "e2e/src/support/global-setup.ts",
+          "hash": "14688124112638150235"
+        },
+        {
+          "file": "e2e/src/support/global-teardown.ts",
+          "hash": "10856769668484651558"
+        },
+        {
+          "file": "e2e/src/support/test-setup.ts",
+          "hash": "11749744855473391997",
+          "deps": [
+            "npm:axios"
+          ]
+        },
+        {
+          "file": "e2e/tsconfig.json",
+          "hash": "8499526883202715106"
+        },
+        {
+          "file": "e2e/tsconfig.spec.json",
+          "hash": "17514012667061082414"
+        }
+      ]
+    }
+  }
+}
