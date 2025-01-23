@@ -30,7 +30,7 @@
       "quizzam": [
         {
           "file": ".gitignore",
-          "hash": "14932807567974563739"
+          "hash": "3854189713376852933"
         },
         {
           "file": ".prettierignore",
@@ -46,7 +46,7 @@
         },
         {
           "file": "README.md",
-          "hash": "1182894210191283755"
+          "hash": "3072361978269707337"
         },
         {
           "file": "eslint.config.cjs",
@@ -155,6 +155,20 @@
           ]
         },
         {
+          "file": "src/app/ping/ping.controller.spec.ts",
+          "hash": "5247648704258512454",
+          "deps": [
+            "npm:@nestjs/testing"
+          ]
+        },
+        {
+          "file": "src/app/ping/ping.controller.ts",
+          "hash": "10531158792373681035",
+          "deps": [
+            "npm:@nestjs/common"
+          ]
+        },
+        {
           "file": "src/assets/.gitkeep",
           "hash": "3244421341483603138"
         },
@@ -164,6 +178,20 @@
           "deps": [
             "npm:@nestjs/common",
             "npm:@nestjs/core"
+          ]
+        },
+        {
+          "file": "src/ping/ping.controller.spec.ts",
+          "hash": "5247648704258512454",
+          "deps": [
+            "npm:@nestjs/testing"
+          ]
+        },
+        {
+          "file": "src/ping/ping.controller.ts",
+          "hash": "17301635667618645072",
+          "deps": [
+            "npm:@nestjs/common"
           ]
         },
         {
