@@ -1,0 +1,21 @@
+{
+  "run": {
+    "command": "nx run quizzam:build:development",
+    "startTime": "2025-01-23T14:15:22.314Z",
+    "endTime": "2025-01-23T14:15:24.379Z",
+    "inner": false
+  },
+  "tasks": [
+    {
+      "taskId": "quizzam:build:development",
+      "target": "build",
+      "projectName": "quizzam",
+      "hash": "16161280321141804910",
+      "startTime": "2025-01-23T14:15:22.322Z",
+      "endTime": "2025-01-23T14:15:24.379Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 0
+    }
+  ]
+}
