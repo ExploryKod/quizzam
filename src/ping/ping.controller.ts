@@ -1,9 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpStatus } from '@nestjs/common';
 
 @Controller('ping')
 export class PingController {
   @Get()
-  getPing(): string {
-    return 'Pong!';
+  getPing(): {message: string, status: HttpStatus} {
+    return {message: 'Pong!', status: HttpStatus.OK};
   }
 }
