@@ -132,3 +132,5 @@ dist
 
 # Nx
 .nx
+
+src/assets/quizzam-firebase-key.json
