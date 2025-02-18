@@ -7,6 +7,7 @@ export class UsersController {
   @Post()
   @Auth()
   create(@Req() request: RequestWithUser) {
+    console.log('request', request);
     console.log(request.user.uid);
   }
 }

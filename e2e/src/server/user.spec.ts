@@ -36,4 +36,41 @@ describe('POST /api/users', () => {
       expect(e.status).toBe(401);
     }
   });
+
+  it('should retrieve the uid from the token returned by the auth service', async () => {
+    const auth = await axios.post(
+      `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA`,
+      {
+        email: 'user@email.com',
+        password: 'password',
+        returnSecureToken: true,
+      }
+    );
+
+    expect(auth.status).toBe(200);
+    const token = auth.data.idToken;
+
+    // Method 1: Using jsonwebtoken library
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+    console.log('Decoded token:', decodedToken);
+    // Access specific claims
+    console.log('User ID:', decodedToken.user_id);
+    console.log('Email:', decodedToken.email);
+
+    // Method 2: Manual base64 decoding
+    const [header, payload, signature] = token.split('.');
+    const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString());
+    console.log('Decoded payload:', decodedPayload);
+
+    const userResponse = await axios.post('/api/users', {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(userResponse.status).toBe(201);
+    const uid = userResponse.data.uid;
+    console.log(uid);
+  });
 });
