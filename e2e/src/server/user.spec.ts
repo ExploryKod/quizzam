@@ -1,9 +1,11 @@
 import axios from 'axios';
+import dotenv from 'dotenv';
+dotenv.config();
 
 describe('POST /api/users', () => {
   it('should return 201 if user is authenticated', async () => {
     const auth = await axios.post(
-      `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${process.env.API_KEY}`,
+      `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA`,
       {
         email: 'user@email.com',
         password: 'password',

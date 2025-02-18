@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PingController } from './ping.controller';
-import { VersionRepositoryService } from './version-repository.service';
+// TODO: Remplacer cela par un équivalent pour les tests
+//import { VersionRepositoryService } from './version-repository.service';
 
 describe('PingController', () => {
   let controller: PingController;
-  let versionService: VersionRepositoryService;
+  //let versionService: VersionRepositoryService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
