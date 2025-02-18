@@ -2,15 +2,14 @@ import axios from 'axios';
 
 describe('POST /api/users', () => {
   it('should return 201 if user is authenticated', async () => {
-    //TODO: Mettre ici nos propres id
-    // const auth = await axios.post(
-    //   'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyDIBKcmYN8CkFIQ4zWZpBmI1N3piflfqqM',
-    //   {
-    //     email: 'fhemery@hemit.fr',
-    //     password: 'Test123!',
-    //     returnSecureToken: true,
-    //   }
-    // );
+    const auth = await axios.post(
+      `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${process.env.API_KEY}`,
+      {
+        email: 'quizzam@mail.com',
+        password: 'password',
+        returnSecureToken: true,
+      }
+    );
 
     expect(auth.status).toBe(200);
     const token = auth.data.idToken;

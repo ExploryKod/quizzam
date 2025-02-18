@@ -1,0 +1,23 @@
+meta {
+  name: request-jwt
+  type: http
+  seq: 2
+}
+
+post {
+  url: https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=
+  body: json
+  auth: basic
+}
+
+params:query {
+  key: 
+}
+
+body:json {
+  {
+    email:'fhemery@hemit.fr',
+    password:'Test123!',
+    returnSecureToken: true
+  }
+}
