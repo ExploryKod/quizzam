@@ -52,13 +52,13 @@ describe('POST /api/users', () => {
     expect(auth.status).toBe(200);
     const token = auth.data.idToken;
 
-    // Method 1: Using jsonwebtoken library
+    //Method 1: Using jsonwebtoken library
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token);
     console.log('Decoded token:', decodedToken);
     // Access specific claims
-    console.log('User ID:', decodedToken.user_id);
-    console.log('Email:', decodedToken.email);
+    //console.log('User ID:', decodedToken.user_id);
+    //console.log('Email:', decodedToken.email);
 
     // Method 2: Manual base64 decoding
     const [header, payload, signature] = token.split('.');
