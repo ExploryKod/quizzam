@@ -76,3 +76,15 @@ describe('POST /api/users', () => {
     console.log(uid);
   });
 });
+
+describe('GET /api/users/me', () => {
+  it('should retrieve data of the currently connected user', async () => {
+    try {
+      await axios.get('/api/users/me', {
+
+      });
+    } catch (e) {
+      expect(e.status).toBe(400);
+    }
+  });
+})

@@ -26,6 +26,7 @@ export class UsersController {
       const userRef = this.firebase.firestore.collection('users').doc(uid);
 
       await userRef.set({
+        uid: request.user.uid.toString(),
         username,
         email: request.user.email,
       });
@@ -48,6 +49,7 @@ export class UsersController {
   @Get('me')
   @Auth()
   async getCurrentUser(@Req() request: RequestWithUser) {
+    console.log("user request on connexion", request.user);
     if (!request.user?.uid) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
@@ -57,19 +59,15 @@ export class UsersController {
       const userDoc = await userRef.get();
 
       if (!userDoc.exists) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+        throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
       }
 
       const userData = userDoc.data();
-
+      console.log("USER DATA", userData);
       return {
-        status: HttpStatus.OK,
-        message: 'User data retrieved successfully',
-        data: {
-          uid: request.user.uid,
-          username: userData.username,
-          email: userData.email,
-        }
+        uid: request.user.uid,
+        username: userData.username,
+        email: request.user.email,
       };
     } catch (error) {
       console.error('Error getting user data:', error);
