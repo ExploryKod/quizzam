@@ -5,7 +5,7 @@ describe('POST /api/users', () => {
     const auth = await axios.post(
       `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${process.env.API_KEY}`,
       {
-        email: 'quizzam@mail.com',
+        email: 'user@email.com',
         password: 'password',
         returnSecureToken: true,
       }
