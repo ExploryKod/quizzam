@@ -29,6 +29,8 @@ describe('POST /api/users', () => {
     expect(userResponse.status).toBe(201);
   });
 
+
+
   it('should return 401 if user is not authenticated', async () => {
     try {
       await axios.post('/api/users', {});

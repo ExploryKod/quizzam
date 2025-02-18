@@ -10,13 +10,16 @@ describe('PingController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PingController],
+      providers: [],
     }).compile();
 
     controller = module.get<PingController>(PingController);
+    //versionService = module.get<VersionRepositoryService>(VersionRepositoryService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    //expect(versionService).toBeDefined();
   });
 
   it('should return pong with version info if database is running', async () => {

@@ -4,10 +4,18 @@ import { Auth } from '../modules/auth/auth.decorator';
 
 @Controller('users')
 export class UsersController {
+
+
   @Post()
   @Auth()
   create(@Req() request: RequestWithUser) {
-    console.log('request', request);
-    console.log(request.user.uid);
+    const { username } = request.body;
+    console.log("username", username);
+    console.log("request token if auth result", request.user.uid);
   }
+
+
 }
+
+
+
