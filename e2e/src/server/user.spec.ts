@@ -1,13 +1,7 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 dotenv.config();
-
-const API_BASE_URL = 'http://localhost:3000';
-
-
-
-
 
 describe('POST /api/users', () => {
   let token;
@@ -49,35 +43,63 @@ describe('POST /api/users', () => {
     }
   });
 
-  it('should retrieve the uid from the token returned by the auth service', async () => {
-    const decodedToken = jwt.decode(token);
-    console.log('Decoded token:', decodedToken);
-
-    const userResponse = await axios.post(
-      `${API_BASE_URL}/api/users`,
-      { username: 'AnotherTestUser' },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    expect(userResponse.status).toBe(201);
-    expect(userResponse.data).toHaveProperty('uid'); 
-
-    const uidFromResponse = userResponse.data.uid;
-    console.log('UID from API response:', uidFromResponse);
-  });
-
 });
 
 describe('GET /api/users/me', () => {
+  let token;
+
+  beforeAll(async () => {
+    const auth = await axios.post(
+      `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA`,
+      {
+        email: 'user@email.com',
+        password: 'password',
+        returnSecureToken: true,
+      }
+    );
+    expect(auth.status).toBe(200);
+    token = auth.data.idToken;
+  });
+
   it('should retrieve data of the currently connected user', async () => {
     try {
-      await axios.get('/api/users/me', {
-
+      const userResponse = await axios.get('/api/users/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
+      expect(userResponse.status).toBe(200);
+      expect(userResponse.data).toHaveProperty('uid');
+      expect(userResponse.data).toHaveProperty('username');
+      expect(userResponse.data).toHaveProperty('email');
+      
+      const decodedToken = jwt.decode(token) as JwtPayload;
+      expect(userResponse.data.uid).toBe(decodedToken.user_id);
+      console.log(userResponse.data.uid);
+      
     } catch (e) {
-      expect(e.status).toBe(400);
+      console.error('Error during the request:', e);
+      throw e; 
     }
   });
-})
+
+  it('should return 401 if user is not authenticated', async () => {
+    try {
+      await axios.get('/api/users/me');
+    } catch (e) {
+      expect(e.response.status).toBe(401);
+    }
+  });
+
+  it('should return 404 if user is not found in database', async () => {
+    try {
+      await axios.get('/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (e) {
+      console.log(e.response.data); 
+      expect(e.response.status).toBe(404);
+    }
+  });
+});

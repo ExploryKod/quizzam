@@ -10,6 +10,7 @@ import {
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
 import { Auth } from '../modules/auth/auth.decorator';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
+import { JwtPayload } from 'jsonwebtoken';
 
 class CreateUserDto {
   username: string;
@@ -53,7 +54,7 @@ export class UsersController {
   async getCurrentUser(@Req() request: RequestWithUser) {
     const token = request.headers.authorization.split('Bearer ')[1];
     const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
+    const decodedToken = jwt.decode(token) as JwtPayload;
 
     if (!decodedToken.user_id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -62,7 +63,7 @@ export class UsersController {
     try {
       const userRef = this.firebase.firestore
         .collection('users')
-        .doc(request.user.uid);
+        .doc(decodedToken.user_id);
       const userDoc = await userRef.get();
 
       if (!userDoc.exists) {
