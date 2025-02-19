@@ -36,7 +36,7 @@ describe('POST /api/users', () => {
 });
 
 describe('GET /api/users/me', () => { 
-  let token;
+  let token: string;
 
   beforeAll(async () => {
     console.log('Authenticating user for /api/users/me test...');
