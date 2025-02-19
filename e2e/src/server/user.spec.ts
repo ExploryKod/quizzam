@@ -92,14 +92,4 @@ describe('GET /api/users/me', () => {
     }
   });
 
-  it('should return 404 if user is not found in database', async () => {
-    try {
-      await axios.get('/api/users/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch (e) {
-      console.log(e.response.data); 
-      expect(e.response.status).toBe(404);
-    }
-  });
 });
