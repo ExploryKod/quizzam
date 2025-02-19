@@ -27,13 +27,10 @@ export class UsersController {
     @Body() CreateUserDto: CreateUserDto
   ) {
     const { username } = CreateUserDto;
-    console.log('headers', request.headers);
     const token = request.headers.authorization.split('Bearer ')[1];
-    console.log('token', token);
 
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token);
-    console.log('Decoded token:', decodedToken);
 
     const uid = decodedToken.user_id;
 
@@ -54,8 +51,11 @@ export class UsersController {
   @Get('me')
   @Auth()
   async getCurrentUser(@Req() request: RequestWithUser) {
-    console.log('user request on connexion', request.user);
-    if (!request.user?.uid) {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken.user_id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
@@ -70,11 +70,10 @@ export class UsersController {
       }
 
       const userData = userDoc.data();
-      console.log('USER DATA', userData);
       return {
-        uid: request.user.uid,
+        uid: decodedToken.user_id,
         username: userData.username,
-        email: request.user.email,
+        email: decodedToken.email,
       };
     } catch (error) {
       console.error('Error getting user data:', error);
