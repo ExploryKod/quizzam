@@ -1,9 +1,19 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 dotenv.config();
 
+const API_BASE_URL = 'http://localhost:3000';
+
+
+
+
+
 describe('POST /api/users', () => {
-  it('should return 201 if user is authenticated', async () => {
+  let token;
+
+  beforeAll(async () => {
+    // Authentification Firebase
     const auth = await axios.post(
       `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA`,
       {
@@ -14,12 +24,13 @@ describe('POST /api/users', () => {
     );
 
     expect(auth.status).toBe(200);
-    const token = auth.data.idToken;
-    console.log(token);
+    token = auth.data.idToken;
+  });
 
+  it('should return 201 if user is authenticated', async () => {
     const userResponse = await axios.post(
       '/api/users',
-      {},
+      {username: 'TestUser'},
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -30,51 +41,33 @@ describe('POST /api/users', () => {
   });
 
 
-
   it('should return 401 if user is not authenticated', async () => {
     try {
-      await axios.post('/api/users', {});
+      await axios.post('/api/users',  { username: 'TestUser' });
     } catch (e) {
-      expect(e.status).toBe(401);
+      expect(e.response.status).toBe(401);
     }
   });
 
   it('should retrieve the uid from the token returned by the auth service', async () => {
-    const auth = await axios.post(
-      `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA`,
+    const decodedToken = jwt.decode(token);
+    console.log('Decoded token:', decodedToken);
+
+    const userResponse = await axios.post(
+      `${API_BASE_URL}/api/users`,
+      { username: 'AnotherTestUser' },
       {
-        email: 'user@email.com',
-        password: 'password',
-        returnSecureToken: true,
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
 
-    expect(auth.status).toBe(200);
-    const token = auth.data.idToken;
-
-    //Method 1: Using jsonwebtoken library
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-    console.log('Decoded token:', decodedToken);
-    // Access specific claims
-    //console.log('User ID:', decodedToken.user_id);
-    //console.log('Email:', decodedToken.email);
-
-    // Method 2: Manual base64 decoding
-    const [header, payload, signature] = token.split('.');
-    const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString());
-    console.log('Decoded payload:', decodedPayload);
-
-    const userResponse = await axios.post('/api/users', {}, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
     expect(userResponse.status).toBe(201);
-    const uid = userResponse.data.uid;
-    console.log(uid);
+    expect(userResponse.data).toHaveProperty('uid'); 
+
+    const uidFromResponse = userResponse.data.uid;
+    console.log('UID from API response:', uidFromResponse);
   });
+
 });
 
 describe('GET /api/users/me', () => {
