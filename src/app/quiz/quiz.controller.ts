@@ -28,6 +28,16 @@ class PatchOperation {
   value: string;
 }
 
+class Answer {
+  title: string;
+  isCorrect: boolean;
+}
+
+class CreateQuestionDto {
+  title: string;
+  answers: Answer[];
+}
+
 @Controller('quiz')
 export class QuizController {
   constructor(
@@ -229,6 +239,72 @@ export class QuizController {
       console.error('Erreur lors de la mise à jour du quiz:', error);
       throw new HttpException(
         'Erreur lors de la mise à jour du quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(':id/questions')
+  @Auth()
+  @HttpCode(201)
+  async addQuestion(
+    @Param('id') quizId: string,
+    @Body() questionDto: CreateQuestionDto,
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    try {
+      const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+      const quizDoc = await quizRef.get();
+
+      if (!quizDoc.exists) {
+        throw new NotFoundException('Quiz non trouvé');
+      }
+
+      const quizData = quizDoc.data();
+
+      if (quizData.userId !== decodedToken.user_id) {
+        throw new NotFoundException('Quiz non trouvé');
+      }
+
+      const questions = quizData.questions || [];
+
+      const newQuestion = {
+        title: questionDto.title,
+        answers: questionDto.answers || [],
+        createdAt: new Date(),
+      };
+
+      questions.push(newQuestion);
+
+      await quizRef.update({ questions });
+
+      const questionIndex = questions.length - 1;
+
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const locationUrl = `${baseUrl}/api/quiz/${quizId}/questions/${questionIndex}`;
+
+      response.header('Location', locationUrl);
+
+      return null;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error("Erreur lors de l'ajout de la question:", error);
+      throw new HttpException(
+        "Erreur lors de l'ajout de la question",
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
