@@ -486,4 +486,11 @@ export class QuizController {
       );
     }
   }
+
+  @Post(':quizId/start')
+  async startQuiz(@Param('quizId') quizId: string, @Res() res) {
+    const executionId = Math.random().toString(36).slice(2, 8);
+    return res.status(201).location(`/execution/${executionId}`).send();
+  }
+
 }
