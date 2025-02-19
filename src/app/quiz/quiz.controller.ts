@@ -75,12 +75,22 @@ export class QuizController {
         return { data: [] };
       }
 
-      const quizzes = quizzesData.docs.map((doc) => ({
-        id: doc.id,
-        title: doc.data().title,
-      }));
+      const quizzes = quizzesData.empty
+        ? []
+        : quizzesData.docs.map((doc) => ({
+            id: doc.id,
+            title: doc.data().title,
+          }));
 
-      return { data: quizzes };
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const createUrl = `${baseUrl}/api/quiz`;
+
+      return {
+        data: quizzes,
+        _links: {
+          create: createUrl,
+        },
+      };
     } catch (error) {
       console.error('Erreur lors de la récupération des quiz:', error);
       throw new HttpException(
