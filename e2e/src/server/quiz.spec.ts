@@ -147,14 +147,18 @@ describe('GET /api/quiz/:id', () => {
 // ========== DEMARRAGE D'UN QUIZ ( # CREATION ) ===============
 describe('POST /api/quiz/<id>/start', () => {
   let token: string;
-  let quizId: string;
   let existingQuizId: string;
   let nonexistentQuizId: string;
 
+  const otherUser = 'otherUser@email.com';
+  const currentUser = 'user@email.com';
+  const currentPassword = 'password';
+  let otherUserToken: string;
+
   beforeAll(async () => {
     const auth = await request(defaultFirebaseUrl).post('').send({
-      email: 'user@email.com',
-      password: 'password',
+      email: currentUser,
+      password: currentPassword,
       returnSecureToken: true,
     });
 
@@ -175,17 +179,17 @@ describe('POST /api/quiz/<id>/start', () => {
     existingQuizId = createResponse.headers.location.split('/').pop();
 
     const otherAuth = await request(defaultFirebaseUrl).post('').send({
-      email: 'usera@email.com',
+      email: otherUser,
       password: 'password',
       returnSecureToken: true,
     });
 
     expect(otherAuth.status).toBe(200);
-    const otherToken = otherAuth.body.idToken;
+    otherUserToken = otherAuth.body.idToken;
 
     const response = await request(defaultUrl)
       .post(`/api/quiz/${existingQuizId}/start`)
-      .set('Authorization', `Bearer ${otherToken}`);
+      .set('Authorization', `Bearer ${otherUserToken}`);
 
     expect(response.status).toBe(403);
   });
@@ -213,20 +217,47 @@ describe('POST /api/quiz/<id>/start', () => {
     expect(response.status).toBe(404);
   });
 
-  it('should return 404 if a connected user tries to start a quiz he owned', async () => {
-    try {
-      const response = await request(defaultUrl)
-        .post(`/api/quiz/${existingQuizId}/start`)
-        .set('Authorization', `Bearer ${token}`);
+  it('should return 404 if a user tries to start a quiz owned by him', async () => {
 
-      expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('status', 404);
-      expect(response.body).toHaveProperty('error', 'Not Found');
-      expect(response.body.message).toBe('Quiz not found');
-    } catch (e) {
-      fail('Should not throw error');
-    }
+    const auth = await request(defaultFirebaseUrl).post('').send({
+      email: currentUser,
+      password: currentPassword,
+      returnSecureToken: true,
+    });
+
+    expect(auth.status).toBe(200);
+    const token = auth.body.idToken;
+
+    // Step 2: Create a quiz as this user
+    const quizData = {
+      title: 'Quiz Owned by User',
+      description: 'This is a quiz created by user@email.com',
+      status: 'ready', // Ensure the quiz is in a "ready" state
+    };
+
+    const createResponse = await request(defaultUrl)
+      .post('/api/quiz')
+      .set('Authorization', `Bearer ${token}`)
+      .send(quizData);
+
+    expect(createResponse.status).toBe(201);
+
+    // Extract the Quiz ID from the Location header
+    const locationHeader = createResponse.headers.location;
+    const quizId = locationHeader.split('/').pop();
+
+    // Step 3: Try to start the quiz while still authenticated as the owner
+    const startResponse = await request(defaultUrl)
+      .post(`/api/quiz/${quizId}/start`)
+      .set('Authorization', `Bearer ${token}`);
+
+    // Step 4: Expect a 404 because the user owns this quiz
+    expect(startResponse.status).toBe(404);
+    expect(startResponse.body).toHaveProperty('status', 404);
+    expect(startResponse.body).toHaveProperty('error', 'Not Found');
+    expect(startResponse.body.message).toBe('Quiz not found');
   });
+
 });
 
 describe('PATCH /api/quiz/:id', () => {
