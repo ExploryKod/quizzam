@@ -162,7 +162,11 @@ export class QuizController {
       return {
         title: quizData.title,
         description: quizData.description,
-        questions: quizData.questions || [],
+        questions:
+          quizData.questions?.map((question) => ({
+            title: question.title,
+            answers: question.answers || [],
+          })) || [],
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
