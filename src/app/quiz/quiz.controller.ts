@@ -57,6 +57,8 @@ export class QuizController {
     const token = request.headers.authorization.split('Bearer ')[1];
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token);
+    const baseUrl = request.protocol + '://' + request.get('host');
+    const createUrl = `${baseUrl}/api/quiz`;
 
     if (!decodedToken.user_id) {
       throw new HttpException(
@@ -72,7 +74,9 @@ export class QuizController {
         .get();
 
       if (quizzesData.empty) {
-        return { data: [] };
+        return { data: [],
+                _links: { create: `${baseUrl}/api/quiz`}
+         };
       }
 
       const quizzes = quizzesData.empty
@@ -81,9 +85,6 @@ export class QuizController {
             id: doc.id,
             title: doc.data().title,
           }));
-
-      const baseUrl = request.protocol + '://' + request.get('host');
-      const createUrl = `${baseUrl}/api/quiz`;
 
       return {
         data: quizzes,
