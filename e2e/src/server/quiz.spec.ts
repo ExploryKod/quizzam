@@ -77,3 +77,75 @@ describe('POST /api/quiz', () => {
         }
       });
 });
+
+//Get Quiz by ID
+describe('GET /api/quiz/<id>', () => {
+    let token: string
+    let quizId:string
+    let otherUserToken: string;
+
+    beforeAll(async () => {
+        const auth = await request(defaultFirebaseUrl).post('').send({
+          email: 'user@email.com',
+          password: 'password',
+          returnSecureToken: true,
+        });
+    
+        expect(auth.status).toBe(200);
+        token = auth.body.idToken;
+
+          // Création d'un quiz pour récupérer un ID valide
+            const quizData = {
+                title: 'Quiz Test',
+                description: 'Description du quiz test',
+            };
+  
+        const createResponse = await request(defaultUrl)
+            .post('/api/quiz')
+            .set('Authorization', `Bearer ${token}`)
+            .send(quizData);
+    
+        expect(createResponse.status).toBe(201);
+      
+        // Extraction de l'ID du quiz depuis l'en-tête Location
+        const locationHeader = createResponse.headers.location;
+        console.log('Created Quiz Location:', locationHeader);
+    
+        quizId = locationHeader.split('/').pop();
+    });
+
+    it('should retrieve a quiz by ID for an authenticated user', async () => {
+
+    const response = await request(defaultUrl)
+        .get(`/api/quiz/${quizId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+    console.log('Retrieved Quiz:', response.body);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('title', 'Quiz Test');
+    expect(response.body).toHaveProperty('description', 'Description du quiz test');
+    expect(response.body).toHaveProperty('questions');
+    expect(Array.isArray(response.body.questions)).toBe(true);
+
+    });
+
+
+    it('should return 404 if the quiz does not exist', async () => {
+        const response = await request(defaultUrl)
+          .get('/api/quiz/nonexistentQuizId')
+          .set('Authorization', `Bearer ${token}`);
+    
+        expect(response.status).toBe(404);
+      });
+
+
+    it("should return 401 if the quiz doesn't belong to the authenticated user", async () => {
+        const response = await request(defaultUrl)
+        .get(`/api/quiz/${quizId}`)
+        .set('Authorization', `Bearer ${otherUserToken}`);
+
+        expect(response.status).toBe(401);
+    });
+
+});
