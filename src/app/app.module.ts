@@ -1,7 +1,8 @@
-import {   MiddlewareConsumer,
+import {
+  MiddlewareConsumer,
   Module,
   NestModule,
-  RequestMethod
+  RequestMethod,
 } from '@nestjs/common';
 import { PingoController } from 'src/pingo/pingo.controller';
 import { FirebaseModule } from 'nestjs-firebase';
@@ -11,6 +12,7 @@ import { PingModule } from './ping/ping.module';
 import { UsersController } from './users/users.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthMiddleware } from './modules/auth/auth.middleware';
+import { QuizController } from './quiz/quiz.controller';
 
 @Module({
   imports: [
@@ -20,10 +22,14 @@ import { AuthMiddleware } from './modules/auth/auth.middleware';
     }),
     AuthModule,
   ],
-  controllers: [AppController, PingoController, UsersController],
+  controllers: [
+    AppController,
+    PingoController,
+    UsersController,
+    QuizController,
+  ],
   providers: [AppService],
 })
-
 export class AppModule implements NestModule {
   public configure(consumer: MiddlewareConsumer) {
     consumer
@@ -31,7 +37,3 @@ export class AppModule implements NestModule {
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }
-
-
-
-
