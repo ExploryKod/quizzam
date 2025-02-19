@@ -213,11 +213,18 @@ describe('POST /api/quiz/<id>/start', () => {
     expect(response.status).toBe(404);
   });
 
-  it('should return 401 if user is not authenticated', async () => {
+  it('should return 404 if a connected user tries to start a quiz he owned', async () => {
     try {
-      await request(defaultUrl).post(`/api/quiz/${existingQuizId}/start`);
+      const response = await request(defaultUrl)
+        .post(`/api/quiz/${existingQuizId}/start`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty('status', 404);
+      expect(response.body).toHaveProperty('error', 'Not Found');
+      expect(response.body.message).toBe('Quiz not found');
     } catch (e) {
-      expect(e.response.status).toBe(401);
+      fail('Should not throw error');
     }
   });
 });
