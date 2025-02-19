@@ -142,7 +142,84 @@ describe('GET /api/quiz/:id', () => {
 
         expect(response.status).toBe(401);
     });
+});
 
+// ========== DEMARRAGE D'UN QUIZ ( # CREATION ) ===============
+describe('POST /api/quiz/<id>/start', () => {
+  let token: string;
+  let quizId: string;
+  let existingQuizId: string;
+  let nonexistentQuizId: string;
+
+  beforeAll(async () => {
+    const auth = await request(defaultFirebaseUrl).post('').send({
+      email: 'user@email.com',
+      password: 'password',
+      returnSecureToken: true,
+    });
+
+    expect(auth.status).toBe(200);
+    token = auth.body.idToken;
+
+    const quizData = {
+      title: 'Quiz Test',
+      description: 'Description du quiz test',
+    };
+
+    const createResponse = await request(defaultUrl)
+      .post('/api/quiz')
+      .set('Authorization', `Bearer ${token}`)
+      .send(quizData);
+
+    expect(createResponse.status).toBe(201);
+    existingQuizId = createResponse.headers.location.split('/').pop();
+
+    const otherAuth = await request(defaultFirebaseUrl).post('').send({
+      email: 'usera@email.com',
+      password: 'password',
+      returnSecureToken: true,
+    });
+
+    expect(otherAuth.status).toBe(200);
+    const otherToken = otherAuth.body.idToken;
+
+    const response = await request(defaultUrl)
+      .post(`/api/quiz/${existingQuizId}/start`)
+      .set('Authorization', `Bearer ${otherToken}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it('should start an existing quiz successfully with a correct pattern for its id', async () => {
+    const response = await request(defaultUrl)
+      .post(`/api/quiz/${existingQuizId}/start`)
+      .set('Authorization', `Bearer ${token}`);
+
+    console.log('Start Quiz Response:', response.body);
+    console.log('Headers:', response.headers);
+
+    expect(response.status).toBe(201);
+    expect(response.headers).toHaveProperty('location');
+    // REGEX : /execution/ suivi de 6 chiffres et/ou lettres en uppercase ou non, pas plus de 6 caractères (ex : /execution/abc123)
+    expect(response.headers.location).toMatch(/^\/execution\/[a-zA-Z0-9]{6}$/);
+  });
+
+  it('should return 404 if quiz does not exist', async () => {
+    nonexistentQuizId = 'ade1246';
+    const response = await request(defaultUrl)
+      .post(`/api/quiz/${nonexistentQuizId}/start`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should return 401 if user is not authenticated', async () => {
+    try {
+      await request(defaultUrl).post(`/api/quiz/${existingQuizId}/start`);
+    } catch (e) {
+      expect(e.response.status).toBe(401);
+    }
+  });
 });
 
 describe('PATCH /api/quiz/:id', () => {
@@ -174,7 +251,7 @@ describe('PATCH /api/quiz/:id', () => {
       .send(quizData);
 
     expect(createResponse.status).toBe(201);
-    
+
     // Récupération de l'ID du quiz
     const locationHeader = createResponse.headers.location;
     quizId = locationHeader.split('/').pop();
