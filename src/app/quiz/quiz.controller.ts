@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Req,
   Body,
   HttpException,
@@ -16,6 +17,7 @@ import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
 import { Auth } from '../modules/auth/auth.decorator';
 import { Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 
 class CreateQuizDto {
   title: string;
@@ -34,6 +36,11 @@ class Answer {
 }
 
 class CreateQuestionDto {
+  title: string;
+  answers: Answer[];
+}
+
+class UpdateQuestionDto {
   title: string;
   answers: Answer[];
 }
@@ -107,7 +114,6 @@ export class QuizController {
         title: createQuizDto.title,
         description: createQuizDto.description,
         userId: decodedToken.user_id,
-        createdAt: new Date(),
       };
 
       const quizRef = await this.firebase.firestore
@@ -164,6 +170,7 @@ export class QuizController {
         description: quizData.description,
         questions:
           quizData.questions?.map((question) => ({
+            id: question.id,
             title: question.title,
             answers: question.answers || [],
           })) || [],
@@ -260,6 +267,7 @@ export class QuizController {
     const token = request.headers.authorization.split('Bearer ')[1];
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token);
+    const questionId = uuidv4();
 
     if (!decodedToken.user_id) {
       throw new HttpException(
@@ -285,20 +293,18 @@ export class QuizController {
       const questions = quizData.questions || [];
 
       const newQuestion = {
+        id: questionId,
         title: questionDto.title,
         answers: questionDto.answers || [],
-        createdAt: new Date(),
       };
 
       questions.push(newQuestion);
 
       await quizRef.update({ questions });
 
-      const questionIndex = questions.length - 1;
-
       const baseUrl = request.protocol + '://' + request.get('host');
-      const locationUrl = `${baseUrl}/api/quiz/${quizId}/questions/${questionIndex}`;
-
+      const locationUrl = `${baseUrl}/api/quiz/${quizId}/questions/${questionId}`;
+      console.log(locationUrl);
       response.header('Location', locationUrl);
 
       return null;
@@ -309,6 +315,86 @@ export class QuizController {
       console.error("Erreur lors de l'ajout de la question:", error);
       throw new HttpException(
         "Erreur lors de l'ajout de la question",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Put(':quizId/questions/:questionId')
+  @Auth()
+  @HttpCode(204)
+  async replaceQuestion(
+    @Param('quizId') quizId: string,
+    @Param('questionId') questionId: string,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+    @Req() request: RequestWithUser
+  ) {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    try {
+      const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+      const quizDoc = await quizRef.get();
+
+      if (!quizDoc.exists) {
+        throw new NotFoundException('Quiz non trouvé');
+      }
+
+      const quizData = quizDoc.data();
+
+      if (quizData.userId !== decodedToken.user_id) {
+        throw new NotFoundException('Quiz non trouvé');
+      }
+
+      if (!Array.isArray(quizData.questions)) {
+        quizData.questions = [];
+      }
+
+      const questionIndex = quizData.questions.findIndex(
+        (q) => q.id === questionId
+      );
+
+      if (questionIndex === -1) {
+        throw new NotFoundException('Question non trouvée');
+      }
+
+      const updatedQuestion = {
+        id: questionId,
+        title: updateQuestionDto.title,
+        answers: updateQuestionDto.answers || [],
+      };
+
+      quizData.questions[questionIndex] = updatedQuestion;
+
+      await quizRef.update({
+        questions: quizData.questions,
+      });
+
+      return null;
+    } catch (error) {
+      console.error(
+        'Erreur complète lors de la mise à jour de la question:',
+        error
+      );
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        'Erreur lors de la mise à jour de la question',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
