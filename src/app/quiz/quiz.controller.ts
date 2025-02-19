@@ -132,7 +132,7 @@ export class QuizController {
         .add(quizData);
 
       const baseUrl = request.protocol + '://' + request.get('host');
-      const locationUrl = `${baseUrl}/quiz/${quizRef.id}`;
+      const locationUrl = `${baseUrl}/api/quiz/${quizRef.id}`;
       console.log('locationUrl', locationUrl);
       response.header('Location', locationUrl);
 
