@@ -51,6 +51,54 @@ export class QuizController {
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
+  // @Get()
+  // @Auth()
+  // async getUserQuizzes(@Req() request: RequestWithUser) {
+  //   const token = request.headers.authorization.split('Bearer ')[1];
+  //   const jwt = require('jsonwebtoken');
+  //   const decodedToken = jwt.decode(token);
+
+  //   if (!decodedToken.user_id) {
+  //     throw new HttpException(
+  //       'Utilisateur non authentifié',
+  //       HttpStatus.UNAUTHORIZED
+  //     );
+  //   }
+
+  //   try {
+  //     const quizzesData = await this.firebase.firestore
+  //       .collection('quizzes')
+  //       .where('userId', '==', decodedToken.user_id)
+  //       .get();
+
+  //     if (quizzesData.empty) {
+  //       return { data: [] };
+  //     }
+
+  //     const quizzes = quizzesData.empty
+  //       ? []
+  //       : quizzesData.docs.map((doc) => ({
+  //           id: doc.id,
+  //           title: doc.data().title,
+  //         }));
+
+  //     const baseUrl = request.protocol + '://' + request.get('host');
+  //     const createUrl = `${baseUrl}/api/quiz`;
+
+  //     return {
+  //       data: quizzes,
+  //       _links: {
+  //         create: createUrl,
+  //       },
+  //     };
+  //   } catch (error) {
+  //     console.error('Erreur lors de la récupération des quiz:', error);
+  //     throw new HttpException(
+  //       'Erreur lors de la récupération des quiz',
+  //       HttpStatus.INTERNAL_SERVER_ERROR
+  //     );
+  //   }
+  // }
   @Get()
   @Auth()
   async getUserQuizzes(@Req() request: RequestWithUser) {
@@ -73,6 +121,8 @@ export class QuizController {
         .where('userId', '==', decodedToken.user_id)
         .get();
 
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
       if (quizzesData.empty) {
         return { data: [],
                 _links: { create: `${baseUrl}/api/quiz`}
@@ -86,6 +136,55 @@ export class QuizController {
             title: doc.data().title,
           }));
 
+=======
+=======
+>>>>>>> Stashed changes
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const createUrl = `${baseUrl}/api/quiz`;
+
+      if (quizzesData.empty) {
+        return {
+          data: [],
+          _links: {
+            create: createUrl,
+          },
+        };
+      }
+
+      // Transformation des données avec vérification de démarrabilité
+      const quizzes = quizzesData.docs.map((doc) => {
+        const quizData = doc.data();
+        const quizId = doc.id;
+        const quizTitle = quizData.title;
+        const questions = quizData.questions || [];
+
+        // Vérifier si le quiz est démarrable
+        const isStartable = this.isQuizStartable(quizTitle, questions);
+
+        // Construire l'objet quiz avec liens conditionnels
+        const quizObject = {
+          id: quizId,
+          title: quizTitle,
+        };
+
+        // Ajouter les liens HATEOAS si démarrable
+        if (isStartable) {
+          Object.assign(quizObject, {
+            _links: {
+              start: `${baseUrl}/api/quiz/${quizId}/start`,
+            },
+          });
+        }
+
+        return quizObject;
+      });
+      console.log('quizzes', quizzes);
+
+      // Retourner les données avec les liens HATEOAS
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
       return {
         data: quizzes,
         _links: {
@@ -99,6 +198,54 @@ export class QuizController {
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  /**
+   * Détermine si un quiz est démarrable selon les critères spécifiés
+   * @param title Titre du quiz
+   * @param questions Tableau des questions du quiz
+   * @returns Booléen indiquant si le quiz est démarrable
+   */
+  private isQuizStartable(title: string, questions: any[]): boolean {
+    // Critère 1: Le titre ne doit pas être vide
+    if (!title || title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: Il doit y avoir au moins une question
+    if (!questions || questions.length === 0) {
+      return false;
+    }
+
+    // Critère 3: Toutes les questions doivent être valides
+    return questions.every((question) => this.isQuestionValid(question));
+  }
+
+  /**
+   * Vérifie si une question est valide selon les critères spécifiés
+   * @param question Objet question à vérifier
+   * @returns Booléen indiquant si la question est valide
+   */
+  private isQuestionValid(question: any): boolean {
+    // Critère 1: La question doit avoir un titre non vide
+    if (!question.title || question.title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: La question doit avoir au moins deux réponses
+    if (!question.answers || question.answers.length < 2) {
+      return false;
+    }
+
+    // Critère 3: Il doit y avoir exactement une réponse correcte
+    const correctAnswersCount = question.answers.filter(
+      (answer) => answer.isCorrect
+    ).length;
+    if (correctAnswersCount !== 1) {
+      return false;
+    }
+
+    return true;
   }
 
   @Post()
