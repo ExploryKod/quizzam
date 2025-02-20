@@ -79,7 +79,7 @@ describe('POST /api/quiz', () => {
 });
 
 //Get Quiz by ID
-describe('GET /api/quiz/<id>', () => {
+describe('GET /api/quiz/:id', () => {
     let token: string
     let quizId:string
     let otherUserToken: string;
@@ -147,5 +147,76 @@ describe('GET /api/quiz/<id>', () => {
 
         expect(response.status).toBe(401);
     });
+
+});
+
+describe('PATCH /api/quiz/:id', () => {
+  let token: string;
+  let otherUserToken: string;
+  let quizId: string;
+
+  beforeAll(async () => {
+    const auth = await request(defaultFirebaseUrl)
+      .post('')
+      .send({
+        email: 'user@email.com',
+        password: 'password',
+        returnSecureToken: true,
+      });
+
+    expect(auth.status).toBe(200);
+    token = auth.body.idToken;
+
+    // Création d'un quiz pour avoir un ID valide
+    const quizData = {
+      title: 'Quiz Test',
+      description: 'Description du quiz test',
+    };
+
+    const createResponse = await request(defaultUrl)
+      .post('/api/quiz')
+      .set('Authorization', `Bearer ${token}`)
+      .send(quizData);
+
+    expect(createResponse.status).toBe(201);
+    
+    // Récupération de l'ID du quiz
+    const locationHeader = createResponse.headers.location;
+    quizId = locationHeader.split('/').pop();
+
+  });
+
+  it('should update a quiz title successfully', async () => {
+    const patchOperations = [{ op: 'replace', path: '/title', value: 'New Quiz Title' }];
+
+    const response = await request(defaultUrl)
+      .patch(`/api/quiz/${quizId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(patchOperations);
+
+    expect(response.status).toBe(204);
+  });
+
+  it('should return 404 if the quiz does not exist', async () => {
+    const patchOperations = [{ op: 'replace', path: '/title', value: 'New Title' }];
+
+    const response = await request(defaultUrl)
+      .patch('/api/quiz/nonexistentQuizId')
+      .set('Authorization', `Bearer ${token}`)
+      .send(patchOperations);
+
+    expect(response.status).toBe(404);
+  });
+
+  it("should return 401 if the quiz doesn't belong to the authenticated user", async () => {
+    const patchOperations = [{ op: 'replace', path: '/title', value: 'Hacked Title' }];
+
+    const response = await request(defaultUrl)
+      .patch(`/api/quiz/${quizId}`)
+      .set('Authorization', `Bearer ${otherUserToken}`)
+      .send(patchOperations);
+
+    expect(response.status).toBe(401);
+  });
 
 });

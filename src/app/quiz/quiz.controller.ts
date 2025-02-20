@@ -231,7 +231,7 @@ export class QuizController {
         throw new NotFoundException('Quiz non trouvé');
       }
 
-      let updateData = {};
+      const updateData = {};
 
       for (const operation of operations) {
         if (operation.op !== 'replace') {
