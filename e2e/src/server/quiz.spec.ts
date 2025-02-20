@@ -145,7 +145,7 @@ describe('GET /api/quiz/:id', () => {
 });
 
 // ========== DEMARRAGE D'UN QUIZ ( # CREATION ) ===============
-describe('POST /api/quiz/<id>/start', () => {
+describe('POST /api/quiz/:id/start', () => {
   let token: string;
   let existingQuizId: string;
   let nonexistentQuizId: string;
@@ -153,6 +153,7 @@ describe('POST /api/quiz/<id>/start', () => {
   const otherUser = 'otherUser@email.com';
   const currentUser = 'user@email.com';
   const currentPassword = 'password';
+  const exampleId = 'jcaJYBwMXviS7b3FzMSx'
   let otherUserToken: string;
 
   beforeAll(async () => {
@@ -177,6 +178,7 @@ describe('POST /api/quiz/<id>/start', () => {
 
     expect(createResponse.status).toBe(201);
     existingQuizId = createResponse.headers.location.split('/').pop();
+    console.log("issue 14 - test - existing quizid ", existingQuizId)
 
     const otherAuth = await request(defaultFirebaseUrl).post('').send({
       email: otherUser,

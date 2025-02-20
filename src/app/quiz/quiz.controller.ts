@@ -487,10 +487,13 @@ export class QuizController {
     }
   }
 
-  @Post(':quizId/start')
+  @Post(':id/start')
   async startQuiz(@Param('quizId') quizId: string, @Res() res) {
     const executionId = Math.random().toString(36).slice(2, 8);
-    return res.status(201).location(`/execution/${executionId}`).send();
+    const temp = res.status(201).location(`http://localhost:3000/execution/${executionId}`)
+      .send();
+    console.log("temp", temp)
+    return temp
   }
 
 }
