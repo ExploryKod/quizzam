@@ -51,62 +51,13 @@ export class QuizController {
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
-  // @Get()
-  // @Auth()
-  // async getUserQuizzes(@Req() request: RequestWithUser) {
-  //   const token = request.headers.authorization.split('Bearer ')[1];
-  //   const jwt = require('jsonwebtoken');
-  //   const decodedToken = jwt.decode(token);
 
-  //   if (!decodedToken.user_id) {
-  //     throw new HttpException(
-  //       'Utilisateur non authentifié',
-  //       HttpStatus.UNAUTHORIZED
-  //     );
-  //   }
-
-  //   try {
-  //     const quizzesData = await this.firebase.firestore
-  //       .collection('quizzes')
-  //       .where('userId', '==', decodedToken.user_id)
-  //       .get();
-
-  //     if (quizzesData.empty) {
-  //       return { data: [] };
-  //     }
-
-  //     const quizzes = quizzesData.empty
-  //       ? []
-  //       : quizzesData.docs.map((doc) => ({
-  //           id: doc.id,
-  //           title: doc.data().title,
-  //         }));
-
-  //     const baseUrl = request.protocol + '://' + request.get('host');
-  //     const createUrl = `${baseUrl}/api/quiz`;
-
-  //     return {
-  //       data: quizzes,
-  //       _links: {
-  //         create: createUrl,
-  //       },
-  //     };
-  //   } catch (error) {
-  //     console.error('Erreur lors de la récupération des quiz:', error);
-  //     throw new HttpException(
-  //       'Erreur lors de la récupération des quiz',
-  //       HttpStatus.INTERNAL_SERVER_ERROR
-  //     );
-  //   }
-  // }
   @Get()
   @Auth()
   async getUserQuizzes(@Req() request: RequestWithUser) {
     const token = request.headers.authorization.split('Bearer ')[1];
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token);
-    const baseUrl = request.protocol + '://' + request.get('host');
-    const createUrl = `${baseUrl}/api/quiz`;
 
     if (!decodedToken.user_id) {
       throw new HttpException(
@@ -121,24 +72,6 @@ export class QuizController {
         .where('userId', '==', decodedToken.user_id)
         .get();
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-      if (quizzesData.empty) {
-        return { data: [],
-                _links: { create: `${baseUrl}/api/quiz`}
-         };
-      }
-
-      const quizzes = quizzesData.empty
-        ? []
-        : quizzesData.docs.map((doc) => ({
-            id: doc.id,
-            title: doc.data().title,
-          }));
-
-=======
-=======
->>>>>>> Stashed changes
       const baseUrl = request.protocol + '://' + request.get('host');
       const createUrl = `${baseUrl}/api/quiz`;
 
@@ -181,10 +114,6 @@ export class QuizController {
       console.log('quizzes', quizzes);
 
       // Retourner les données avec les liens HATEOAS
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
       return {
         data: quizzes,
         _links: {
@@ -279,7 +208,7 @@ export class QuizController {
         .add(quizData);
 
       const baseUrl = request.protocol + '://' + request.get('host');
-      const locationUrl = `${baseUrl}/api/quiz/${quizRef.id}`;
+      const locationUrl = `${baseUrl}/quiz/${quizRef.id}`;
       console.log('locationUrl', locationUrl);
       response.header('Location', locationUrl);
 
