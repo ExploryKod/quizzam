@@ -47,6 +47,7 @@ export class AuthMiddleware implements NestMiddleware {
 
   private getToken(authToken: string): string {
     const match = authToken.match(/^Bearer (.*)$/);
+    console.log("match token", authToken)
     if (!match || match.length < 2) {
       throw new UnauthorizedException('Invalid token');
     }
