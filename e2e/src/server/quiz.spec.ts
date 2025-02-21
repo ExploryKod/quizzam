@@ -113,6 +113,22 @@ describe('GET /api/quiz/:id', () => {
         const locationHeader = createResponse.headers.location;
         quizId = locationHeader.split('/').pop();
 
+        const questionData = {
+          title: 'What is the capital of France?',
+          answers: [
+            { title: 'Paris', isCorrect: true },
+            { title: 'London', isCorrect: false },
+            { title: 'Rome', isCorrect: false },
+            { title: 'Berlin', isCorrect: false },
+          ],
+        };
+      
+        const questionResponse = await request(defaultUrl)
+          .post(`/api/quiz/${quizId}/questions`)
+          .set('Authorization', `Bearer ${token}`)
+          .send(questionData);
+      
+        expect(questionResponse.status).toBe(201);
     });
 
   it('should retrieve a quiz by ID for an authenticated user', async () => {
@@ -136,7 +152,7 @@ describe('GET /api/quiz/:id', () => {
     expect(question).toHaveProperty('answers');
     expect(Array.isArray(question.answers)).toBe(true);
 
-     // Vérifie que chaque réponse est un objet contenant `title` et `isCorrect`
+    // Vérifie que chaque réponse est un objet contenant `title` et `isCorrect`
      question.answers.forEach((answer) => {
       expect(answer).toHaveProperty('title');
       expect(answer).toHaveProperty('isCorrect');
