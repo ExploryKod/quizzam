@@ -18,30 +18,42 @@ import { RequestWithUser } from '../modules/auth/model/request-with-user';
 import { Auth } from '../modules/auth/auth.decorator';
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { ApiProperty } from '@nestjs/swagger';
 
 class CreateQuizDto {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   description: string;
 }
 
 class PatchOperation {
+  @ApiProperty()
   op: string;
+  @ApiProperty()
   path: string;
+  @ApiProperty()
   value: string;
 }
 
 class Answer {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   isCorrect: boolean;
 }
 
 class CreateQuestionDto {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   answers: Answer[];
 }
 
 class UpdateQuestionDto {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   answers: Answer[];
 }
 
