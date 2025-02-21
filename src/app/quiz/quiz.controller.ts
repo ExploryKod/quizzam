@@ -12,6 +12,7 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  BadRequestException,
 } from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
@@ -487,13 +488,65 @@ export class QuizController {
     }
   }
 
-  @Post(':id/start')
-  async startQuiz(@Param('quizId') quizId: string, @Res() res) {
-    const executionId = Math.random().toString(36).slice(2, 8);
-    const temp = res.status(201).location(`http://localhost:3000/execution/${executionId}`)
-      .send();
-    console.log("temp", temp)
-    return temp
-  }
+/**
+   * Endpoint pour démarrer un quiz
+   * @param quizId Identifiant du quiz
+   * @param res Réponse HTTP
+   */
+@Post(':quizId/start')
+@Auth()
+async startQuiz(
+  @Param('quizId') quizId: string, 
+  @Req() request: RequestWithUser, 
+  @Res({ passthrough: true }) response: Response ) {
+  try {
 
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists || quizDoc.data().userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz not found or not owned by user');
+    }
+
+    const quizData = quizDoc.data();
+    const quizTitle = quizData.title;
+    const questions = quizData.questions || [];
+
+    // Vérifier si le quiz est démarrable
+    if (!this.isQuizStartable(quizTitle, questions)) {
+      throw new BadRequestException('Quiz is not ready to be started');
+    }
+
+    // Générer un ID aléatoire pour l'exécution
+    const executionId = this.randomString(6);
+
+    // Construire l'URL de l'exécution
+    const baseUrl = request.protocol + '://' + request.get('host');
+    const executionUrl = `${baseUrl}/api/execution/${executionId}`;
+
+    // Retourner la réponse avec le header Location
+    response.status(HttpStatus.CREATED).location(executionUrl).send();
+  
+  } catch (error) {
+    console.error('Erreur lors du démarrage du quiz:', error);
+    throw new BadRequestException('Erreur lors du démarrage du quiz');
+  }
+}
+
+   /**
+   * Génère un identifiant aléatoire de 6 caractères
+   */
+   private randomString(length: number): string {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  }
 }
