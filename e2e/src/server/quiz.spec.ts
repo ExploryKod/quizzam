@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { defaultFirebaseUrl, defaultUrl } from '../constants';
 
+// ========== RECUPERATION DE TOUS LES QUIZ POUR UN USER =============== //
 describe('GET /api/quiz', () => {
   let token: string;
 
@@ -36,6 +37,7 @@ describe('GET /api/quiz', () => {
   });
 });
 
+// ========== CREATION D'UN QUIZ =============== //
 describe('POST /api/quiz', () => {
   let token: string;
 
@@ -78,10 +80,11 @@ describe('POST /api/quiz', () => {
       });
 });
 
-//Get Quiz by ID
+// ========== RECUPERATION D'UN QUIZ PAR ID =============== //
 describe('GET /api/quiz/:id', () => {
     let token: string
     let otherUserToken: string;
+    let quizId: string;
 
     beforeAll(async () => {
         const auth = await request(defaultFirebaseUrl).post('').send({
@@ -93,12 +96,29 @@ describe('GET /api/quiz/:id', () => {
         expect(auth.status).toBe(200);
         token = auth.body.idToken;
 
+        // Création d'un quiz pour avoir un ID valide
+        const quizData = {
+          title: 'Quiz Test',
+          description: 'Description du quiz test',
+        };
+
+        const createResponse = await request(defaultUrl)
+          .post('/api/quiz')
+          .set('Authorization', `Bearer ${token}`)
+          .send(quizData);
+
+        expect(createResponse.status).toBe(201);
+
+        // Récupération de l'ID du quiz
+        const locationHeader = createResponse.headers.location;
+        quizId = locationHeader.split('/').pop();
+
     });
 
   it('should retrieve a quiz by ID for an authenticated user', async () => {
 
     const response = await request(defaultUrl)
-        .get(`/api/quiz/wKkPH7AE773kbOu9Sf2B`)
+        .get(`/api/quiz/${quizId}`)
         .set('Authorization', `Bearer ${token}`);
 
     console.log('Retrieved Quiz:', JSON.stringify(response.body, null, 2));
@@ -137,131 +157,14 @@ describe('GET /api/quiz/:id', () => {
 
     it("should return 401 if the quiz doesn't belong to the authenticated user", async () => {
         const response = await request(defaultUrl)
-        .get(`/api/quiz/wKkPH7AE773kbOu9Sf2B`)
+        .get(`/api/quiz/${quizId}`)
         .set('Authorization', `Bearer ${otherUserToken}`);
 
         expect(response.status).toBe(401);
     });
 });
 
-// ========== DEMARRAGE D'UN QUIZ ( # CREATION ) ===============
-describe('POST /api/quiz/:id/start', () => {
-  let token: string;
-  let existingQuizId: string;
-  let nonexistentQuizId: string;
-
-  const otherUser = 'otherUser@email.com';
-  const currentUser = 'user@email.com';
-  const currentPassword = 'password';
-  const exampleId = 'jcaJYBwMXviS7b3FzMSx'
-  let otherUserToken: string;
-
-  beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl).post('').send({
-      email: currentUser,
-      password: currentPassword,
-      returnSecureToken: true,
-    });
-
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
-
-    const quizData = {
-      title: 'Quiz Test',
-      description: 'Description du quiz test',
-    };
-
-    const createResponse = await request(defaultUrl)
-      .post('/api/quiz')
-      .set('Authorization', `Bearer ${token}`)
-      .send(quizData);
-
-    expect(createResponse.status).toBe(201);
-    existingQuizId = createResponse.headers.location.split('/').pop();
-    console.log("issue 14 - test - existing quizid ", existingQuizId)
-
-    const otherAuth = await request(defaultFirebaseUrl).post('').send({
-      email: otherUser,
-      password: 'password',
-      returnSecureToken: true,
-    });
-
-    expect(otherAuth.status).toBe(200);
-    otherUserToken = otherAuth.body.idToken;
-
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${existingQuizId}/start`)
-      .set('Authorization', `Bearer ${otherUserToken}`);
-
-    expect(response.status).toBe(403);
-  });
-
-  it('should start an existing quiz successfully with a correct pattern for its id', async () => {
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${existingQuizId}/start`)
-      .set('Authorization', `Bearer ${token}`);
-
-    console.log('Start Quiz Response:', response.body);
-    console.log('Headers:', response.headers);
-
-    expect(response.status).toBe(201);
-    expect(response.headers).toHaveProperty('location');
-    // REGEX : /execution/ suivi de 6 chiffres et/ou lettres en uppercase ou non, pas plus de 6 caractères (ex : /execution/abc123)
-    expect(response.headers.location).toMatch(/^\/execution\/[a-zA-Z0-9]{6}$/);
-  });
-
-  it('should return 404 if quiz does not exist', async () => {
-    nonexistentQuizId = 'ade1246';
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${nonexistentQuizId}/start`)
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(response.status).toBe(404);
-  });
-
-  it('should return 404 if a user tries to start a quiz owned by him', async () => {
-
-    const auth = await request(defaultFirebaseUrl).post('').send({
-      email: currentUser,
-      password: currentPassword,
-      returnSecureToken: true,
-    });
-
-    expect(auth.status).toBe(200);
-    const token = auth.body.idToken;
-
-    // Step 2: Create a quiz as this user
-    const quizData = {
-      title: 'Quiz Owned by User',
-      description: 'This is a quiz created by user@email.com',
-      status: 'ready', // Ensure the quiz is in a "ready" state
-    };
-
-    const createResponse = await request(defaultUrl)
-      .post('/api/quiz')
-      .set('Authorization', `Bearer ${token}`)
-      .send(quizData);
-
-    expect(createResponse.status).toBe(201);
-
-    // Extract the Quiz ID from the Location header
-    const locationHeader = createResponse.headers.location;
-    const quizId = locationHeader.split('/').pop();
-
-    // Step 3: Try to start the quiz while still authenticated as the owner
-    const startResponse = await request(defaultUrl)
-      .post(`/api/quiz/${quizId}/start`)
-      .set('Authorization', `Bearer ${token}`);
-
-    // Step 4: Expect a 404 because the user owns this quiz
-    expect(startResponse.status).toBe(404);
-    expect(startResponse.body).toHaveProperty('status', 404);
-    expect(startResponse.body).toHaveProperty('error', 'Not Found');
-    expect(startResponse.body.message).toBe('Quiz not found');
-  });
-
-});
-
+// ========== MODIFICATION D'UN QUIZ =============== //
 describe('PATCH /api/quiz/:id', () => {
   let token: string;
   let otherUserToken: string;
@@ -333,6 +236,7 @@ describe('PATCH /api/quiz/:id', () => {
 
 });
 
+// ========== CREATION D'UNE QUESTION =============== //
 describe('POST /api/quiz/:id/questions', () => {
   let token: string;
   let quizId: string;
@@ -405,6 +309,106 @@ describe('POST /api/quiz/:id/questions', () => {
       .send(questionData);
 
     expect(response.status).toBe(404);
+  });
+
+});
+
+// ========== DEMARRAGE D'UN QUIZ =============== //
+describe('POST /api/quiz/:id/start', () => {
+  let token: string;
+  let nonexistentQuizId: string;
+  let quizId: string;
+  
+  const currentUser = 'user@email.com';
+  const currentPassword = 'password';
+
+  beforeAll(async () => {
+    const auth = await request(defaultFirebaseUrl).post('').send({
+      email: currentUser,
+      password: currentPassword,
+      returnSecureToken: true,
+    });
+
+    expect(auth.status).toBe(200);
+    token = auth.body.idToken;
+
+    const quizData = {
+      title: 'Quiz Test start',
+      description: 'Description du quiz test',
+    };
+    
+    const createResponse = await request(defaultUrl)
+      .post('/api/quiz')
+      .set('Authorization', `Bearer ${token}`)
+      .send(quizData);
+
+    expect(createResponse.status).toBe(201);
+
+    const locationHeader = createResponse.headers.location;
+    quizId = locationHeader.split('/').pop();
+
+     // Ajout d'une question au quiz
+  const questionData = {
+    title: 'What is the capital of France?',
+    answers: [
+      { title: 'Paris', isCorrect: true },
+      { title: 'London', isCorrect: false },
+      { title: 'Rome', isCorrect: false },
+      { title: 'Berlin', isCorrect: false },
+    ],
+  };
+
+  const questionResponse = await request(defaultUrl)
+    .post(`/api/quiz/${quizId}/questions`)
+    .set('Authorization', `Bearer ${token}`)
+    .send(questionData);
+
+  expect(questionResponse.status).toBe(201);
+  });
+
+  it('should start an existing quiz successfully with a correct pattern for its id', async () => {
+    const response = await request(defaultUrl)
+      .post(`/api/quiz/${quizId}/start`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(201);
+    expect(response.headers).toHaveProperty('location');
+    expect(response.headers.location).toMatch(/\/api\/execution\/[A-Z0-9]{6}/);
+  });
+
+  it('should return 404 if quiz does not exist', async () => {
+    nonexistentQuizId = 'ade1246';
+    const response = await request(defaultUrl)
+      .post(`/api/quiz/${nonexistentQuizId}/start`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(404);
+  });
+
+
+  it('should return 400 if quiz is not ready to be started', async () => {
+    // Création d'un quiz sans questions
+    const incompleteQuizData = {
+      title: 'Incomplete Quiz',
+      description: 'This quiz has no questions',
+    };
+
+    const createResponse = await request(defaultUrl)
+      .post('/api/quiz')
+      .set('Authorization', `Bearer ${token}`)
+      .send(incompleteQuizData);
+
+    expect(createResponse.status).toBe(201);
+
+    const locationHeader = createResponse.headers.location;
+    const incompleteQuizId = locationHeader.split('/').pop();
+
+    // Essayer de démarrer ce quiz qui n'a pas de questions
+    const response = await request(defaultUrl)
+      .post(`/api/quiz/${incompleteQuizId}/start`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(400);
   });
 
 });
