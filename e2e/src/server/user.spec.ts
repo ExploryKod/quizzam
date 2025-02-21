@@ -1,6 +1,5 @@
 import request from 'supertest';
-import { defaultFirebaseUrl, defaultUrl } from '../constants';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import { defaultUrl } from '../constants';
 import { AuthHelper, TestUser } from '../helpers/auth.helper';
 
 describe('POST /api/users', () => {
