@@ -13,6 +13,7 @@ import {
   NotFoundException,
   Param,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
@@ -112,7 +113,6 @@ export class QuizController {
 
         return quizObject;
       });
-      console.log('quizzes', quizzes);
 
       // Retourner les données avec les liens HATEOAS
       return {
@@ -514,13 +514,17 @@ async startQuiz(
     const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
     const quizDoc = await quizRef.get();
 
-    if (!quizDoc.exists || quizDoc.data().userId !== decodedToken.user_id) {
-      throw new NotFoundException('Quiz not found or not owned by user');
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz not found');
     }
 
     const quizData = quizDoc.data();
     const quizTitle = quizData.title;
     const questions = quizData.questions || [];
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
 
     // Vérifier si le quiz est démarrable
     if (!this.isQuizStartable(quizTitle, questions)) {
@@ -538,15 +542,27 @@ async startQuiz(
     response.status(HttpStatus.CREATED).location(executionUrl).send();
   
   } catch (error) {
-    console.error('Erreur lors du démarrage du quiz:', error);
-    throw new BadRequestException('Erreur lors du démarrage du quiz');
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+
+    if (error instanceof HttpException) {
+      throw error;
+    }
+   
+    if (error instanceof BadRequestException) {
+      throw error;
+    } 
+    
   }
+  
 }
 
    /**
    * Génère un identifiant aléatoire de 6 caractères
    */
    private randomString(length: number): string {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 }
