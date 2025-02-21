@@ -11,10 +11,13 @@ import { RequestWithUser } from '../modules/auth/model/request-with-user';
 import { Auth } from '../modules/auth/auth.decorator';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { JwtPayload } from 'jsonwebtoken';
+import { ApiProperty } from '@nestjs/swagger';
 
 class CreateUserDto {
+  @ApiProperty()
   username: string;
 }
+
 @Controller('users')
 export class UsersController {
   constructor(
