@@ -23,6 +23,7 @@ describe('GET /api/quiz', () => {
     console.log('Response:', response.body);
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('data');
+    // TODO : Verifier pourquoi cela (pas demandé à l'issue 5)
     expect(response.body).toHaveProperty('_links');
     expect(response.body._links).toHaveProperty('create');
   });
@@ -116,15 +117,15 @@ describe('GET /api/quiz/:id', () => {
     expect(question).toHaveProperty('answers');
     expect(Array.isArray(question.answers)).toBe(true);
 
-     // Vérifie que chaque réponse est un objet contenant `title` et `isCorrect`
-     question.answers.forEach((answer) => {
-      expect(answer).toHaveProperty('title');
-      expect(answer).toHaveProperty('isCorrect');
-      expect(typeof answer.title).toBe('string');
-      expect(typeof answer.isCorrect).toBe('boolean');
+    // Vérifie que chaque réponse est un objet contenant `title` et `isCorrect`
+    question.answers.forEach((answer) => {
+        expect(answer).toHaveProperty('title');
+        expect(answer).toHaveProperty('isCorrect');
+        expect(typeof answer.title).toBe('string');
+        expect(typeof answer.isCorrect).toBe('boolean');
+      });
     });
   });
-});
 
    it('should return 404 if the quiz does not exist', async () => {
       const response = await request(defaultUrl)
