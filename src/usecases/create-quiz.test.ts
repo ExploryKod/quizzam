@@ -21,5 +21,8 @@ describe('create quiz', () => {
     };
     const result = await useCase.execute(quizData)
     expect(repository.database.length).toBe(1)
+
+    const createQuiz = repository.database[0];
+    expect(createQuiz.title).toBe('Quiz Test');
   })
 })

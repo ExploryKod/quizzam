@@ -1,7 +1,12 @@
 // CORRESPOND A CreateQuizDto
 export class Quiz {
-  title: string;
-  description: string;
+  public title: string;
+  public description: string;
+
+  constructor(title: string, description: string) {
+    this.title = title;
+    this.description = description;
+  }
 }
 
 export interface IQuizRepository {
@@ -11,6 +16,6 @@ export interface IQuizRepository {
 export class CreateQuiz {
   constructor(private readonly repository:  IQuizRepository) {}
   execute(data: Quiz) {
-    return this.repository.create(new Quiz);
+    return this.repository.create(new Quiz(data.title, data.description));
   }
 }
