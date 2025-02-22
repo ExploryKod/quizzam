@@ -9,5 +9,8 @@ export interface IQuizRepository {
 }
 
 export class CreateQuiz {
-  execute(data: Quiz) {}
+  constructor(private readonly repository:  IQuizRepository) {}
+  execute(data: Quiz) {
+    return this.repository.create(new Quiz);
+  }
 }
