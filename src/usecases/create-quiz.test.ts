@@ -14,7 +14,7 @@ describe('create quiz', () => {
       }
     }
     const repository = new quizFakeRepository()
-    const useCase = new CreateQuiz();
+    const useCase = new CreateQuiz(repository);
     const quizData = {
       title: 'Quiz Test',
       description: 'Description du quiz test',
