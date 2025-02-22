@@ -7,17 +7,19 @@ describe('create quiz', () => {
   })
 
   it('should create a new quiz', async () => {
-    class quizFake implements IQuizRepository {
+    class quizFakeRepository implements IQuizRepository {
       public database: Quiz[] = []
       async create(quiz: Quiz): Promise<void> {
         this.database.push(quiz)
       }
     }
+    const repository = new quizFakeRepository()
     const useCase = new CreateQuiz();
     const quizData = {
       title: 'Quiz Test',
       description: 'Description du quiz test',
     };
     const result = await useCase.execute(quizData)
+    expect(repository.database.length).toBe(1)
   })
 })
