@@ -44,7 +44,7 @@ import { UsersController} from '../users/controllers/users.controller';
     CommonModule,
     QuizModule
   ],
-  controllers: [AppController, UsersController],
+  controllers: [AppController],
   providers: [AppService,
     {
       provide: Authenticator,
@@ -61,6 +61,7 @@ import { UsersController} from '../users/controllers/users.controller';
     //   },
     // },
   ],
+  exports: [FirebaseModule]
 })
 
 export class AppModule implements NestModule {
