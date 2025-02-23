@@ -18,6 +18,7 @@ import { RequestWithUser } from '../auth/model/request-with-user';
 import { Auth } from '../auth/auth.decorator';
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { extractTokenAuthorization } from '../core/utils/extract-token';
 
 class CreateQuizDto {
   title: string;
@@ -55,6 +56,8 @@ export class QuizController {
   @Auth()
   async getUserQuizzes(@Req() request: RequestWithUser) {
     const token = request.headers.authorization.split('Bearer ')[1];
+    //const token = extractTokenAuthorization(request.headers.authorization)
+    console.log("token", token);
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token);
     const baseUrl = request.protocol + '://' + request.get('host');

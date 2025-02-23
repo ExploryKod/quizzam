@@ -7,10 +7,11 @@ import { MongoUser } from '../users/adapters/mongo/mongo-user';
 import { UserModule } from '../users/user.module';
 
 import { MongoQuiz } from './adapters/mongo/mongo-quiz';
-import { QuizController } from './controllers/quiz.controller';
+import { QuizController } from './quiz.controller';
 import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
 import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
 import { CreateQuiz } from './commands/create-quiz';
+import { GetQuizByIdQueryHandler } from './queries/get-quiz-by-id';
 
 @Module({
   imports: [
@@ -28,26 +29,26 @@ import { CreateQuiz } from './commands/create-quiz';
   providers: [
     {
       provide: I_QUIZ_REPOSITORY,
-      inject: [getModelToken(MongoQuiz.CollectionName)],
+      inject: [
+        getModelToken(MongoQuiz.CollectionName)
+      ],
       useFactory: (model) => {
         return new MongoQuizRepository(model);
       },
     },
-    // {
-    //   provide: GetWebinaireByIdQueryHandler,
-    //   inject: [
-    //     getModelToken(MongoWebinaire.CollectionName),
-    //     getModelToken(MongoParticipation.CollectionName),
-    //     getModelToken(MongoUser.CollectionName),
-    //   ],
-    //   useFactory: (webinaireModel, participationModel, userModel) => {
-    //     return new GetWebinaireByIdQueryHandler(
-    //       webinaireModel,
-    //       participationModel,
-    //       userModel,
-    //     );
-    //   },
-    // },
+    {
+      provide: GetQuizByIdQueryHandler,
+      inject: [
+        getModelToken(MongoQuiz.CollectionName),
+        getModelToken(MongoUser.CollectionName),
+      ],
+      useFactory: (quizModel, userModel) => {
+        return new GetQuizByIdQueryHandler(
+          quizModel,
+          userModel,
+        );
+      },
+    },
     {
       provide: CreateQuiz,
       inject: [I_QUIZ_REPOSITORY, I_ID_GENERATOR],

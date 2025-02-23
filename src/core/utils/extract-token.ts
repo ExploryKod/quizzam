@@ -7,3 +7,9 @@ export const extractToken = (header: string): string | null => {
 
   return parts[1];
 };
+
+
+export const extractTokenAuthorization = (header: string): string | null => {
+  const parts = header.split('Bearer ');
+  return parts[1];
+};
