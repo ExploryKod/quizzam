@@ -24,6 +24,7 @@ import { AuthGuard } from './auth.guard';
 import { CommonModule } from './common.module';
 import { QuizModule } from '../quiz/quiz.module';
 import { AppController } from './app.controller';
+import { UsersController} from '../users/controllers/users.controller';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { AppController } from './app.controller';
     CommonModule,
     QuizModule
   ],
-  controllers: [AppController],
+  controllers: [AppController, UsersController],
   providers: [AppService,
     {
       provide: Authenticator,
@@ -52,13 +53,13 @@ import { AppController } from './app.controller';
         return new Authenticator(repository);
       },
     },
-    {
-      provide: APP_GUARD,
-      inject: [Authenticator],
-      useFactory: (authenticator) => {
-        return new AuthGuard(authenticator);
-      },
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   inject: [Authenticator],
+    //   useFactory: (authenticator) => {
+    //     return new AuthGuard(authenticator);
+    //   },
+    // },
   ],
 })
 
