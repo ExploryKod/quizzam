@@ -7,7 +7,7 @@ import { MongoUser } from '../users/adapters/mongo/mongo-user';
 import { UserModule } from '../users/user.module';
 
 import { MongoQuiz } from './adapters/mongo/mongo-quiz';
-import { QuizController } from './quiz.controller';
+import { QuizController } from './controllers/quiz.controller';
 import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
 import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
 import { CreateQuiz } from './commands/create-quiz';

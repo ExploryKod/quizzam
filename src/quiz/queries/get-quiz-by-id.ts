@@ -10,7 +10,8 @@ export class GetQuizByIdQuery implements IQuery {
 }
 
 @QueryHandler(GetQuizByIdQuery)
-export class GetQuizByIdQueryHandler implements IQueryHandler<GetQuizByIdQuery> {
+export class GetQuizByIdQueryHandler implements IQueryHandler {
+
   constructor(
     private readonly quizModel: Model<MongoQuiz.SchemaClass>,
     private readonly userModel: Model<MongoUser.SchemaClass>,
