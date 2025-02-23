@@ -17,11 +17,11 @@ import { QuizController } from '../quiz/quiz.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { APP_GUARD } from '@nestjs/core';
+// import { APP_GUARD } from '@nestjs/core';
 import { I_USER_REPOSITORY } from '../users/ports/user-repository.interface';
 import { Authenticator } from '../users/services/authenticator';
 import { UserModule } from '../users/user.module';
-import { AuthGuard } from './auth.guard';
+// import { AuthGuard } from './auth.guard';
 import { CommonModule } from './common.module';
 
 @Module({
@@ -55,13 +55,13 @@ import { CommonModule } from './common.module';
         return new Authenticator(repository);
       },
     },
-    {
-      provide: APP_GUARD,
-      inject: [Authenticator],
-      useFactory: (authenticator) => {
-        return new AuthGuard(authenticator);
-      },
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   inject: [Authenticator],
+    //   useFactory: (authenticator) => {
+    //     return new AuthGuard(authenticator);
+    //   },
+    // },
   ],
 })
 
