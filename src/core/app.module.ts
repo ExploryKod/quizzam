@@ -4,25 +4,26 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { PingoController } from 'src/pingo/pingo.controller';
+
 import { FirebaseModule } from 'nestjs-firebase';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
 import { PingModule } from '../ping/ping.module';
-import { UsersController } from '../users/users.controller';
+
 import { AuthModule } from '../auth/auth.module';
 import { AuthMiddleware } from '../auth/auth.middleware';
-import { QuizController } from '../quiz/quiz.controller';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
-// import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { I_USER_REPOSITORY } from '../users/ports/user-repository.interface';
 import { Authenticator } from '../users/services/authenticator';
 import { UserModule } from '../users/user.module';
-// import { AuthGuard } from './auth.guard';
+import { AuthGuard } from './auth.guard';
 import { CommonModule } from './common.module';
+import { QuizModule } from '../quiz/quiz.module';
 
 @Module({
   imports: [
@@ -40,13 +41,9 @@ import { CommonModule } from './common.module';
     AuthModule,
     UserModule,
     CommonModule,
+    QuizModule
   ],
-  controllers: [
-    AppController,
-    PingoController,
-    UsersController,
-    QuizController,
-  ],
+  controllers: [AppController],
   providers: [AppService,
     {
       provide: Authenticator,
@@ -55,13 +52,13 @@ import { CommonModule } from './common.module';
         return new Authenticator(repository);
       },
     },
-    // {
-    //   provide: APP_GUARD,
-    //   inject: [Authenticator],
-    //   useFactory: (authenticator) => {
-    //     return new AuthGuard(authenticator);
-    //   },
-    // },
+    {
+      provide: APP_GUARD,
+      inject: [Authenticator],
+      useFactory: (authenticator) => {
+        return new AuthGuard(authenticator);
+      },
+    },
   ],
 })
 
