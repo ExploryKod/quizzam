@@ -4,9 +4,11 @@ import { MongoUser } from './adapters/mongo/mongo-user';
 import { MongoUserRepository } from './adapters/mongo/mongo-user-repository';
 import { I_USER_REPOSITORY } from './ports/user-repository.interface';
 import { UsersController } from './controllers/users.controller';
+import { FirebaseModule } from 'nestjs-firebase';
 
 @Module({
   imports: [
+    FirebaseModule,
     MongooseModule.forFeature([
       {
         name: MongoUser.CollectionName,
@@ -14,8 +16,8 @@ import { UsersController } from './controllers/users.controller';
       },
     ]),
   ],
+  controllers: [UsersController],
   providers: [
-    UsersController,
     {
       provide: I_USER_REPOSITORY,
       inject: [getModelToken(MongoUser.CollectionName)],
