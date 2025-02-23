@@ -3,6 +3,7 @@ import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { MongoUser } from './adapters/mongo/mongo-user';
 import { MongoUserRepository } from './adapters/mongo/mongo-user-repository';
 import { I_USER_REPOSITORY } from './ports/user-repository.interface';
+import { UsersController } from './controllers/users.controller';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { I_USER_REPOSITORY } from './ports/user-repository.interface';
     ]),
   ],
   providers: [
+    UsersController,
     {
       provide: I_USER_REPOSITORY,
       inject: [getModelToken(MongoUser.CollectionName)],
