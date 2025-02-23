@@ -12,6 +12,7 @@ import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
 import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
 import { CreateQuiz } from './commands/create-quiz';
 import { GetQuizByIdQueryHandler } from './queries/get-quiz-by-id';
+import { OldquizController } from './controllers/oldquiz.controller';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { GetQuizByIdQueryHandler } from './queries/get-quiz-by-id';
       }
     ]),
   ],
-  controllers: [QuizController],
+  controllers: [QuizController, OldquizController],
   providers: [
     {
       provide: I_QUIZ_REPOSITORY,

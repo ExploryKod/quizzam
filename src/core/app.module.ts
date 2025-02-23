@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 
 import { FirebaseModule } from 'nestjs-firebase';
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { PingModule } from '../ping/ping.module';
@@ -24,6 +23,7 @@ import { UserModule } from '../users/user.module';
 import { AuthGuard } from './auth.guard';
 import { CommonModule } from './common.module';
 import { QuizModule } from '../quiz/quiz.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [

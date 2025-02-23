@@ -14,11 +14,11 @@ import {
   Param,
 } from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { RequestWithUser } from '../auth/model/request-with-user';
-import { Auth } from '../auth/auth.decorator';
+import { RequestWithUser } from '../../auth/model/request-with-user';
+import { Auth } from '../../auth/auth.decorator';
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { extractTokenAuthorization } from '../core/utils/extract-token';
+import { extractTokenAuthorization } from '../../core/utils/extract-token';
 
 class CreateQuizDto {
   title: string;
@@ -47,7 +47,7 @@ class UpdateQuestionDto {
 }
 
 @Controller('quiz')
-export class QuizController {
+export class OldquizController {
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
