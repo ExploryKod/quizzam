@@ -7,8 +7,8 @@ import {
   HttpException,
   Body,
 } from '@nestjs/common';
-import { RequestWithUser } from '../modules/auth/model/request-with-user';
-import { Auth } from '../modules/auth/auth.decorator';
+import { RequestWithUser } from '../auth/model/request-with-user';
+import { Auth } from '../auth/auth.decorator';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { JwtPayload } from 'jsonwebtoken';
 
