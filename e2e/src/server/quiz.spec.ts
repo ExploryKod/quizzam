@@ -97,8 +97,9 @@ describe('GET /api/quiz/:id', () => {
 
   it('should retrieve a quiz by ID for an authenticated user', async () => {
 
+    // TODO: the quiz id here is for user@email.com but it could disappear from bdd and be falsely false
     const response = await request(defaultUrl)
-        .get(`/api/quiz/wKkPH7AE773kbOu9Sf2B`)
+        .get(`/api/quiz/AfdmK8kgZhac9Dfn9IO2`)
         .set('Authorization', `Bearer ${token}`);
 
     console.log('Retrieved Quiz:', JSON.stringify(response.body, null, 2));

@@ -12,12 +12,14 @@ import { User } from '../../users/entities/user.entity';
 import { CreateQuiz } from '../commands/create-quiz';
 import { QuizAPI } from '../contract';
 import { GetQuizByIdQuery } from '../queries/get-quiz-by-id';
+import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 
 @Controller()
 export class QuizController {
   constructor(
     private readonly createQuiz: CreateQuiz,
     private readonly queryBus: QueryBus,
+    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
   @Post('/quiz')
