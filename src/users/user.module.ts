@@ -9,6 +9,7 @@ import { FirebaseModule } from 'nestjs-firebase';
 import { AddUsername } from './commands/add-username';
 import { CqrsModule } from '@nestjs/cqrs';
 import { CommonModule } from '../core/common.module';
+import { OldquizController } from '../quiz/controllers/oldquiz.controller';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { CommonModule } from '../core/common.module';
       },
     ]),
   ],
-  controllers: [UsersController],
+  controllers: [UsersController, OldquizController],
   providers: [
     {
       provide: I_USER_REPOSITORY,

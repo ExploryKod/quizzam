@@ -1,13 +1,29 @@
 import { Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { QuestionDTO } from '../../dto/quiz.dto';
+import { QuestionDTO, basicQuizDTO } from '../../dto/quiz.dto';
 
 export class FirebaseQuizRepository implements IQuizRepository {
 
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
+
+  async findAllFromUser(userId: string): Promise<basicQuizDTO[] | []> {
+    const quizzesData = await this.firebase.firestore
+      .collection('quizzes')
+      .where('userId', '==', userId)
+      .get();
+
+    if (quizzesData.empty) {
+      return []
+    }
+
+    return quizzesData.docs.map((doc) => ({
+      id: doc.id,
+      title: doc.data().title,
+    }))
+  }
 
   async findById(id: string): Promise<Quiz | null> {
 
