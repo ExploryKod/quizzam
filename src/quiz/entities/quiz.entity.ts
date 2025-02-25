@@ -28,7 +28,7 @@ export class Quiz extends Entity<QuizProps> {
     return this.props.questions.length < 1;
   }
 
-  isUserProperty(user: User): boolean {
-    return this.props.userId === user.props.id;
+  isUserOwnQuiz(user: User): boolean {
+    return this.props.userId === user.props.uid;
   }
 }

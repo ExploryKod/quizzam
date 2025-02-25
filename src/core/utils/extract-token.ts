@@ -1,3 +1,4 @@
+
 export const extractToken = (header: string): string | null => {
   const parts = header.split(' ');
 
@@ -13,3 +14,4 @@ export const extractTokenAuthorization = (header: string): string | null => {
   const parts = header.split('Bearer ');
   return parts[1];
 };
+

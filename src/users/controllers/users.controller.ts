@@ -12,14 +12,38 @@ import { Auth } from '../../auth/auth.decorator';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { JwtPayload } from 'jsonwebtoken';
 
-class CreateUserDto {
-  username: string;
-}
+import { AddUsername } from '../commands/add-username';
+import { ZodValidationPipe } from '../../core/pipes/zod-validation.pipe';
+import { userAPI } from '../contract';
+import { CreateUserDto} from '../dto/user.dto';
+
 @Controller('users')
 export class UsersController {
   constructor(
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
+    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
+    private readonly addUsername: AddUsername,
   ) {}
+
+  // Need to know the link here with createUserDTO that was previously linked to body
+  // @Post()
+  // @Auth()
+  // async create(
+  //   @Req() request: RequestWithUser,
+  //   @Body(new ZodValidationPipe(userAPI.addUsername.schema))
+  //   body: userAPI.addUsername.Request,
+  // ): Promise<userAPI.addUsername.Response> {
+  //
+  //   const token = request.headers.authorization.split('Bearer ')[1];
+  //   const jwt = require('jsonwebtoken');
+  //   const decodedToken = jwt.decode(token);
+  //
+  //   const uid = decodedToken.user_id;
+  //
+  //   return this.addUsername.execute({
+  //     uid: uid,
+  //     username: body.username
+  //   });
+  // }
 
   @Post()
   @Auth()
@@ -36,12 +60,12 @@ export class UsersController {
     const uid = decodedToken.user_id;
 
     try {
+
       const userRef = this.firebase.firestore.collection('users').doc(uid);
 
       await userRef.set({
         username,
       });
-
       return null;
     } catch (error) {
       console.error('Error creating user:', error);

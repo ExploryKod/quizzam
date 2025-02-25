@@ -14,10 +14,7 @@ export namespace MongoUser {
     _id: string;
 
     @Prop()
-    emailAddress: string;
-
-    @Prop()
-    password: string;
+    username: string;
   }
 
   export const Schema = SchemaFactory.createForClass(SchemaClass);
