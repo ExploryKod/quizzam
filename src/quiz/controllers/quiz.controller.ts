@@ -23,13 +23,12 @@ import { GetUserQuizzes } from '../commands/get-user-quizzes';
 export class QuizController {
   constructor(
     private readonly getUserQuizzesQuery: GetUserQuizzes,
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
 
   @Get()
   @Auth()
-  async getUserQuizzes(@Req() request: RequestWithUser) : Promise<any> {
+  async getUserQuizzes(@Req() request: RequestWithUser) : Promise<QuizAPI.GetAllQuizzesFromUser.Response> {
     const token = request.headers.authorization.split('Bearer ')[1];
     //const token = extractTokenAuthorization(request.headers.authorization)
     console.log("token", token);
