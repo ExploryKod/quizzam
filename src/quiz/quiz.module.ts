@@ -26,7 +26,7 @@ import { OldquizController } from './controllers/oldquiz.controller';
       }
     ]),
   ],
-  controllers: [QuizController, OldquizController],
+  controllers: [OldquizController],
   providers: [
     {
       provide: I_QUIZ_REPOSITORY,

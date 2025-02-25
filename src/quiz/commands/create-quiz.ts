@@ -29,7 +29,7 @@ export class CreateQuiz implements Executable<Request, Response> {
       id,
       title: data.title,
       description: data.description,
-      userId: data.user.props.id,
+      userId: data.user.props.uid,
       questions: []
     });
 
