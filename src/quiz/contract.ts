@@ -22,7 +22,7 @@ export namespace QuizAPI {
     });
 
     export type Request = z.infer<typeof schema>;
-    export type Response = basicQuizDTO[] | [];
+    export type Response = { data: basicQuizDTO[] | [], _links: { create: string } };
   }
 
   export namespace GetQuiz {
