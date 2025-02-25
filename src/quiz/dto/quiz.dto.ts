@@ -15,3 +15,8 @@ export type QuizDTO = {
   questions: Array<QuestionDTO>;
   title: string;
 };
+
+export type basicQuizDTO = {
+  id: string;
+  title: string;
+}

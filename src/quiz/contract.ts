@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { QuizDTO } from './dto/quiz.dto';
+import { QuizDTO, basicQuizDTO } from './dto/quiz.dto';
 
 export namespace QuizAPI {
   export namespace CreateQuiz {
@@ -14,6 +14,15 @@ export namespace QuizAPI {
     export type Response = {
       id: string;
     };
+  }
+
+  export namespace GetAllQuizzesFromUser {
+    export const schema = z.object({
+      userId: z.string(),
+    });
+
+    export type Request = z.infer<typeof schema>;
+    export type Response = basicQuizDTO[] | [];
   }
 
   export namespace GetQuiz {
