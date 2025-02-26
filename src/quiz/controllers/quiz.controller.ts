@@ -6,18 +6,13 @@ import {
   Post, Req,
   Request
 } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
-import { ZodValidationPipe } from '../../core/pipes/zod-validation.pipe';
-import { User } from '../../users/entities/user.entity';
-import { CreateQuiz } from '../commands/create-quiz';
+
 import { QuizAPI } from '../contract';
-import { GetQuizByIdQuery } from '../queries/get-quiz-by-id';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { Auth } from '../../auth/auth.decorator';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 
 import { basicQuizDTO } from '../dto/quiz.dto';
-import { GetUserQuizzes } from '../commands/get-user-quizzes';
+import { GetUserQuizzes } from '../queries/get-user-quizzes';
 
 @Controller('quiz')
 export class QuizController {

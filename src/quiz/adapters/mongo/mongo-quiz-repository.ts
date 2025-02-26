@@ -3,20 +3,25 @@ import { Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { MongoQuiz } from './mongo-quiz';
 import { basicQuizDTO } from '../../dto/quiz.dto';
+import { getModelToken } from '@nestjs/mongoose';
+import { Inject } from '@nestjs/common';
 
 export class MongoQuizRepository implements IQuizRepository {
-  constructor(private readonly model: Model<MongoQuiz.SchemaClass>) {
+  constructor(@Inject(getModelToken(MongoQuiz.CollectionName)) private readonly model: Model<MongoQuiz.SchemaClass>)  {
   }
 
-  async findAllFromUser(userId: string) : Promise<basicQuizDTO[] | []> {
+  async findAllFromUser(userId: string): Promise<basicQuizDTO[] | []> {
 
-    const record = await this.model.find({ userId }).select('title');
-
-    if (!record) {
-      return [];
+    if (!this.model) {
+      console.error('Mongo model is not injected correctly!');
     }
-    return record.map((quiz) => ({
-      id: quiz._id.toString(),
+
+    const quizzes = await this.model.find({ userId }).exec();
+
+    if(!quizzes) return [];
+
+    return quizzes.map((quiz) => ({
+      id: quiz._id,
       title: quiz.title,
     }));
   }
