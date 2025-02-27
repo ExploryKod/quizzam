@@ -7,13 +7,10 @@ export namespace QuizAPI {
       title: z.string(),
       description: z.string(),
       userId: z.string(),
-      questions: z.array(z.string()),
     });
 
     export type Request = z.infer<typeof schema>;
-    export type Response = {
-      id: string;
-    };
+    export type Response = string
   }
 
   export namespace GetAllQuizzesFromUser {

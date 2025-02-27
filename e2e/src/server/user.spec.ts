@@ -14,7 +14,6 @@ describe('POST /api/users', () => {
     console.log('Authentication response:', auth.body);
     expect(auth.status).toBe(200);
     const token = auth.body.idToken;
-    console.log('Received token:', token);
 
     const userResponse = await request(defaultUrl)
       .post('/api/users')

@@ -1,8 +1,4 @@
-import { Inject, NotFoundException } from '@nestjs/common';
-import { IQuery, IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { Model } from 'mongoose';
-import { MongoUser } from '../../users/adapters/mongo/mongo-user';
-import { MongoQuiz } from '../adapters/mongo/mongo-quiz';
+import { Inject } from '@nestjs/common';
 import { basicQuizDTO } from '../dto/quiz.dto';
 import { Executable } from '../../shared/executable';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
