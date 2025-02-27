@@ -21,7 +21,6 @@ import { CommonModule } from './common.module';
 import { QuizModule } from '../quiz/quiz.module';
 import { AppController } from './app.controller';
 
-
 @Module({
   imports: [
     MongooseModule.forRootAsync({
