@@ -1,33 +1,25 @@
-import { NotFoundException } from '@nestjs/common';
-import { IQuery, IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { Model } from 'mongoose';
-import { MongoUser } from '../../users/adapters/mongo/mongo-user';
-import { MongoQuiz } from '../adapters/mongo/mongo-quiz';
-import { QuizDTO } from '../dto/quiz.dto';
+import { Inject, NotFoundException } from '@nestjs/common';
+import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
+import { Quiz } from '../entities/quiz.entity';
+import { Executable } from '../../shared/executable';
 
-export class GetQuizByIdQuery implements IQuery {
-  constructor(public id: string) {}
-}
+type Request = string
+type Response = Quiz | null
 
-@QueryHandler(GetQuizByIdQuery)
-export class GetQuizByIdQueryHandler implements IQueryHandler {
+export class GetQuizByIdQuery implements Executable<Request, Response> {
 
   constructor(
-    private readonly quizModel: Model<MongoQuiz.SchemaClass>,
-    private readonly userModel: Model<MongoUser.SchemaClass>,
+    @Inject(I_QUIZ_REPOSITORY)
+    private readonly quizRepository: IQuizRepository,
   ) {}
 
-  async execute({ id }: GetQuizByIdQuery): Promise<QuizDTO> {
-    const quiz = await this.quizModel.findById(id);
+  async execute(id : Request): Promise<Response> {
+    const quiz = await this.quizRepository.findById(id);
     if (!quiz) {
       throw new NotFoundException();
     }
 
-    return {
-      id: quiz.id,
-      title: quiz.title,
-      description: quiz.description,
-      questions: [],
-    };
+    return quiz
   }
+
 }

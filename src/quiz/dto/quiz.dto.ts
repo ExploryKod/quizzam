@@ -20,3 +20,10 @@ export type basicQuizDTO = {
   id: string;
   title: string;
 }
+
+export type CreateQuizDTO = {
+  title: string;
+  description: string;
+  userId: string;
+}
+

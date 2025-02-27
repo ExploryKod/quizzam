@@ -20,7 +20,6 @@ describe('GET /api/quiz', () => {
       .get('/api/quiz')
       .set('Authorization', `Bearer ${token}`);
 
-    console.log('Response:', response.body);
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('data');
     expect(response.body).toHaveProperty('_links');
@@ -260,8 +259,7 @@ describe('POST /api/quiz/:id/questions', () => {
         { title: 'Berlin', isCorrect: false },
       ],
     };
-    
-    console.log(quizId);
+
     const response = await request(defaultUrl)
       .post(`/api/quiz/${quizId}/questions`)
       .set('Authorization', `Bearer ${token}`)
@@ -269,7 +267,6 @@ describe('POST /api/quiz/:id/questions', () => {
 
     expect(response.status).toBe(201);
     expect(response.headers).toHaveProperty('location');
-    console.log('Location:', response.headers.location);
   });
 
   it('should return 404 if the quiz does not exist', async () => {

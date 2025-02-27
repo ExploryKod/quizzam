@@ -1,7 +1,9 @@
 import { Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { QuestionDTO, basicQuizDTO } from '../../dto/quiz.dto';
+import { QuestionDTO, basicQuizDTO, CreateQuizDTO } from '../../dto/quiz.dto';
+import { firestore } from 'firebase-admin';
+import DocumentData = firestore.DocumentData;
 
 export class FirebaseQuizRepository implements IQuizRepository {
 
@@ -25,7 +27,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     }))
   }
 
-  async findById(id: string): Promise<Quiz | null> {
+  async findById(id:string): Promise<Quiz | null> {
 
     const quizDoc = await this.firebase.firestore
       .collection('quizzes')
@@ -47,18 +49,17 @@ export class FirebaseQuizRepository implements IQuizRepository {
         title: question.title,
         answers: question.answers || [],
       })) || [],
-      userId: "no-user-id-yet",
+      userId: quizData.userId,
     });
   }
 
-  async create(quiz: Quiz): Promise<void> {
+  async create(data: CreateQuizDTO): Promise<string> {
 
-    await this.firebase.firestore
+    const quizRef = await this.firebase.firestore
       .collection('quizzes')
-      .add({
-        _id: quiz.props.id,
-        title: quiz.props.title,
-        description: quiz.props.description,
-      });
+      .add(data);
+
+    const result:string = quizRef.id.toString();
+    return result;
   }
 }

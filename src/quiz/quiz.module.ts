@@ -12,6 +12,8 @@ import { FirebaseQuizRepository } from './adapters/firebase/firebase-quiz-reposi
 import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
 
 import { GetUserQuizzes } from './queries/get-user-quizzes';
+import { CreateQuizCommand } from './commands/create-quiz-command';
+import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
 
 @Module({
   imports: [
@@ -38,12 +40,26 @@ import { GetUserQuizzes } from './queries/get-user-quizzes';
     {
       provide: GetUserQuizzes,
       inject: [
-        I_QUIZ_REPOSITORY  // Inject the repository
+        I_QUIZ_REPOSITORY,
       ],
       useFactory: (repository) => {
         return new GetUserQuizzes(repository);
       },
     },
+    {
+      provide: CreateQuizCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new CreateQuizCommand(repository);
+      },
+    },
+    {
+      provide: GetQuizByIdQuery,
+      inject : [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => { return new GetQuizByIdQuery(repository)}
+    }
   ],
   exports: [I_QUIZ_REPOSITORY],
 })

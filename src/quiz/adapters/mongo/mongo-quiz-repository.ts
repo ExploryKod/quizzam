@@ -2,12 +2,15 @@ import { Model } from 'mongoose';
 import { Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { MongoQuiz } from './mongo-quiz';
-import { basicQuizDTO } from '../../dto/quiz.dto';
+import { basicQuizDTO, CreateQuizDTO } from '../../dto/quiz.dto';
+import { v4 as uuid } from 'uuid';
 import { getModelToken } from '@nestjs/mongoose';
 import { Inject } from '@nestjs/common';
 
 export class MongoQuizRepository implements IQuizRepository {
-  constructor(@Inject(getModelToken(MongoQuiz.CollectionName)) private readonly model: Model<MongoQuiz.SchemaClass>)  {
+  constructor(
+    @Inject(getModelToken(MongoQuiz.CollectionName)) private readonly model: Model<MongoQuiz.SchemaClass>,
+  )  {
   }
 
   async findAllFromUser(userId: string): Promise<basicQuizDTO[] | []> {
@@ -37,17 +40,16 @@ export class MongoQuizRepository implements IQuizRepository {
       title: record.title,
       description: record.description,
       questions: [],
-      userId: record._id,
+      userId: record.userId,
     });
   }
 
-  async create(quiz: Quiz): Promise<void> {
-    const record = new this.model({
-      _id: quiz.props.id,
-      title: quiz.props.title,
-      description: quiz.props.description,
-    });
+  async create(quiz: CreateQuizDTO): Promise<string> {
+    const id = uuid()
+    const data = {_id: id, ...quiz};
 
-    await record.save();
+    const record = new this.model(data);
+    const result = await record.save();
+    return result.id
   }
 }

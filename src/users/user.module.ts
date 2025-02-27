@@ -9,7 +9,8 @@ import { FirebaseModule } from 'nestjs-firebase';
 import { AddUsername } from './commands/add-username';
 import { CqrsModule } from '@nestjs/cqrs';
 import { CommonModule } from '../core/common.module';
-import { OldquizController } from '../quiz/controllers/oldquiz.controller';
+import { I_QUIZ_REPOSITORY } from '../quiz/ports/quiz-repository.interface';
+import { MongoQuizRepository } from '../quiz/adapters/mongo/mongo-quiz-repository';
 
 @Module({
   imports: [
@@ -23,14 +24,11 @@ import { OldquizController } from '../quiz/controllers/oldquiz.controller';
       },
     ]),
   ],
-  controllers: [UsersController, OldquizController],
+  controllers: [UsersController],
   providers: [
     {
       provide: I_USER_REPOSITORY,
-      inject: [getModelToken(MongoUser.CollectionName)],
-      useFactory: (model) => {
-        return new MongoUserRepository(model);
-      },
+      useClass: MongoUserRepository,  // Use MongoDBQuizRepository as the implementation
     },
     {
       provide: AddUsername,
