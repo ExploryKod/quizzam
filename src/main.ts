@@ -18,8 +18,7 @@ async function bootstrap() {
 
   await app.listen(variables.port);
   Logger.log(
-    `\n 🚀 Application is running on: http://localhost:${variables.port}/${variables.globalPrefix} 
-     \n 💽 The chosen database is ${variables.database}`
+    `🚀 Application is running on: http://localhost:${variables.port}/${variables.globalPrefix} 💽 The chosen database is ${variables.database}`
   );
 }
 
