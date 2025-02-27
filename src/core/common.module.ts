@@ -3,7 +3,6 @@ import { RandomIDGenerator } from './adapters/random-id-generator';
 import { AppService } from './app.service';
 import { I_ID_GENERATOR } from './ports/id-generator.interface';
 
-
 @Module({
   imports: [],
   controllers: [],
