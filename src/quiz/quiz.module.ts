@@ -13,7 +13,7 @@ import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
 import { FirebaseQuizRepository } from './adapters/firebase/firebase-quiz-repository';
 import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
 
-import { variables }from '../core/config/variables.config';
+import { variables }from '../shared/variables.config';
 import { GetUserQuizzes } from './queries/get-user-quizzes';
 import { CreateQuizCommand } from './commands/create-quiz-command';
 import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
