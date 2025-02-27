@@ -2,12 +2,11 @@ import "reflect-metadata";
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './core/main.module';
+import { variables } from './core/config/variables.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(MainModule);
-  const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
+  app.setGlobalPrefix(variables.globalPrefix);
 
   app.enableCors({
     origin: '*',
@@ -16,9 +15,11 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
     exposedHeaders: ['Location'],
   });
-  await app.listen(port);
+
+  await app.listen(variables.port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
+    `\n 🚀 Application is running on: http://localhost:${variables.port}/${variables.globalPrefix} 
+     \n 💽 The chosen database is ${variables.database}`
   );
 }
 
