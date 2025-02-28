@@ -2,23 +2,26 @@ import {
   Body,
   Controller,
   Get, HttpCode, HttpException, HttpStatus, Inject, NotFoundException, Param, Patch,
-  Post, Req, Res
+  Post, Put, Req, Res
 } from '@nestjs/common';
 
 import { QuizAPI } from '../contract';
 import { Auth } from '../../auth/auth.decorator';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 
-import { basicQuizDTO, PatchOperation, DecodedToken, CreateQuizDTO } from '../dto/quiz.dto';
+import { basicQuizDTO, PatchOperation, DecodedToken, CreateQuizDTO, CreateQuestionDTO } from '../dto/quiz.dto';
 
 import { GetUserQuizzes } from '../queries/get-user-quizzes';
 import { CreateQuizCommand } from '../commands/create-quiz-command'
 
 import { ZodValidationPipe } from '../../core/pipes/zod-validation.pipe';
 import { Response } from 'express';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { GetQuizByIdQuery } from '../queries/get-quiz-by-id';
 import { UpdateQuizCommand } from '../commands/update-quiz-command';
+
+import { v4 as uuidv4 } from 'uuid';
+import { AddQuestionCommand } from '../commands/add-question-command';
+import { UpdateQuestionCommand } from '../commands/update-question-command';
 
 @Controller('quiz')
 export class QuizController {
@@ -27,7 +30,8 @@ export class QuizController {
     private readonly createQuizCommand: CreateQuizCommand,
     private readonly getQuizByIdQuery: GetQuizByIdQuery,
     private readonly updateQuizCommand: UpdateQuizCommand,
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
+    private readonly addQuestionCommand: AddQuestionCommand,
+    private readonly updateQuestionCommand: UpdateQuestionCommand,
   ) {}
 
   private async generateDecodedToken(request:  RequestWithUser) {
@@ -192,5 +196,90 @@ export class QuizController {
       );
     }
   }
+
+  @Post(':id/questions')
+  @Auth()
+  @HttpCode(201)
+  async addQuestion(
+    @Param('id') quizId: string,
+    @Body() questionDto: CreateQuestionDTO,
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const questionId = uuidv4();
+
+    const decodedToken: DecodedToken = await this.generateDecodedToken(request);
+
+    const datas = {
+      quizId: quizId,
+      questionId: questionId,
+      question: questionDto,
+      decodedToken: decodedToken,
+    }
+
+    try {
+
+      await this.addQuestionCommand.execute(datas);
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const locationUrl = `${baseUrl}/api/quiz/${quizId}/questions/${questionId}`;
+      console.log(locationUrl);
+      response.header('Location', locationUrl);
+
+    } catch (error) {
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error("Erreur lors de l'ajout de la question:", error);
+      throw new HttpException(
+        "Erreur lors de l'ajout de la question",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Put(':quizId/questions/:questionId')
+  @Auth()
+  @HttpCode(204)
+  async replaceQuestion(
+    @Param('quizId') quizId: string,
+    @Param('questionId') questionId: string,
+    @Body() updateQuestionDto: CreateQuestionDTO,
+    @Req() request: RequestWithUser
+  ) {
+
+    const decodedToken: DecodedToken = await this.generateDecodedToken(request);
+
+    const datas = {
+      quizId: quizId,
+      questionId: questionId,
+      question: updateQuestionDto,
+      decodedToken: decodedToken,
+    }
+
+    try {
+      await this.updateQuestionCommand.execute(datas);
+    } catch (error) {
+      console.error(
+        'Erreur complète lors de la mise à jour de la question:',
+        error
+      );
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        'Erreur lors de la mise à jour de la question',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
+  }
+
 
 }

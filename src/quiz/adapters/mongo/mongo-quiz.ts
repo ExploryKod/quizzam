@@ -5,6 +5,17 @@ import {
 } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
+type Answer = {
+  isCorrect: boolean;
+  title: string;
+}
+
+type Question = {
+  id: string;
+  title: string;
+  answers: Answer[];
+}
+
 export namespace MongoQuiz {
   export const CollectionName = 'quizzes';
 
@@ -18,6 +29,9 @@ export namespace MongoQuiz {
 
     @Prop()
     description: string;
+
+    @Prop()
+    questions: Array<Question>;
 
     @Prop()
     userId: string;

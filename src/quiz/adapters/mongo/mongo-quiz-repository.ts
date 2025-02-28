@@ -2,10 +2,10 @@ import { Model } from 'mongoose';
 import { Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { MongoQuiz } from './mongo-quiz';
-import { basicQuizDTO, CreateQuizDTO, DecodedToken, PatchOperation } from '../../dto/quiz.dto';
+import { basicQuizDTO, CreateQuestionDTO, CreateQuizDTO, DecodedToken, PatchOperation } from '../../dto/quiz.dto';
 import { v4 as uuid } from 'uuid';
 import { getModelToken } from '@nestjs/mongoose';
-import { HttpException, HttpStatus, Inject, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Inject, NotFoundException } from '@nestjs/common';
 
 export class MongoQuizRepository implements IQuizRepository {
   constructor(
@@ -86,6 +86,60 @@ export class MongoQuizRepository implements IQuizRepository {
 
     quizDoc.set(updateMongoData);
     await quizDoc.save();
+  }
+
+  async addQuestion(quizId:string, questionId:string, question:  CreateQuestionDTO, decodedToken: DecodedToken){
+    const quizDoc = await this.model.findById(quizId);
+
+    if (!quizDoc) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    if (quizDoc.userId.toString() !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const newQuestion = {
+      id: questionId,
+      title: question.title,
+      answers: question.answers || [],
+    };
+
+    quizDoc.questions.push(newQuestion);
+
+    await quizDoc.save();
+  }
+
+  async updateQuestion(
+    quizId: string,
+    questionId: string,
+    question: CreateQuestionDTO,
+    decodedToken: DecodedToken,
+  ): Promise<void> {
+
+    const quiz = await this.model.findById(quizId).exec();
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    if (quiz.userId !== decodedToken.user_id) {
+      throw new ForbiddenException('You are not authorized to update this quiz');
+    }
+
+    const questionIndex = quiz.questions.findIndex((q) => q.id === questionId);
+
+    if (questionIndex === -1) {
+      throw new NotFoundException('Question not found');
+    }
+
+    quiz.questions[questionIndex] = {
+      id: questionId,
+      title: question.title,
+      answers: question.answers || [],
+    };
+
+    await quiz.save();
   }
 
 }
