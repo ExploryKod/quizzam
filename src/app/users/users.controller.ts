@@ -6,6 +6,8 @@ import {
   HttpStatus,
   HttpException,
   Body,
+  Delete,
+  Param,
 } from '@nestjs/common';
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
 import { Auth } from '../modules/auth/auth.decorator';

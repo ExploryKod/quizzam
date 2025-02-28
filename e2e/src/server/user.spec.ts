@@ -3,20 +3,20 @@ import { defaultUrl } from '../constants';
 import { AuthHelper, TestUser } from '../helpers/auth.helper';
 
 describe('POST /api/users', () => {
+  
   it('should return 201 if user is authenticated', async () => {
     const testUser = await AuthHelper.createAndLoginUser({
       email: 'user@email.com',
       password: 'password',
       username: 'TestUser'
     });
-
-    console.log('Created user:', testUser);
     expect(testUser.token).toBeDefined();
     expect(testUser.uid).toBeDefined();
+
+    await AuthHelper.deleteUser(testUser.uid);
   });
 
   it('should return 401 if user is not authenticated', async () => {
-    console.log('Sending request without authentication...');
     const response = await request(defaultUrl)
       .post('/api/users')
       .send({ username: 'TestUser' });
@@ -37,6 +37,10 @@ describe('GET /api/users/me', () => {
       password: 'password',
       username: 'TestUser'
     });
+  });
+
+  afterAll(async () => {
+    await AuthHelper.deleteUser(testUser.uid);
   });
 
   it('should retrieve data of the currently connected user', async () => {
