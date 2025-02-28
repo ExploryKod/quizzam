@@ -8,12 +8,13 @@ export class QuizHasNoQuestionException extends DomainException {
 
 export class QuizHasNoTitleException extends DomainException {
   constructor() {
-    super('The quiz must must have at least one question');
+    super('The quiz must must have one title');
   }
 }
 
-export class QuizHasNoDescriptionException extends DomainException {
+export class QuizHasNoValidQuestionsException extends DomainException {
   constructor() {
-    super('The quiz must must have at least one question');
+    super('The quiz must must have valid questions: (...)');
   }
 }
+

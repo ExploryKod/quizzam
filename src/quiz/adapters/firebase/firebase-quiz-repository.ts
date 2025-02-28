@@ -16,7 +16,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
-  async findAllFromUser(userId: string): Promise<basicQuizDTO[] | []> {
+  async findAllFromUser(userId: string): Promise<basicQuizDTO[]> {
     const quizzesData = await this.firebase.firestore
       .collection('quizzes')
       .where('userId', '==', userId)
@@ -26,10 +26,30 @@ export class FirebaseQuizRepository implements IQuizRepository {
       return [];
     }
 
-    return quizzesData.docs.map((doc) => ({
-      id: doc.id,
-      title: doc.data().title,
-    }));
+    // const quizzes: basicQuizDTO[] = quizzesData.docs.map((doc) => {
+    //   const data = doc.data();
+    //
+    //   const quizProps: any = {
+    //     id: doc.id,
+    //     title: data.title || '',
+    //     description: data.description || '',
+    //     questions: data.questions || [],
+    //     userId: data.userId,
+    //   };
+    //
+    //   return new basicQuizDTO(quizProps);
+    // });
+    console.log(quizzesData.docs.map(doc => console.log("doc data", doc.data().questions)));
+    return quizzesData.docs.map(
+      (doc) =>
+        new basicQuizDTO(
+          doc.id,
+          doc.data().title || '',
+          doc.data().description || '',
+          doc.data().questions || [],
+          doc.data().userId,
+        )
+    );
   }
 
   async findById(id: string): Promise<Quiz | null> {

@@ -4,7 +4,7 @@ import { basicQuizDTO, CreateQuizDTO, DecodedToken, PatchOperation,  CreateQuest
 export const I_QUIZ_REPOSITORY = 'I_QUIZ_REPOSITORY';
 
 export interface IQuizRepository {
-  findAllFromUser(userId: string): Promise<basicQuizDTO[] | []>;
+  findAllFromUser(userId: string): Promise<basicQuizDTO[]>;
   findById(id: string): Promise<Quiz | null>;
   create(quiz: CreateQuizDTO): Promise<string>;
   update(operations: PatchOperation[], id: string, decodedToken: DecodedToken): Promise<void>;

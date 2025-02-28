@@ -22,6 +22,12 @@ import { UpdateQuizCommand } from '../commands/update-quiz-command';
 import { v4 as uuidv4 } from 'uuid';
 import { AddQuestionCommand } from '../commands/add-question-command';
 import { UpdateQuestionCommand } from '../commands/update-question-command';
+import { Quiz } from '../entities/quiz.entity';
+import {
+  QuizHasNoQuestionException,
+  QuizHasNoTitleException,
+  QuizHasNoValidQuestionsException
+} from '../exceptions/quiz.exceptions';
 
 @Controller('quiz')
 export class QuizController {
@@ -61,19 +67,43 @@ export class QuizController {
 
     try {
 
-      const quizzes: basicQuizDTO[] | [] = await this.getUserQuizzesQuery.execute({userId : decodedToken.user_id});
+      const quizzes = await this.getUserQuizzesQuery.execute({userId : decodedToken.user_id});
 
       if (!quizzes) {
+        console.log("no quizzes found.");
         return { data: [],
           _links: { create: `${baseUrl}/api/quiz`}
         };
       }
 
+      quizzes.map((doc: basicQuizDTO) => {
+
+        console.log("one doc", doc);
+
+        // Vérifier si le quiz est démarrable
+        const isStartable = this.isQuizStartable(doc.title, doc.questions);
+
+        const quizObject = {
+          id: doc.id,
+          title: doc.title,
+        };
+
+        if (isStartable) {
+          Object.assign(quizObject, {
+            _links: {
+              start: `${baseUrl}/api/quiz/${doc.id}/start`,
+            },
+          });
+        }
+
+        return quizObject;
+      })
+
+      console.log("QUIZZES", quizzes);
+
       return {
         data: quizzes,
-        _links: {
-          create: createUrl,
-        },
+        _links: { create: createUrl },
       };
     } catch (error) {
       console.error('Erreur lors de la récupération des quiz:', error);
@@ -151,7 +181,7 @@ export class QuizController {
       return {
         title: quizDoc.props.title,
         description: quizDoc.props.description,
-        questions: [],
+        questions: quizDoc.props.questions,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -281,5 +311,54 @@ export class QuizController {
 
   }
 
+
+
+  /**
+   * Détermine si un quiz est démarrable selon les critères spécifiés
+   * @param title Titre du quiz
+   * @param questions Tableau des questions du quiz
+   * @returns Booléen indiquant si le quiz est démarrable
+   */
+  private isQuizStartable(title: string, questions: any[]): boolean {
+    // Critère 1: Le titre ne doit pas être vide
+    if (!title || title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: Il doit y avoir au moins une question
+    if (!questions || questions.length === 0) {
+      return false;
+    }
+
+    // Critère 3: Toutes les questions doivent être valides
+    return questions.every((question) => this.isQuestionValid(question));
+  }
+
+  /**
+   * Vérifie si une question est valide selon les critères spécifiés
+   * @param question Objet question à vérifier
+   * @returns Booléen indiquant si la question est valide
+   */
+  private isQuestionValid(question: any): boolean {
+    // Critère 1: La question doit avoir un titre non vide
+    if (!question.title || question.title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: La question doit avoir au moins deux réponses
+    if (!question.answers || question.answers.length < 2) {
+      return false;
+    }
+
+    // Critère 3: Il doit y avoir exactement une réponse correcte
+    const correctAnswersCount = question.answers.filter(
+      (answer) => answer.isCorrect
+    ).length;
+    if (correctAnswersCount !== 1) {
+      return false;
+    }
+
+    return true;
+  }
 
 }
