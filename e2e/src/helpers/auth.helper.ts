@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { defaultFirebaseUrl, defaultUrl } from '../constants';
+import { defaultUrl } from '../constants';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
 export interface TestUser {
@@ -11,6 +11,11 @@ export interface TestUser {
 }
 
 export class AuthHelper {
+
+  private static readonly FIREBASE_SIGNUP_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
+  
+  private static readonly FIREBASE_SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
+
   static async createAndLoginUser(userData: Partial<TestUser> = {}): Promise<TestUser> {
     const testUser: TestUser = {
       email: userData.email || `test-${Date.now()}@example.com`,
@@ -18,8 +23,7 @@ export class AuthHelper {
       username: userData.username || `testUser-${Date.now()}`,
     };
 
-    // Register the user with Firebase
-    const authResponse = await request(defaultFirebaseUrl)
+    const authResponse = await request(this.FIREBASE_SIGNUP_URL)
       .post('')
       .send({
         email: testUser.email,
@@ -28,6 +32,7 @@ export class AuthHelper {
       });
 
     if (authResponse.status !== 200) {
+      console.error('Firebase signup error:', authResponse.body);
       throw new Error('Failed to create Firebase user');
     }
 
@@ -49,7 +54,7 @@ export class AuthHelper {
   }
 
   static async loginExistingUser(email: string, password: string): Promise<string> {
-    const authResponse = await request(defaultFirebaseUrl)
+    const authResponse = await request(this.FIREBASE_SIGNIN_URL)
       .post('')
       .send({
         email,
@@ -62,5 +67,20 @@ export class AuthHelper {
     }
 
     return authResponse.body.idToken;
+  }
+
+  static async deleteUser(uid: string): Promise<void> {
+    try {
+      const response = await request(defaultUrl)
+        .delete(`/api/test/users/${uid}`)
+        .send();
+      
+      if (response.status !== 200) {
+        throw new Error(`Failed to delete user: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error deleting test user:', error);
+      throw error;
+    }
   }
 } 

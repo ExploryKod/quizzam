@@ -1,24 +1,27 @@
 import request from 'supertest';
 import { defaultFirebaseUrl, defaultUrl } from '../constants';
+import { AuthHelper } from '../helpers/auth.helper';
 
 describe('GET /api/quiz', () => {
-  let token: string;
+  let testUser: any;
 
   beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl).post('').send({
+    console.log('Creating and authenticating user for /api/quiz test...');
+    testUser = await AuthHelper.createAndLoginUser({
       email: 'user@email.com',
       password: 'password',
-      returnSecureToken: true,
+      username: 'TestUser'
     });
+  });
 
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
+  afterAll(async () => {
+    await AuthHelper.deleteUser(testUser.uid);
   });
 
   it('should return quizzes for the authenticated user', async () => {
     const response = await request(defaultUrl)
       .get('/api/quiz')
-      .set('Authorization', `Bearer ${token}`);
+      .set('Authorization', `Bearer ${testUser.token}`);
 
     console.log('Response:', response.body);
     expect(response.status).toBe(200);
@@ -38,17 +41,14 @@ describe('GET /api/quiz', () => {
 });
 
 describe('POST /api/quiz', () => {
-  let token: string;
+  let testUser: any;
 
   beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl).post('').send({
+    testUser = await AuthHelper.createAndLoginUser({
       email: 'user@email.com',
       password: 'password',
-      returnSecureToken: true,
+      username: 'TestUser'
     });
-
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
   });
 
    it('should create a quiz successfully', async () => {
@@ -58,7 +58,7 @@ describe('POST /api/quiz', () => {
         };
         const response = await request(defaultUrl)
             .post('/api/quiz')
-            .set('Authorization', `Bearer ${token}`)
+            .set('Authorization', `Bearer ${testUser.token}`)
             .send(quizData);
 
         console.log('Location header:', response.headers.location);
@@ -81,19 +81,15 @@ describe('POST /api/quiz', () => {
 
 //Get Quiz by ID
 describe('GET /api/quiz/:id', () => {
-    let token: string
+    let testUser: any;
     let otherUserToken: string;
 
     beforeAll(async () => {
-        const auth = await request(defaultFirebaseUrl).post('').send({
-          email: 'user@email.com',
-          password: 'password',
-          returnSecureToken: true,
+        testUser = await AuthHelper.createAndLoginUser({
+            email: 'user@email.com',
+            password: 'password',
+            username: 'TestUser'
         });
-    
-        expect(auth.status).toBe(200);
-        token = auth.body.idToken;
-
     });
 
   // it('should retrieve a quiz by ID for an authenticated user', async () => {
@@ -130,7 +126,7 @@ describe('GET /api/quiz/:id', () => {
    it('should return 404 if the quiz does not exist', async () => {
       const response = await request(defaultUrl)
           .get('/api/quiz/nonexistentQuizId')
-          .set('Authorization', `Bearer ${token}`);
+          .set('Authorization', `Bearer ${testUser.token}`);
       
       expect(response.status).toBe(404);
       });
@@ -147,21 +143,16 @@ describe('GET /api/quiz/:id', () => {
 });
 
 describe('PATCH /api/quiz/:id', () => {
-  let token: string;
+  let testUser: any;
   let otherUserToken: string;
   let quizId: string;
 
   beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl)
-      .post('')
-      .send({
-        email: 'user@email.com',
-        password: 'password',
-        returnSecureToken: true,
-      });
-
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
+    testUser = await AuthHelper.createAndLoginUser({
+      email: 'user@email.com',
+      password: 'password',
+      username: 'TestUser'
+    });
 
     // Création d'un quiz pour avoir un ID valide
     const quizData = {
@@ -171,7 +162,7 @@ describe('PATCH /api/quiz/:id', () => {
 
     const createResponse = await request(defaultUrl)
       .post('/api/quiz')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${testUser.token}`)
       .send(quizData);
 
     expect(createResponse.status).toBe(201);
@@ -187,7 +178,7 @@ describe('PATCH /api/quiz/:id', () => {
 
     const response = await request(defaultUrl)
       .patch(`/api/quiz/${quizId}`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${testUser.token}`)
       .send(patchOperations);
 
     expect(response.status).toBe(204);
@@ -198,7 +189,7 @@ describe('PATCH /api/quiz/:id', () => {
 
     const response = await request(defaultUrl)
       .patch('/api/quiz/nonexistentQuizId')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${testUser.token}`)
       .send(patchOperations);
 
     expect(response.status).toBe(404);
@@ -218,20 +209,15 @@ describe('PATCH /api/quiz/:id', () => {
 });
 
 describe('POST /api/quiz/:id/questions', () => {
-  let token: string;
+  let testUser: any;
   let quizId: string;
 
   beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl)
-      .post('')
-      .send({
-        email: 'user@email.com',
-        password: 'password',
-        returnSecureToken: true,
-      });
-
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
+    testUser = await AuthHelper.createAndLoginUser({
+      email: 'user@email.com',
+      password: 'password',
+      username: 'TestUser'
+    });
 
     const quizData = {
       title: 'Quiz Test addQuestions',
@@ -240,7 +226,7 @@ describe('POST /api/quiz/:id/questions', () => {
 
     const createResponse = await request(defaultUrl)
       .post('/api/quiz')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${testUser.token}`)
       .send(quizData);
 
     expect(createResponse.status).toBe(201);
@@ -264,7 +250,7 @@ describe('POST /api/quiz/:id/questions', () => {
     console.log(quizId);
     const response = await request(defaultUrl)
       .post(`/api/quiz/${quizId}/questions`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${testUser.token}`)
       .send(questionData);
 
     expect(response.status).toBe(201);
@@ -285,7 +271,7 @@ describe('POST /api/quiz/:id/questions', () => {
 
     const response = await request(defaultUrl)
       .post('/api/quiz/nonexistentQuizId/questions')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${testUser.token}`)
       .send(questionData);
 
     expect(response.status).toBe(404);
