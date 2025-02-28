@@ -13,7 +13,7 @@ export class MongoQuizRepository implements IQuizRepository {
   )  {
   }
 
-  async findAllFromUser(userId: string): Promise<basicQuizDTO[] | []> {
+  async findAllFromUser(userId: string): Promise<basicQuizDTO[]> {
 
     if (!this.model) {
       console.error('Mongo model is not injected correctly!');
@@ -23,10 +23,15 @@ export class MongoQuizRepository implements IQuizRepository {
 
     if(!quizzes) return [];
 
-    return quizzes.map((quiz) => ({
-      id: quiz._id,
-      title: quiz.title,
-    }));
+    return quizzes.map((quiz) => (
+      new basicQuizDTO(
+        quiz.id,
+        quiz.title || '',
+        quiz.description || '',
+        quiz.questions || [],
+        quiz.userId,
+      )
+    ));
   }
 
   async findById(id: string): Promise<Quiz | null> {
@@ -39,7 +44,7 @@ export class MongoQuizRepository implements IQuizRepository {
       id: record._id,
       title: record.title,
       description: record.description,
-      questions: [],
+      questions: record.questions,
       userId: record.userId,
     });
   }

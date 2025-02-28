@@ -1,3 +1,6 @@
+import { Question } from '../entities/quiz.entity';
+import { Entity } from '../../shared/entity';
+
 export type DecodedToken = {
   user_id: string;
 }
@@ -32,9 +35,27 @@ export type QuizDTO = {
   title: string;
 };
 
-export type basicQuizDTO = {
+export type QuizProps = {
   id: string;
   title: string;
+  description: string;
+  questions: Array<Question>;
+  userId: string;
+};
+
+export class basicQuizDTO {
+  id: string;
+  title: string;
+  description: string;
+  questions: Array<Question>;
+  userId: string;
+  constructor(id: string, title: string, description: string, questions: Array<Question>, userId: string) {
+    this.id = id;
+    this.title = title;
+    this.description = description;
+    this.questions = questions;
+    this.userId = userId;
+  }
 }
 
 export type CreateQuizDTO = {

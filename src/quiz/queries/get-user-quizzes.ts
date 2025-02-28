@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { basicQuizDTO } from '../dto/quiz.dto';
 import { Executable } from '../../shared/executable';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
+import { Quiz } from '../entities/quiz.entity';
 
 type Request = {
   userId: string;
