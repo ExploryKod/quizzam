@@ -16,6 +16,7 @@ import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
 import { variables }from '../shared/variables.config';
 import { GetUserQuizzes } from './queries/get-user-quizzes';
 import { CreateQuizCommand } from './commands/create-quiz-command';
+import { UpdateQuizCommand } from './commands/update-quiz-command'
 import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
 
 @Module({
@@ -52,6 +53,15 @@ import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
       ],
       useFactory: (repository) => {
         return new CreateQuizCommand(repository);
+      },
+    },
+    {
+      provide: UpdateQuizCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new UpdateQuizCommand(repository);
       },
     },
     {

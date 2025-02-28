@@ -1,3 +1,7 @@
+export type DecodedToken = {
+  user_id: string;
+}
+
 export type AnswerDTO = {
   title: string;
   isCorrect: boolean;
@@ -25,5 +29,11 @@ export type CreateQuizDTO = {
   title: string;
   description: string;
   userId: string;
+}
+
+export class PatchOperation {
+  op: string;
+  path: string;
+  value: string;
 }
 
