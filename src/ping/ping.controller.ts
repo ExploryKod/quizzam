@@ -1,16 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
-import { VersionRepositoryService } from './version-repository.service';
+import { Controller, Get, Logger } from '@nestjs/common';
+import { GetVersionCommand } from './version-repository.command';
 
 @Controller('ping')
 export class PingController {
-  constructor(private readonly versionRepository: VersionRepositoryService) {}
+  constructor(private readonly versionRepository: GetVersionCommand) {}
 
   @Get()
   async ping() {
-    console.log('Received ping request');
+    const version = await this.versionRepository.execute();
+    Logger.log(
+      `🚀 Ping request : \x1b[35m${version.status} \x1b[0m and 💽 \x1b[35m${version.details.database}`
+    );
     return {
       response: 'pong',
-      version: await this.versionRepository.getVersion(),
+      version: version,
     };
   }
 }

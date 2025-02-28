@@ -1,9 +1,15 @@
 import { Entity } from '../../shared/entity';
 import { User } from '../../users/entities/user.entity';
 
+type Answer = {
+  isCorrect: boolean;
+  title: string;
+}
+
 type Question = {
   id: string;
   title: string;
+  answers: Answer[];
 }
 
 type QuizProps = {

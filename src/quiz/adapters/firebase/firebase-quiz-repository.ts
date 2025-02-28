@@ -3,11 +3,12 @@ import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import {
   basicQuizDTO,
-  CreateQuizDTO, DecodedToken,
+  CreateQuestionDTO,
+  CreateQuizDTO,
+  DecodedToken,
   PatchOperation,
-  QuestionDTO
+  QuestionDTO,
 } from '../../dto/quiz.dto';
-import { firestore } from 'firebase-admin';
 import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 
 export class FirebaseQuizRepository implements IQuizRepository {
@@ -66,7 +67,11 @@ export class FirebaseQuizRepository implements IQuizRepository {
     return result;
   }
 
-  async update(operations: PatchOperation[], id: string, decodedToken: DecodedToken): Promise<void> {
+  async update(
+    operations: PatchOperation[],
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<void> {
     const quizRef = this.firebase.firestore.collection('quizzes').doc(id);
     const quizDoc = await quizRef.get();
     const updateData = {};
@@ -100,6 +105,79 @@ export class FirebaseQuizRepository implements IQuizRepository {
     }
 
     await quizRef.update(updateData);
+  }
 
+  async addQuestion(
+    quizId: string,
+    questionId: string,
+    question: CreateQuestionDTO,
+    decodedToken: DecodedToken
+  ) {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const quizData = quizDoc.data();
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const questions = quizData.questions || [];
+
+    const newQuestion = {
+      id: questionId,
+      title: question.title,
+      answers: question.answers || [],
+    };
+
+    questions.push(newQuestion);
+
+    await quizRef.update({ questions });
+  }
+
+  async updateQuestion(
+    quizId: string,
+    questionId: string,
+    question: CreateQuestionDTO,
+    decodedToken: DecodedToken
+  ): Promise<void> {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const quizData = quizDoc.data();
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    if (!Array.isArray(quizData.questions)) {
+      quizData.questions = [];
+    }
+
+    const questionIndex = quizData.questions.findIndex(
+      (q: QuestionDTO) => q.id === questionId
+    );
+
+    if (questionIndex === -1) {
+      throw new NotFoundException('Question non trouvée');
+    }
+
+    quizData.questions[questionIndex] = {
+      id: questionId,
+      title: question.title,
+      answers: question.answers || [],
+    };
+
+    await quizRef.update({
+      questions: quizData.questions,
+    });
   }
 }

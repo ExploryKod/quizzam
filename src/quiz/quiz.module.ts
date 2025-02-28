@@ -18,6 +18,8 @@ import { GetUserQuizzes } from './queries/get-user-quizzes';
 import { CreateQuizCommand } from './commands/create-quiz-command';
 import { UpdateQuizCommand } from './commands/update-quiz-command'
 import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
+import { AddQuestionCommand } from './commands/add-question-command';
+import { UpdateQuestionCommand } from './commands/update-question-command';
 
 @Module({
   imports: [
@@ -62,6 +64,24 @@ import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
       ],
       useFactory: (repository) => {
         return new UpdateQuizCommand(repository);
+      },
+    },
+    {
+      provide: AddQuestionCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new AddQuestionCommand(repository);
+      },
+    },
+    {
+      provide: UpdateQuestionCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new UpdateQuestionCommand(repository);
       },
     },
     {

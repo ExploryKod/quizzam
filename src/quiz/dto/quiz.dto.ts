@@ -13,6 +13,18 @@ export type QuestionDTO = {
   answers: Array<AnswerDTO>;
 }
 
+
+export class CreateQuestionDTO {
+  title: string;
+  answers: AnswerDTO[];
+}
+
+export class UpdateQuestionDTO {
+  title: string;
+  answers: AnswerDTO[];
+}
+
+
 export type QuizDTO = {
   id: string;
   description: string;
@@ -36,4 +48,3 @@ export class PatchOperation {
   path: string;
   value: string;
 }
-
