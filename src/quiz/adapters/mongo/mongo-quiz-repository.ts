@@ -2,10 +2,10 @@ import { Model } from 'mongoose';
 import { Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { MongoQuiz } from './mongo-quiz';
-import { basicQuizDTO, CreateQuizDTO } from '../../dto/quiz.dto';
+import { basicQuizDTO, CreateQuizDTO, DecodedToken, PatchOperation } from '../../dto/quiz.dto';
 import { v4 as uuid } from 'uuid';
 import { getModelToken } from '@nestjs/mongoose';
-import { Inject } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, NotFoundException } from '@nestjs/common';
 
 export class MongoQuizRepository implements IQuizRepository {
   constructor(
@@ -52,4 +52,40 @@ export class MongoQuizRepository implements IQuizRepository {
     const result = await record.save();
     return result.id
   }
+
+  async update(operations: PatchOperation[], id: string, decodedToken: DecodedToken): Promise<void> {
+    const quizDoc = await this.model.findById(id);
+
+    if (!quizDoc) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    if (quizDoc.userId.toString() !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const updateMongoData = {};
+
+    for (const operation of operations) {
+      if (operation.op !== 'replace') {
+        throw new HttpException(
+          `Opération non supportée: ${operation.op}`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      if (operation.path === '/title') {
+        updateMongoData['title'] = operation.value;
+      } else {
+        throw new HttpException(
+          `Chemin non supporté: ${operation.path}`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+    }
+
+    quizDoc.set(updateMongoData);
+    await quizDoc.save();
+  }
+
 }

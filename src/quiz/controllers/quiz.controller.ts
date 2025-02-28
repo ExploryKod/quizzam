@@ -1,7 +1,7 @@
 import {
   Body,
   Controller,
-  Get, HttpCode, HttpException, HttpStatus, Inject, NotFoundException, Param,
+  Get, HttpCode, HttpException, HttpStatus, Inject, NotFoundException, Param, Patch,
   Post, Req, Res
 } from '@nestjs/common';
 
@@ -9,7 +9,7 @@ import { QuizAPI } from '../contract';
 import { Auth } from '../../auth/auth.decorator';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 
-import { basicQuizDTO } from '../dto/quiz.dto';
+import { basicQuizDTO, PatchOperation, DecodedToken, CreateQuizDTO } from '../dto/quiz.dto';
 
 import { GetUserQuizzes } from '../queries/get-user-quizzes';
 import { CreateQuizCommand } from '../commands/create-quiz-command'
@@ -18,15 +18,7 @@ import { ZodValidationPipe } from '../../core/pipes/zod-validation.pipe';
 import { Response } from 'express';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { GetQuizByIdQuery } from '../queries/get-quiz-by-id';
-
-type DecodedToken = {
-  user_id: string;
-}
-
-class CreateQuizDto {
-  title: string;
-  description: string;
-}
+import { UpdateQuizCommand } from '../commands/update-quiz-command';
 
 @Controller('quiz')
 export class QuizController {
@@ -34,6 +26,7 @@ export class QuizController {
     private readonly getUserQuizzesQuery: GetUserQuizzes,
     private readonly createQuizCommand: CreateQuizCommand,
     private readonly getQuizByIdQuery: GetQuizByIdQuery,
+    private readonly updateQuizCommand: UpdateQuizCommand,
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
@@ -94,7 +87,7 @@ export class QuizController {
   async createQuiz(
 
     @Req() request: RequestWithUser,
-    @Body() createQuizDto: CreateQuizDto,
+    @Body() createQuizDto: CreateQuizDTO,
     @Res({ passthrough: true }) response: Response
 
     // @Req() request: RequestWithUser,
@@ -168,5 +161,36 @@ export class QuizController {
     }
   }
 
+  @Patch(':id')
+  @Auth()
+  @HttpCode(204)
+  async updateQuiz(
+    @Param('id') id: string,
+    @Body() operations: PatchOperation[],
+    @Req() request: RequestWithUser
+  ) {
+
+  try {
+    const decodedToken:DecodedToken = await this.generateDecodedToken(request);
+
+    const datas = {
+      operations: operations,
+      id: id,
+      decodedToken: decodedToken,
+    }
+
+    await this.updateQuizCommand.execute(datas)
+
+  } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Erreur lors de la mise à jour du quiz:', error);
+      throw new HttpException(
+        'Erreur lors de la mise à jour du quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 
 }
