@@ -1,8 +1,8 @@
-import { User } from '../entities/user.entity';
-import { CreateUserDto } from '../dto/user.dto';
+import { CreateUserDto, FindUserDTO } from '../dto/user.dto';
 
 export const I_USER_REPOSITORY = 'I_USER_REPOSITORY';
 
 export interface IUserRepository {
-  addUsername(user: CreateUserDto): Promise<void>;
+  addUsername(data: CreateUserDto): Promise<void>;
+  findById(id: string): Promise<FindUserDTO  | null>;
 }

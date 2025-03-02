@@ -1,6 +1,6 @@
 import {
   Body,
-  Controller,
+  Controller, Delete,
   Get, HttpCode, HttpException, HttpStatus, Inject, NotFoundException, Param, Patch,
   Post, Put, Req, Res
 } from '@nestjs/common';
@@ -22,12 +22,8 @@ import { UpdateQuizCommand } from '../commands/update-quiz-command';
 import { v4 as uuidv4 } from 'uuid';
 import { AddQuestionCommand } from '../commands/add-question-command';
 import { UpdateQuestionCommand } from '../commands/update-question-command';
-import { Quiz } from '../entities/quiz.entity';
-import {
-  QuizHasNoQuestionException,
-  QuizHasNoTitleException,
-  QuizHasNoValidQuestionsException
-} from '../exceptions/quiz.exceptions';
+import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
+import { Question } from '../entities/quiz.entity';
 
 @Controller('quiz')
 export class QuizController {
@@ -38,23 +34,8 @@ export class QuizController {
     private readonly updateQuizCommand: UpdateQuizCommand,
     private readonly addQuestionCommand: AddQuestionCommand,
     private readonly updateQuestionCommand: UpdateQuestionCommand,
+    private readonly deleteQuizByIdQuery: DeleteQuizByIdQuery,
   ) {}
-
-  private async generateDecodedToken(request:  RequestWithUser) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
-
-    return decodedToken;
-  }
-
 
   @Get()
   @Auth()
@@ -76,35 +57,50 @@ export class QuizController {
         };
       }
 
+      type StartableLink = {
+        start: string;
+      }
+      type QuizObject = {
+        id: string;
+        title: string;
+        _links?: StartableLink;
+      }
+
+      let quizObject: QuizObject;
       quizzes.map((doc: basicQuizDTO) => {
 
-        console.log("one doc", doc);
-
         // Vérifier si le quiz est démarrable
-        const isStartable = this.isQuizStartable(doc.title, doc.questions);
+        //const isStartable = this.isQuizStartable(doc.title, doc.questions);
+        const isStartable = true;
+        console.log("quiz startable ?", isStartable);
 
-        const quizObject = {
-          id: doc.id,
-          title: doc.title,
-        };
 
-        if (isStartable) {
-          Object.assign(quizObject, {
-            _links: {
+        if(isStartable) {
+          quizObject = {
+            id: doc.id,
+            title: doc.title,
+            _links : {
               start: `${baseUrl}/api/quiz/${doc.id}/start`,
-            },
-          });
+            }
+          }
+        } else {
+          quizObject = {
+            id: doc.id,
+            title: doc.title,
+          };
         }
 
+        console.log(doc.id, doc.title, quizObject);
         return quizObject;
       })
 
-      console.log("QUIZZES", quizzes);
-
-      return {
+      const result = {
         data: quizzes,
         _links: { create: createUrl },
       };
+
+      console.log("get user quizzes", result)
+      return result;
     } catch (error) {
       console.error('Erreur lors de la récupération des quiz:', error);
       throw new HttpException(
@@ -143,7 +139,7 @@ export class QuizController {
 
       const baseUrl = request.protocol + '://' + request.get('host');
       const locationUrl = `${baseUrl}/api/quiz/${quizId}`;
-      response.header('Location', locationUrl);
+      response.header('Location (create) ', locationUrl);
 
       return null;
     } catch (error) {
@@ -160,16 +156,7 @@ export class QuizController {
   @Auth()
   async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser)
   {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const decodedToken:DecodedToken = await this.generateDecodedToken(request);
 
     try {
       const quizDoc = await this.getQuizByIdQuery.execute(id);
@@ -177,7 +164,7 @@ export class QuizController {
       if (quizDoc.props.userId !== decodedToken.user_id) {
         throw new NotFoundException("Quiz non trouvé : n'appartient pas à son propriétaire");
       }
-
+      console.log("GET ID", quizDoc);
       return {
         title: quizDoc.props.title,
         description: quizDoc.props.description,
@@ -190,6 +177,36 @@ export class QuizController {
       console.error('Erreur lors de la récupération du quiz:', error);
       throw new HttpException(
         'Erreur lors de la récupération du quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Delete('delete/:id')
+  @Auth()
+  async deleteQuizById(@Param('id') id: string, @Req() request: RequestWithUser)
+  {
+    const decodedToken:DecodedToken = await this.generateDecodedToken(request);
+
+    try {
+      const data = {
+        id: id,
+        decodedToken: decodedToken,
+      }
+      const quizId = await this.deleteQuizByIdQuery.execute(data);
+
+      console.log(`quiz ${quizId.id} deleted by user ${quizId.userId}`);
+
+      return {
+        id: quizId.id
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Erreur lors de la suppression du quiz:', error);
+      throw new HttpException(
+        'Erreur lors de la suppression du quiz',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -212,7 +229,7 @@ export class QuizController {
       id: id,
       decodedToken: decodedToken,
     }
-
+    console.log("UPDATE QUIZ", datas);
     await this.updateQuizCommand.execute(datas)
 
   } catch (error) {
@@ -311,7 +328,20 @@ export class QuizController {
 
   }
 
+  private async generateDecodedToken(request:  RequestWithUser) {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
 
+    if (!decodedToken.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    return decodedToken;
+  }
 
   /**
    * Détermine si un quiz est démarrable selon les critères spécifiés
@@ -319,7 +349,7 @@ export class QuizController {
    * @param questions Tableau des questions du quiz
    * @returns Booléen indiquant si le quiz est démarrable
    */
-  private isQuizStartable(title: string, questions: any[]): boolean {
+  private isQuizStartable(title: string, questions: Question[]): boolean {
     // Critère 1: Le titre ne doit pas être vide
     if (!title || title.trim() === '') {
       return false;
@@ -339,7 +369,7 @@ export class QuizController {
    * @param question Objet question à vérifier
    * @returns Booléen indiquant si la question est valide
    */
-  private isQuestionValid(question: any): boolean {
+  private isQuestionValid(question: Question): boolean {
     // Critère 1: La question doit avoir un titre non vide
     if (!question.title || question.title.trim() === '') {
       return false;
@@ -354,11 +384,7 @@ export class QuizController {
     const correctAnswersCount = question.answers.filter(
       (answer) => answer.isCorrect
     ).length;
-    if (correctAnswersCount !== 1) {
-      return false;
-    }
-
-    return true;
+    return correctAnswersCount === 1;
   }
 
 }
