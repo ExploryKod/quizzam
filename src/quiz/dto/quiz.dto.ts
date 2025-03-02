@@ -5,7 +5,7 @@ export type DecodedToken = {
   user_id: string;
 }
 
-export type AnswerDTO = {
+class AnswerDTO {
   title: string;
   isCorrect: boolean;
 }
@@ -56,6 +56,15 @@ export class basicQuizDTO {
     this.questions = questions;
     this.userId = userId;
   }
+}
+
+export type Link = {
+  create: string,
+}
+
+export type getUserQuizDTO = {
+  data: Array<any>,
+  _links: Link
 }
 
 export type CreateQuizDTO = {
