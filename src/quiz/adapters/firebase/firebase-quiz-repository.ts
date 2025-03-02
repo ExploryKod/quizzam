@@ -5,9 +5,10 @@ import {
   basicQuizDTO,
   CreateQuestionDTO,
   CreateQuizDTO,
-  DecodedToken, DeletedQuizResponseDTO,
+  DecodedToken,
+  DeletedQuizResponseDTO,
   PatchOperation,
-  QuestionDTO
+  QuestionDTO,
 } from '../../dto/quiz.dto';
 import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 
@@ -26,15 +27,19 @@ export class FirebaseQuizRepository implements IQuizRepository {
       return [];
     }
 
-    console.log(quizzesData.docs.map(doc => console.log("doc data", doc.data().questions)));
+    console.log(
+      quizzesData.docs.map((doc) =>
+        console.log('doc data', doc.data().questions)
+      )
+    );
     return quizzesData.docs.map(
       (doc) =>
         new basicQuizDTO(
           doc.id,
           doc.data().title || '',
           doc.data().description || '',
-          [...doc.data().questions],
-          doc.data().userId,
+          doc.data().questions,
+          doc.data().userId
         )
     );
   }
@@ -65,7 +70,10 @@ export class FirebaseQuizRepository implements IQuizRepository {
     });
   }
 
-  async deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO> {
+  async deleteById(
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<DeletedQuizResponseDTO> {
     const quizRef = this.firebase.firestore.collection('quizzes').doc(id);
     const quizDoc = await quizRef.get();
 
@@ -74,7 +82,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     }
     const quizData = quizDoc.data();
 
-    if(quizData.userId !== decodedToken.user_id) {
+    if (quizData.userId !== decodedToken.user_id) {
       return {
         id: id,
         userId: decodedToken.user_id,
@@ -94,8 +102,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
       .collection('quizzes')
       .add(data);
 
-    const result: string = quizRef.id.toString();
-    return result;
+    return quizRef.id.toString();
   }
 
   async update(
