@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -12,7 +13,7 @@ import {
   Post,
   Put,
   Req,
-  Res,
+  Res
 } from '@nestjs/common';
 
 import { QuizAPI } from '../contract';
@@ -37,18 +38,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { AddQuestionCommand } from '../commands/add-question-command';
 import { UpdateQuestionCommand } from '../commands/update-question-command';
 import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
+import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { Question } from '../entities/quiz.entity';
+import { StartQuizQuery } from '../queries/start-quiz-query';
 
 @Controller('quiz')
 export class QuizController {
   constructor(
+    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     private readonly getUserQuizzesQuery: GetUserQuizzes,
     private readonly createQuizCommand: CreateQuizCommand,
     private readonly getQuizByIdQuery: GetQuizByIdQuery,
     private readonly updateQuizCommand: UpdateQuizCommand,
     private readonly addQuestionCommand: AddQuestionCommand,
     private readonly updateQuestionCommand: UpdateQuestionCommand,
-    private readonly deleteQuizByIdQuery: DeleteQuizByIdQuery
+    private readonly deleteQuizByIdQuery: DeleteQuizByIdQuery,
+    private readonly startQuizQuery: StartQuizQuery
   ) {}
 
   @Get()
@@ -312,6 +317,67 @@ export class QuizController {
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  /**
+   * Endpoint pour démarrer un quiz
+   * @param quizId Identifiant du quiz
+   * @param request
+   * @param response
+   */
+  @Post(':quizId/start')
+  @Auth()
+  async startQuiz(
+    @Param('quizId') quizId: string,
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response ) {
+    try {
+
+      const token = request.headers.authorization.split('Bearer ')[1];
+      const jwt = require('jsonwebtoken');
+      const decodedToken = jwt.decode(token);
+
+      if (!decodedToken.user_id) {
+        throw new HttpException(
+          'Utilisateur non authentifié',
+          HttpStatus.UNAUTHORIZED
+        );
+      }
+
+      const baseUrl = request.protocol + '://' + request.get('host');
+
+      const data = {
+        quizId: quizId,
+        decodedToken: decodedToken,
+        baseUrl: baseUrl,
+      }
+
+      const executionUrl = await this.startQuizQuery.execute(data)
+      response.status(HttpStatus.CREATED).location(executionUrl).send();
+
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+    }
+
+  }
+
+  /**
+   * Génère un identifiant aléatoire de 6 caractères
+   */
+  private randomString(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 
   private async generateDecodedToken(request: RequestWithUser) {

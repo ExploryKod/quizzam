@@ -18,4 +18,5 @@ export interface IQuizRepository {
   update(operations: PatchOperation[], id: string, decodedToken: DecodedToken): Promise<void>;
   addQuestion(id:string, questionId: string, question: CreateQuestionDTO, decodedToken: DecodedToken): Promise<void>;
   updateQuestion(quizId:string, questionId: string, question: CreateQuestionDTO, decodedToken: DecodedToken): Promise<void>;
+  startQuiz(quizId:string, decodedToken: DecodedToken, baseUrl: string): Promise<string>;
 }

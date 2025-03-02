@@ -2,22 +2,32 @@ import { Question, Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import {
-  basicQuizDTO,
   CreateQuestionDTO,
   CreateQuizDTO,
   DecodedToken,
-  DeletedQuizResponseDTO, getUserQuizDTO,
+  DeletedQuizResponseDTO,
+  getUserQuizDTO,
   PatchOperation,
-  QuestionDTO, UpdateQuestionDTO
+  QuestionDTO,
+  UpdateQuestionDTO,
 } from '../../dto/quiz.dto';
-import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 
 export class FirebaseQuizRepository implements IQuizRepository {
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
-  async findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<getUserQuizDTO> {
+  async findAllFromUser(
+    userId: string,
+    createUrl: string,
+    baseUrl: string
+  ): Promise<getUserQuizDTO> {
     const quizzesData = await this.firebase.firestore
       .collection('quizzes')
       .where('userId', '==', userId)
@@ -208,7 +218,6 @@ export class FirebaseQuizRepository implements IQuizRepository {
     updateQuestionDto: UpdateQuestionDTO,
     decodedToken: DecodedToken
   ): Promise<void> {
-
     const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
     const quizDoc = await quizRef.get();
 
@@ -227,7 +236,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     }
 
     const questionIndex = quizData.questions.findIndex(
-      (q:any) => q.id === questionId
+      (q: any) => q.id === questionId
     );
 
     if (questionIndex === -1) {
@@ -247,7 +256,36 @@ export class FirebaseQuizRepository implements IQuizRepository {
     });
   }
 
+  async startQuiz(
+    quizId: string,
+    decodedToken: DecodedToken,
+    baseUrl: string
+  ): Promise<string> {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
 
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    const quizData = quizDoc.data();
+    const quizTitle = quizData.title;
+    const questions = quizData.questions || [];
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    // Vérifier si le quiz est démarrable
+    if (!this.isQuizStartable(quizTitle, questions)) {
+      throw new BadRequestException('Quiz is not ready to be started');
+    }
+
+    // Générer un ID aléatoire pour l'exécution
+    const executionId = this.randomString(6);
+
+    return `${baseUrl}/api/execution/${executionId}`;
+  }
 
   /**
    * Détermine si un quiz est démarrable selon les critères spécifiés
@@ -291,5 +329,16 @@ export class FirebaseQuizRepository implements IQuizRepository {
       (answer) => answer.isCorrect
     ).length;
     return correctAnswersCount === 1;
+  }
+
+  /**
+   * Génère un identifiant aléatoire de 6 caractères
+   */
+  private randomString(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from(
+      { length },
+      () => chars[Math.floor(Math.random() * chars.length)]
+    ).join('');
   }
 }

@@ -83,3 +83,9 @@ export class DeletedQuizResponseDTO {
   id: string;
   userId: string;
 }
+
+export class StartQuizDTO {
+  quizId: string;
+  decodedToken: DecodedToken;
+  baseUrl: string;
+}
