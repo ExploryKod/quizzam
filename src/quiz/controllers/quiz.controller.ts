@@ -139,7 +139,8 @@ export class QuizController {
 
       const baseUrl = request.protocol + '://' + request.get('host');
       const locationUrl = `${baseUrl}/api/quiz/${quizId}`;
-      response.header('Location (create) ', locationUrl);
+      console.log("location create ", locationUrl);
+      response.header('Location', locationUrl);
 
       return null;
     } catch (error) {
@@ -266,7 +267,7 @@ export class QuizController {
 
     try {
 
-      await this.addQuestionCommand.execute(datas);
+      // await this.addQuestionCommand.execute(datas);
       const baseUrl = request.protocol + '://' + request.get('host');
       const locationUrl = `${baseUrl}/api/quiz/${quizId}/questions/${questionId}`;
       console.log(locationUrl);
@@ -305,7 +306,7 @@ export class QuizController {
     }
 
     try {
-      await this.updateQuestionCommand.execute(datas);
+      //await this.updateQuestionCommand.execute(datas);
     } catch (error) {
       console.error(
         'Erreur complète lors de la mise à jour de la question:',
