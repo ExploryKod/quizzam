@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule, getModelToken } from '@nestjs/mongoose';
+import { MongooseModule } from '@nestjs/mongoose';
 import { MongoUser } from './adapters/mongo/mongo-user';
 import { MongoUserRepository } from './adapters/mongo/mongo-user-repository';
 
@@ -9,8 +9,11 @@ import { FirebaseModule } from 'nestjs-firebase';
 import { AddUsername } from './commands/add-username';
 import { CqrsModule } from '@nestjs/cqrs';
 import { CommonModule } from '../core/common.module';
+import { variables } from '../shared/variables.config';
+import { FirebaseUserRepository } from './adapters/firebase/firebase-user-repository';
+import { GetQuizByIdQuery } from '../quiz/queries/get-quiz-by-id';
 import { I_QUIZ_REPOSITORY } from '../quiz/ports/quiz-repository.interface';
-import { MongoQuizRepository } from '../quiz/adapters/mongo/mongo-quiz-repository';
+import { GetUserByIdQuery } from './queries/get-user-by-id';
 
 @Module({
   imports: [
@@ -28,14 +31,19 @@ import { MongoQuizRepository } from '../quiz/adapters/mongo/mongo-quiz-repositor
   providers: [
     {
       provide: I_USER_REPOSITORY,
-      useClass: MongoUserRepository,  // Use MongoDBQuizRepository as the implementation
+      useClass: variables.database === "MONGODB" ? MongoUserRepository : FirebaseUserRepository,
     },
     {
       provide: AddUsername,
       inject: [I_USER_REPOSITORY],
-      useFactory: (usersRepository: IUserRepository) => {
-        return new AddUsername(usersRepository);
+      useFactory: (repository: IUserRepository) => {
+        return new AddUsername(repository);
       },
+    },
+    {
+      provide: GetUserByIdQuery,
+      inject : [I_USER_REPOSITORY],
+      useFactory: (repository) => { return new GetUserByIdQuery(repository)}
     },
   ],
   exports: [MongooseModule, I_USER_REPOSITORY],

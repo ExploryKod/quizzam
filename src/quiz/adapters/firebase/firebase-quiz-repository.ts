@@ -5,9 +5,9 @@ import {
   basicQuizDTO,
   CreateQuestionDTO,
   CreateQuizDTO,
-  DecodedToken,
+  DecodedToken, DeletedQuizResponseDTO,
   PatchOperation,
-  QuestionDTO,
+  QuestionDTO
 } from '../../dto/quiz.dto';
 import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 
@@ -26,19 +26,6 @@ export class FirebaseQuizRepository implements IQuizRepository {
       return [];
     }
 
-    // const quizzes: basicQuizDTO[] = quizzesData.docs.map((doc) => {
-    //   const data = doc.data();
-    //
-    //   const quizProps: any = {
-    //     id: doc.id,
-    //     title: data.title || '',
-    //     description: data.description || '',
-    //     questions: data.questions || [],
-    //     userId: data.userId,
-    //   };
-    //
-    //   return new basicQuizDTO(quizProps);
-    // });
     console.log(quizzesData.docs.map(doc => console.log("doc data", doc.data().questions)));
     return quizzesData.docs.map(
       (doc) =>
@@ -46,7 +33,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
           doc.id,
           doc.data().title || '',
           doc.data().description || '',
-          doc.data().questions || [],
+          [...doc.data().questions],
           doc.data().userId,
         )
     );
@@ -76,6 +63,30 @@ export class FirebaseQuizRepository implements IQuizRepository {
         })) || [],
       userId: quizData.userId,
     });
+  }
+
+  async deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO> {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(id);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      return null;
+    }
+    const quizData = quizDoc.data();
+
+    if(quizData.userId !== decodedToken.user_id) {
+      return {
+        id: id,
+        userId: decodedToken.user_id,
+      };
+    }
+
+    await quizRef.delete();
+
+    return {
+      id: id,
+      userId: decodedToken.user_id,
+    };
   }
 
   async create(data: CreateQuizDTO): Promise<string> {

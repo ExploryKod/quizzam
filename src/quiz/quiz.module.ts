@@ -20,6 +20,7 @@ import { UpdateQuizCommand } from './commands/update-quiz-command'
 import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
 import { AddQuestionCommand } from './commands/add-question-command';
 import { UpdateQuestionCommand } from './commands/update-question-command';
+import { DeleteQuizByIdQuery } from './queries/delete-quiz-by-id';
 
 @Module({
   imports: [
@@ -88,6 +89,11 @@ import { UpdateQuestionCommand } from './commands/update-question-command';
       provide: GetQuizByIdQuery,
       inject : [I_QUIZ_REPOSITORY],
       useFactory: (repository) => { return new GetQuizByIdQuery(repository)}
+    },
+    {
+      provide: DeleteQuizByIdQuery,
+      inject : [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => { return new DeleteQuizByIdQuery(repository)}
     }
   ],
   exports: [I_QUIZ_REPOSITORY],

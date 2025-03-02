@@ -2,7 +2,14 @@ import { Model } from 'mongoose';
 import { Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { MongoQuiz } from './mongo-quiz';
-import { basicQuizDTO, CreateQuestionDTO, CreateQuizDTO, DecodedToken, PatchOperation } from '../../dto/quiz.dto';
+import {
+  basicQuizDTO,
+  CreateQuestionDTO,
+  CreateQuizDTO,
+  DecodedToken,
+  DeletedQuizResponseDTO,
+  PatchOperation
+} from '../../dto/quiz.dto';
 import { v4 as uuid } from 'uuid';
 import { getModelToken } from '@nestjs/mongoose';
 import { ForbiddenException, HttpException, HttpStatus, Inject, NotFoundException } from '@nestjs/common';
@@ -20,7 +27,7 @@ export class MongoQuizRepository implements IQuizRepository {
     }
 
     const quizzes = await this.model.find({ userId }).exec();
-
+    console.log(`Found ${quizzes.length} quizzes`);
     if(!quizzes) return [];
 
     return quizzes.map((quiz) => (
@@ -28,7 +35,7 @@ export class MongoQuizRepository implements IQuizRepository {
         quiz.id,
         quiz.title || '',
         quiz.description || '',
-        quiz.questions || [],
+        [...quiz.questions],
         quiz.userId,
       )
     ));
@@ -39,15 +46,57 @@ export class MongoQuizRepository implements IQuizRepository {
     if (!record) {
       return null;
     }
-
+    
     return new Quiz({
       id: record._id,
       title: record.title,
       description: record.description,
-      questions: record.questions,
+      questions: [...record.questions],
       userId: record.userId,
     });
+
+    // Ensure questions are unique (if they are duplicated in the database)
+    // const uniqueQuestions = new Map();
+    // record.questions.forEach((question) => {
+    //     uniqueQuestions.set(question.id, { ...question });
+    // });
+    //
+    // return new Quiz({
+    //   id: record._id,
+    //   title: record.title,
+    //   description: record.description,
+    //   questions: [...uniqueQuestions.values()], // Ensure unique questions
+    //   userId: record.userId,
+    // });
   }
+
+
+
+  async deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO> {
+
+    const record = await this.model.findById(id);
+
+    if(!decodedToken) return null;
+
+    if(decodedToken.user_id !== record.userId) {
+      return {
+        id: id,
+        userId: decodedToken.user_id,
+      };
+    };
+
+    const deletedQuiz = await this.model.findByIdAndDelete(id);
+
+    if (!deletedQuiz) {
+      return null;
+    }
+
+    return {
+      id: id,
+      userId: decodedToken.user_id,
+    };
+  }
+
 
   async create(quiz: CreateQuizDTO): Promise<string> {
     const id = uuid()

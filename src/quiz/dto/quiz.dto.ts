@@ -69,3 +69,8 @@ export class PatchOperation {
   path: string;
   value: string;
 }
+
+export class DeletedQuizResponseDTO {
+  id: string;
+  userId: string;
+}
