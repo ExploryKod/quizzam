@@ -7,7 +7,7 @@ import {
   CreateQuestionDTO,
   CreateQuizDTO,
   DecodedToken,
-  DeletedQuizResponseDTO,
+  DeletedQuizResponseDTO, getUserQuizDTO,
   PatchOperation
 } from '../../dto/quiz.dto';
 import { v4 as uuid } from 'uuid';
@@ -20,7 +20,7 @@ export class MongoQuizRepository implements IQuizRepository {
   )  {
   }
 
-  async findAllFromUser(userId: string): Promise<basicQuizDTO[]> {
+  async findAllFromUser(userId: string, baseUrl: string, createUrl: string): Promise<getUserQuizDTO> {
 
     if (!this.model) {
       console.error('Mongo model is not injected correctly!');
@@ -28,17 +28,24 @@ export class MongoQuizRepository implements IQuizRepository {
 
     const quizzes = await this.model.find({ userId }).exec();
     console.log(`Found ${quizzes.length} quizzes`);
-    if(!quizzes) return [];
+    if(!quizzes) return {
+      data: [],
+      _links: { create: ""}
+    };
 
-    return quizzes.map((quiz) => (
-      new basicQuizDTO(
-        quiz.id,
-        quiz.title || '',
-        quiz.description || '',
-        [...quiz.questions],
-        quiz.userId,
-      )
-    ));
+    // return quizzes.map((quiz) => (
+    //   new basicQuizDTO(
+    //     quiz.id,
+    //     quiz.title || '',
+    //     quiz.description || '',
+    //     [...quiz.questions],
+    //     quiz.userId,
+    //   )
+    // ));
+    return {
+      data: quizzes,
+      _links: { create : ""}
+    }
   }
 
   async findById(id: string): Promise<Quiz | null> {

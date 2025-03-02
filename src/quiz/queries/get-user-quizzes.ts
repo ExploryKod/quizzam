@@ -1,14 +1,16 @@
 import { Inject } from '@nestjs/common';
-import { basicQuizDTO } from '../dto/quiz.dto';
+import { basicQuizDTO, getUserQuizDTO } from '../dto/quiz.dto';
 import { Executable } from '../../shared/executable';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 import { Quiz } from '../entities/quiz.entity';
 
 type Request = {
   userId: string;
+  createUrl: string;
+  baseUrl: string;
 };
 
-type Response = basicQuizDTO[] | []
+type Response = getUserQuizDTO
 
 export class GetUserQuizzes implements Executable<Request, Response> {
 
@@ -18,8 +20,8 @@ export class GetUserQuizzes implements Executable<Request, Response> {
   ) {}
 
   async execute(query: Request): Promise<Response> {
-    const { userId } = query;
-    return this.quizRepository.findAllFromUser(userId);
+    const { userId, createUrl, baseUrl } = query;
+    return this.quizRepository.findAllFromUser(userId, createUrl, baseUrl);
   }
 
 }
