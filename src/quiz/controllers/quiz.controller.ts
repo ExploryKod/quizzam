@@ -38,12 +38,10 @@ import { AddQuestionCommand } from '../commands/add-question-command';
 import { UpdateQuestionCommand } from '../commands/update-question-command';
 import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
 import { Question } from '../entities/quiz.entity';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 
 @Controller('quiz')
 export class QuizController {
   constructor(
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     private readonly getUserQuizzesQuery: GetUserQuizzes,
     private readonly createQuizCommand: CreateQuizCommand,
     private readonly getQuizByIdQuery: GetQuizByIdQuery,
@@ -442,7 +440,7 @@ export class QuizController {
   async replaceQuestion(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
-    @Body() updateQuestionDto: UpdateQuestionDTO,
+    @Body() updateQuestionDTO: UpdateQuestionDTO,
     @Req() request: RequestWithUser
   ) {
     const token = request.headers.authorization.split('Bearer ')[1];
@@ -457,42 +455,15 @@ export class QuizController {
     }
 
     try {
-      const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
-      const quizDoc = await quizRef.get();
 
-      if (!quizDoc.exists) {
-        throw new NotFoundException('Quiz non trouvé');
+      const datas = {
+        quizId: quizId,
+        questionId: questionId,
+        question: updateQuestionDTO,
+        decodedToken: decodedToken
       }
 
-      const quizData = quizDoc.data();
-
-      if (quizData.userId !== decodedToken.user_id) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      if (!Array.isArray(quizData.questions)) {
-        quizData.questions = [];
-      }
-
-      const questionIndex = quizData.questions.findIndex(
-        (q) => q.id === questionId
-      );
-
-      if (questionIndex === -1) {
-        throw new NotFoundException('Question non trouvée');
-      }
-
-      const updatedQuestion = {
-        id: questionId,
-        title: updateQuestionDto.title,
-        answers: updateQuestionDto.answers || [],
-      };
-
-      quizData.questions[questionIndex] = updatedQuestion;
-
-      await quizRef.update({
-        questions: quizData.questions,
-      });
+      await this.updateQuestionCommand.execute(datas)
 
       return null;
     } catch (error) {

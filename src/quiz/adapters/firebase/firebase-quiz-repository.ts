@@ -8,7 +8,7 @@ import {
   DecodedToken,
   DeletedQuizResponseDTO, getUserQuizDTO,
   PatchOperation,
-  QuestionDTO
+  QuestionDTO, UpdateQuestionDTO
 } from '../../dto/quiz.dto';
 import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 
@@ -16,34 +16,6 @@ export class FirebaseQuizRepository implements IQuizRepository {
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
-
-  // async findAllFromUser(userId: string): Promise<basicQuizDTO[]> {
-  //   const quizzesData = await this.firebase.firestore
-  //     .collection('quizzes')
-  //     .where('userId', '==', userId)
-  //     .get();
-  //
-  //   if (quizzesData.empty) {
-  //     return [];
-  //   }
-  //
-  //   console.log(
-  //     quizzesData.docs.map((doc) =>
-  //       console.log('doc data', doc.data().questions)
-  //     )
-  //   );
-  //   return quizzesData.docs.map(
-  //     (doc) =>
-  //       new basicQuizDTO(
-  //         doc.id,
-  //         doc.data().title || '',
-  //         doc.data().description || '',
-  //         doc.data().questions,
-  //         doc.data().userId
-  //       )
-  //   );
-  // }
-
 
   async findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<getUserQuizDTO> {
     const quizzesData = await this.firebase.firestore
@@ -233,9 +205,10 @@ export class FirebaseQuizRepository implements IQuizRepository {
   async updateQuestion(
     quizId: string,
     questionId: string,
-    question: CreateQuestionDTO,
+    updateQuestionDto: UpdateQuestionDTO,
     decodedToken: DecodedToken
   ): Promise<void> {
+
     const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
     const quizDoc = await quizRef.get();
 
@@ -254,18 +227,20 @@ export class FirebaseQuizRepository implements IQuizRepository {
     }
 
     const questionIndex = quizData.questions.findIndex(
-      (q: QuestionDTO) => q.id === questionId
+      (q:any) => q.id === questionId
     );
 
     if (questionIndex === -1) {
       throw new NotFoundException('Question non trouvée');
     }
 
-    quizData.questions[questionIndex] = {
+    const updatedQuestion = {
       id: questionId,
-      title: question.title,
-      answers: question.answers || [],
+      title: updateQuestionDto.title,
+      answers: updateQuestionDto.answers || [],
     };
+
+    quizData.questions[questionIndex] = updatedQuestion;
 
     await quizRef.update({
       questions: quizData.questions,

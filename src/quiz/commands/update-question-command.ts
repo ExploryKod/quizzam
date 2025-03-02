@@ -20,6 +20,6 @@ export class UpdateQuestionCommand implements Executable<Request, Response> {
 
   async execute(datas: Request): Promise<Response> {
     const { quizId, questionId, question, decodedToken } = datas;
-    return this.repository.addQuestion(quizId, questionId, question, decodedToken);
+    return this.repository.updateQuestion(quizId, questionId, question, decodedToken);
   }
 }
