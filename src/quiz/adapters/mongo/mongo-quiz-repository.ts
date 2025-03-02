@@ -12,7 +12,14 @@ import {
 } from '../../dto/quiz.dto';
 import { v4 as uuid } from 'uuid';
 import { getModelToken } from '@nestjs/mongoose';
-import { ForbiddenException, HttpException, HttpStatus, Inject, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  NotFoundException
+} from '@nestjs/common';
 
 export class MongoQuizRepository implements IQuizRepository {
   constructor(
@@ -252,6 +259,39 @@ export class MongoQuizRepository implements IQuizRepository {
     await quiz.save();
   }
 
+  async startQuiz(
+    quizId: string,
+    decodedToken: DecodedToken,
+    baseUrl: string
+  ): Promise<string> {
+    // Find the quiz document
+    const quiz = await this.model.findById(quizId).exec();
+
+    // Check if quiz exists
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    // Get quiz data and questions
+    const quizData = quiz.toObject();
+    const quizTitle = quizData.title;
+    const questions = quizData.questions || [];
+
+    // Verify ownership
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    // Check if quiz is startable
+    if (!this.isQuizStartable(quizTitle, questions)) {
+      throw new BadRequestException('Quiz is not ready to be started');
+    }
+
+    // Generate random execution ID
+    const executionId = this.randomString(6);
+
+    return `${baseUrl}/api/execution/${executionId}`;
+  }
 
   /**
    * Détermine si un quiz est démarrable selon les critères spécifiés
@@ -295,6 +335,14 @@ export class MongoQuizRepository implements IQuizRepository {
       (answer) => answer.isCorrect
     ).length;
     return correctAnswersCount === 1;
+  }
+
+  /**
+   * Génère un identifiant aléatoire de 6 caractères
+   */
+  private randomString(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 
 }
