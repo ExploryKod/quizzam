@@ -20,6 +20,8 @@ import { UserModule } from '../users/user.module';
 import { CommonModule } from './common.module';
 import { QuizModule } from '../quiz/quiz.module';
 import { AppController } from './app.controller';
+import { ChatModule } from '../chat/chat.module';
+import { HostModule } from '../host/host.module';
 
 @Module({
   imports: [
@@ -37,7 +39,8 @@ import { AppController } from './app.controller';
     AuthModule,
     UserModule,
     CommonModule,
-    QuizModule
+    QuizModule,
+    ChatModule
   ],
   controllers: [AppController],
   providers: [AppService],

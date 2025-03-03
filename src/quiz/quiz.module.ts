@@ -22,6 +22,7 @@ import { AddQuestionCommand } from './commands/add-question-command';
 import { UpdateQuestionCommand } from './commands/update-question-command';
 import { DeleteQuizByIdQuery } from './queries/delete-quiz-by-id';
 import { StartQuizQuery } from './queries/start-quiz-query';
+import { QuizGateway } from './gateways/quiz.gateway';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { StartQuizQuery } from './queries/start-quiz-query';
   ],
   controllers: [QuizController],
   providers: [
+    QuizGateway,
     {
       provide: I_QUIZ_REPOSITORY,
       useClass: variables.database === "MONGODB" ? MongoQuizRepository : FirebaseQuizRepository,

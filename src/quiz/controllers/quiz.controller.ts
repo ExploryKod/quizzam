@@ -41,6 +41,7 @@ import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { Question } from '../entities/quiz.entity';
 import { StartQuizQuery } from '../queries/start-quiz-query';
+import { QuizGateway } from '../gateways/quiz.gateway';
 
 @Controller('quiz')
 export class QuizController {
@@ -53,7 +54,8 @@ export class QuizController {
     private readonly addQuestionCommand: AddQuestionCommand,
     private readonly updateQuestionCommand: UpdateQuestionCommand,
     private readonly deleteQuizByIdQuery: DeleteQuizByIdQuery,
-    private readonly startQuizQuery: StartQuizQuery
+    private readonly startQuizQuery: StartQuizQuery,
+    private readonly quizGateway: QuizGateway,
   ) {}
 
   @Get()
@@ -353,7 +355,11 @@ export class QuizController {
       }
 
       const executionUrl = await this.startQuizQuery.execute(data)
+
       response.status(HttpStatus.CREATED).location(executionUrl).send();
+
+      // Notify all WebSocket clients about the quiz starting
+      this.quizGateway.server.to(quizId).emit('status', { status: 'started' });
 
     } catch (error) {
       if (error instanceof NotFoundException) {
