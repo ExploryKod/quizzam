@@ -13,7 +13,7 @@ export class StartQuizQuery implements Executable<Request, Response> {
     @Inject(I_QUIZ_REPOSITORY)
     private readonly repository: IQuizRepository,
     @Inject(I_QUIZ_GATEWAY)
-    private readonly quizGateway: IQuizGateway,
+    private readonly gateway: IQuizGateway,
   ) {}
 
   async execute(query: Request): Promise<Response> {
@@ -26,12 +26,21 @@ export class StartQuizQuery implements Executable<Request, Response> {
     const quiz = await this.repository.findById(quizId);
     const executionId = executionUrl.split('/').pop()
     console.log("execution url is >>> ", executionUrl.split('/').pop());
-    if (quiz) {
-      // Step 3: Notify the host via WebSocket (using executionId)
-      this.quizGateway.handleHost(executionId); // Send the executionId to the Gateway
 
-      // Step 4: Notify participants via WebSocket (status: 'waiting', participants count: 0 initially)
-      this.quizGateway.notifyParticipants(executionId, 'waiting', 0);
+    const notifyHostData = {
+      quizId: quizId,
+      title: quiz.props.title,
+    }
+
+    const notifyParticipantData = {
+      quizId: quizId,
+      status: "waiting",
+      count: 0
+    }
+
+    if (quiz) {
+        this.gateway.notifyHost(notifyHostData.quizId, notifyHostData.title)
+        this.gateway.notifyParticipants(notifyParticipantData.quizId, notifyParticipantData.status, notifyParticipantData.count)
     }
 
     // Step 5: Return the execution URL as the response
