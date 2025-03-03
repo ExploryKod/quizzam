@@ -1,125 +1,133 @@
-import {
-  WebSocketGateway,
-  SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
-  WebSocketServer,
-  OnGatewayConnection,
-  OnGatewayDisconnect
-} from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { GetQuizByIdQuery } from '../queries/get-quiz-by-id';
+import { IQuizGateway } from '../ports/quiz-gateway.interface';
 
-@WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
-})
-export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
+@WebSocketGateway({ cors: { origin: '*' } })
+export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, IQuizGateway {
   @WebSocketServer()
   server: Server;
 
-  private hosts: Map<string, string> = new Map(); // Stores executionId -> hostSocketId
-  private executionParticipants: Map<string, Set<string>> = new Map(); // Stores executionId -> participantSocketIds
+  private logger = new Logger('QuizGateway');
+  private hosts: Map<string, Socket> = new Map(); // Track the host for each executionId
+  private participants: Map<string, Set<string>> = new Map(); // Track participants for each executionId
 
-  constructor(private readonly getQuizByIdQuery: GetQuizByIdQuery) {}
-
-  handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
-  }
-
-  handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
-
-    // Check if the client is a host
-    for (const [executionId, hostSocketId] of this.hosts.entries()) {
-      if (hostSocketId === client.id) {
-        this.hosts.delete(executionId);
-        this.executionParticipants.delete(executionId);
-        console.log(`Host disconnected for executionId: ${executionId}`);
-        return;
-      }
-    }
-
-    // Check if the client is a participant
-    for (const [executionId, participants] of this.executionParticipants.entries()) {
-      if (participants.has(client.id)) {
-        participants.delete(client.id);
-        console.log(`Participant disconnected from executionId: ${executionId}`);
-        this.broadcastStatus(executionId);
-        return;
-      }
-    }
-  }
-
-  // @SubscribeMessage('host')
-  // async handleHostEvent(
-  //   @MessageBody() data: { executionId: string },
-  //   @ConnectedSocket() client: Socket
-  // ) {
-  //   const { executionId } = data;
-  //   console.log(`Host connected for executionId: ${executionId}`);
-  //
-  //   try {
-  //     const quiz = await this.getQuizByIdQuery.execute(executionId);
-  //
-  //     if (!quiz) {
-  //       client.emit('error', { message: 'Quiz not found' });
-  //       return;
-  //     }
-  //
-  //     // Store host socket ID
-  //     this.hosts.set(executionId, client.id);
-  //     this.executionParticipants.set(executionId, new Set());
-  //
-  //     // Send hostDetails only to the host
-  //     client.emit('hostDetails', { quiz: { title: quiz.props.title } });
-  //
-  //     // Send status to everyone connected to this execution
-  //     this.broadcastStatus(executionId);
-  //   } catch (error) {
-  //     console.error('Error fetching quiz:', error);
-  //     client.emit('error', { message: 'Internal server error' });
-  //   }
-  // }
-
+  // Handle the 'host' event (host starts the quiz)
   @SubscribeMessage('host')
-  async handleHostEvent(
-    @MessageBody() data: { executionId: string },
-    @ConnectedSocket() client: Socket
-  ) {
-    const { executionId } = data;
-    console.log(`🔍 Checking executionId: ${executionId}`); // Debug log
+  handleHost(@MessageBody() executionId: string): void {
+    //this.logger.log(`Host connected to quiz with executionId: ${executionId.toString()}`);
 
-    try {
-      const quiz = await this.getQuizByIdQuery.execute(executionId);
+    // Store the host for this executionId
+    const hostSocket = this.hosts.get(executionId);
+    if (hostSocket) {
+      // Emit host details to the host (just the quiz title for now)
+      const quizTitle = this.getQuizTitle(executionId);
+      hostSocket.emit('hostDetails', { quiz: { title: quizTitle } });
 
-      if (!quiz) {
-        console.log(`❌ Quiz not found for executionId: ${executionId}`);
-        client.emit('error', { message: 'Quiz not found' });
-        return;
-      }
-
-      console.log(`✅ Quiz found: ${quiz.props.title}`); // Debug log
-
-      this.hosts.set(executionId, client.id);
-      this.executionParticipants.set(executionId, new Set());
-
-      client.emit('hostDetails', { quiz: { title: quiz.props.title } });
-
+      // Emit status (waiting) to all participants (including the host)
       this.broadcastStatus(executionId);
-    } catch (error) {
-      console.error(`❌ Error fetching quiz for executionId: ${executionId}`, error);
-      client.emit('error', { message: 'Internal server error' });
     }
   }
 
-  private broadcastStatus(executionId: string) {
-    const participantsCount = this.executionParticipants.get(executionId)?.size || 0;
+  // Handle the 'join' event (participants join the quiz)
+  @SubscribeMessage('join')
+  handleJoin(@MessageBody() executionId: string, socket: Socket): void {
+    this.logger.log(`Player joining quiz with executionId: ${executionId}`);
 
+    // Track the participant
+    this.addParticipant(executionId, socket.id);
+
+    // Emit join details (quiz title) to the joining player
+    const quizTitle = this.getQuizTitle(executionId);
+    socket.emit('joinDetails', { quizTitle });
+
+    // Emit status (waiting) to all participants (including the host)
+    this.broadcastStatus(executionId);
+  }
+
+  // Handle the 'nextQuestion' event (host proceeds to next question)
+  @SubscribeMessage('nextQuestion')
+  handleNextQuestion(@MessageBody() executionId: string, socket: Socket): void {
+    const hostSocket = this.hosts.get(executionId);
+
+    // Ensure the socket is the host
+    if (hostSocket && hostSocket.id === socket.id) {
+      const questionData = this.getNextQuestion(executionId);
+
+      // Emit status (started) to all participants
+      this.broadcastStatus(executionId);
+
+      // Emit the new question to all participants
+      this.server.to(executionId).emit('newQuestion', questionData);
+    } else {
+      socket.emit('error', { message: 'You are not the host of this session.' });
+    }
+  }
+
+  // Broadcast status (participants count) to all clients connected to the executionId
+  broadcastStatus(executionId: string): void {
+    const participantCount = this.participants.get(executionId)?.size || 0;
     this.server.to(executionId).emit('status', {
-      status: 'waiting',
+      status: 'waiting', // or 'started' when the quiz is in progress
+      participants: participantCount,
+    });
+  }
+
+  // Notify participants with the current status and participant count
+  notifyParticipants(executionId: string, status: string, participantsCount: number): void {
+    this.server.to(executionId).emit('status', {
+      status,
       participants: participantsCount,
     });
+  }
+
+  // Add a participant to the quiz
+  private addParticipant(executionId: string, participantId: string): void {
+    if (!this.participants.has(executionId)) {
+      this.participants.set(executionId, new Set());
+    }
+    this.participants.get(executionId).add(participantId);
+  }
+
+  // Method to retrieve the quiz title (mocked for now)
+  private getQuizTitle(executionId: string): string {
+    // In a real scenario, retrieve the quiz title from the database or a service
+    return 'Sample Quiz Title';
+  }
+
+  // Method to get the next question (mocked for now)
+  private getNextQuestion(executionId: string): { question: string, answers: string[] } {
+    // In a real scenario, you would retrieve the question from the database or a question pool
+    return { question: 'What is the capital of France?', answers: ['Paris', 'London', 'Berlin', 'Rome'] };
+  }
+
+  // Handle a connection event (e.g., when the host or participant connects)
+  handleConnection(socket: Socket): void {
+    this.logger.log(`Socket connected: ${socket.id}`);
+  }
+
+  // Handle a disconnection event (e.g., when a participant or host disconnects)
+  handleDisconnect(socket: Socket): void {
+    this.logger.log(`Socket disconnected: ${socket.id}`);
+
+    // Remove participant from the quiz session if necessary
+    for (const [executionId, participants] of this.participants.entries()) {
+      if (participants.has(socket.id)) {
+        this.removeParticipant(executionId, socket.id);
+        this.broadcastStatus(executionId); // Update status for all connected participants
+        break;
+      }
+    }
+  }
+
+  // Method to remove a participant from the quiz session
+  private removeParticipant(executionId: string, participantId: string): void {
+    if (this.participants.has(executionId)) {
+      const participants = this.participants.get(executionId);
+      participants.delete(participantId);
+      if (participants.size === 0) {
+        this.participants.delete(executionId);
+      }
+    }
   }
 }

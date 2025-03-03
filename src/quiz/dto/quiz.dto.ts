@@ -89,3 +89,9 @@ export class StartQuizDTO {
   decodedToken: DecodedToken;
   baseUrl: string;
 }
+
+export class CreateExecutionDto {
+  quizId: string;
+  executionId: string;
+  status: string;
+}
