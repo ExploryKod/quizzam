@@ -14,8 +14,9 @@ export class FirebasePingRepository implements IPingRepository {
     const version = versions[0].data();
 
     return {
+      version: version.version,
       status : version.version ? "OK" : "Partial",
-      details : { database: version.version ? `Database is running on version ${version.version}` : "Database KO" }
+      details : { database: version.version ? "OK" : "KO" }
     };
   }
 }

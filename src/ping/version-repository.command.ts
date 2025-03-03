@@ -7,6 +7,7 @@ type DatabaseStatus = {
 }
 
 type Ping = {
+  version: string;
   status: string;
   details: DatabaseStatus;
 }
