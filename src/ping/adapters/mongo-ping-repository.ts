@@ -14,6 +14,7 @@ export class MongoPingRepository implements IPingRepository {
     const version = info.version;
 
     return {
+      version: version,
       status : version ? "OK" : "Partial",
       details : { database: version ? `Database is running on version ${version}` : "Database KO" }
     };
