@@ -23,6 +23,7 @@ import { UpdateQuestionCommand } from './commands/update-question-command';
 import { DeleteQuizByIdQuery } from './queries/delete-quiz-by-id';
 import { StartQuizQuery } from './queries/start-quiz-query';
 import { QuizGateway } from './gateways/quiz.gateway';
+import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
 
 @Module({
   imports: [
@@ -38,10 +39,13 @@ import { QuizGateway } from './gateways/quiz.gateway';
   ],
   controllers: [QuizController],
   providers: [
-    QuizGateway,
     {
       provide: I_QUIZ_REPOSITORY,
       useClass: variables.database === "MONGODB" ? MongoQuizRepository : FirebaseQuizRepository,
+    },
+    {
+      provide: I_QUIZ_GATEWAY,
+      useClass: QuizGateway,
     },
     {
       provide: GetUserQuizzes,
@@ -100,9 +104,9 @@ import { QuizGateway } from './gateways/quiz.gateway';
     },
     {
       provide: StartQuizQuery,
-      inject : [I_QUIZ_REPOSITORY],
-      useFactory: (repository) => { return new StartQuizQuery(repository)}
-    }
+      inject: [I_QUIZ_REPOSITORY, I_QUIZ_GATEWAY],
+      useFactory: (repository, gateway) => new StartQuizQuery(repository, gateway),
+    },
   ],
   exports: [I_QUIZ_REPOSITORY],
 })

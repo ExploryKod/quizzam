@@ -54,8 +54,7 @@ export class QuizController {
     private readonly addQuestionCommand: AddQuestionCommand,
     private readonly updateQuestionCommand: UpdateQuestionCommand,
     private readonly deleteQuizByIdQuery: DeleteQuizByIdQuery,
-    private readonly startQuizQuery: StartQuizQuery,
-    private readonly quizGateway: QuizGateway,
+    private readonly startQuizQuery: StartQuizQuery
   ) {}
 
   @Get()
@@ -354,13 +353,9 @@ export class QuizController {
         baseUrl: baseUrl,
       }
 
+      // startQuizQuery : It handles also the host websocket event
       const executionUrl = await this.startQuizQuery.execute(data)
-
       response.status(HttpStatus.CREATED).location(executionUrl).send();
-
-      // Notify all WebSocket clients about the quiz starting
-      this.quizGateway.server.to(quizId).emit('status', { status: 'started' });
-
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
