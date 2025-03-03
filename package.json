@@ -15,7 +15,11 @@
     "@nestjs/cqrs": "^10.2.6",
     "@nestjs/mongoose": "^10.0.1",
     "@nestjs/platform-express": "^10.2.5",
+    "@nestjs/platform-socket.io": "^11.0.11",
+    "@nestjs/platform-ws": "^11.0.11",
+    "@nestjs/websockets": "^11.0.11",
     "@types/supertest": "^6.0.2",
+    "@types/ws": "^8.5.14",
     "axios": "^1.7.9",
     "express": "^4.21.2",
     "firebase-admin": "^13.1.0",
@@ -24,7 +28,9 @@
     "nestjs-firebase": "^10.5.1",
     "reflect-metadata": "^0.1.14",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
     "uuid": "^9.0.1",
+    "ws": "^8.18.1",
     "zod": "^3.24.2"
   },
   "devDependencies": {
