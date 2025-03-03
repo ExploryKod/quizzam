@@ -25,6 +25,7 @@ import { StartQuizQuery } from './queries/start-quiz-query';
 import { QuizGateway } from './gateways/quiz.gateway';
 import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
 
+
 @Module({
   imports: [
     CqrsModule,
@@ -104,8 +105,8 @@ import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
     },
     {
       provide: StartQuizQuery,
-      inject: [I_QUIZ_REPOSITORY, I_QUIZ_GATEWAY],
-      useFactory: (repository, gateway) => new StartQuizQuery(repository, gateway),
+      inject: [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => new StartQuizQuery(repository),
     },
   ],
   exports: [I_QUIZ_REPOSITORY],

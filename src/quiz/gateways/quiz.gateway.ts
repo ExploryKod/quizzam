@@ -14,12 +14,12 @@ import { Server, Socket } from 'socket.io';
 export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
-
   private logger = new Logger('QuizGateway');
 
   //This will be triggered when a client connects to a quiz session
-  handleConnection(socket: Socket, quizId: string) {
-    this.logger.log(`Socket quiz connected: ${socket.id}`);
+  async handleConnection(socket: Socket, quizId: string) {
+
+    this.logger.log(`Socket quiz connected: ${socket.id} with quiz: ${quizId}`);
     // Join the room related to the quizId
     socket.join(quizId);
 
@@ -30,20 +30,10 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     // Send host details to the host only
-    socket.emit('hostDetails', { quiz: { title: 'Quiz Title' } });
+    socket.emit('hostDetails', { quiz: { title: quizId } });
   }
 
-  handleDisconnect(socket: Socket) {
+  async handleDisconnect(socket: Socket) {
     this.logger.log(`Socket disconnected: ${socket.id}`);
-  }
-
-  // Emit status updates (e.g., quiz starting, etc.)
-  notifyParticipants(quizId: string, status: string, participants: number) {
-    this.server.to(quizId).emit('status', { status, participants });
-  }
-
-  // Emit host details to the host (quiz owner)
-  notifyHost(quizId: string, quizTitle: string) {
-    this.server.to(quizId).emit('hostDetails', { quiz: { title: quizTitle } });
   }
 }
