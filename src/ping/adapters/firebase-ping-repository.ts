@@ -1,13 +1,13 @@
 import { IPingRepository } from '../ping-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { VersionResult } from '../ping.entity';
+import { DatabaseStatus, DatabaseVersion } from '../ping.entity';
 
 export class FirebasePingRepository implements IPingRepository {
   constructor(
     @InjectFirebaseAdmin() private readonly fa: FirebaseAdmin
   ) {}
 
-  async getVersion(): Promise<VersionResult> {
+  async getDatabaseVersion(): Promise<DatabaseVersion> {
 
     const versionsCollection = this.fa.firestore.collection('versions');
     const versions = (await versionsCollection.get()).docs;
@@ -15,8 +15,20 @@ export class FirebasePingRepository implements IPingRepository {
 
     return {
       version: version.version,
-      status : version.version ? "OK" : "Partial",
-      details : { database: version.version ? "OK" : "KO" }
     };
+  }
+
+  async getDatabaseStatus(): Promise<DatabaseStatus> {
+    try {
+      await this.fa.firestore.collection('versions').limit(1).get();
+      return {
+        status: "OK"
+      };
+    } catch (error) {
+      console.error('Firebase database connection error:', error);
+      return {
+         status: "KO"
+      };
+    }
   }
 }

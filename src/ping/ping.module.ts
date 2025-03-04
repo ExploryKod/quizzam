@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PingController } from './ping.controller';
 import { GetVersionCommand} from './version-repository.command';
-import { I_PING_REPOSITORY } from './ping-repository.interface';
+import { I_PING_REPOSITORY, IPingRepository } from './ping-repository.interface';
 import { variables } from '../shared/variables.config';
 import { MongoPingRepository } from './adapters/mongo-ping-repository';
 import { FirebasePingRepository } from './adapters/firebase-ping-repository';
@@ -26,12 +26,13 @@ import { FirebasePingRepository } from './adapters/firebase-ping-repository';
     {
       provide: GetVersionCommand,
       inject: [
-        I_PING_REPOSITORY
+        I_PING_REPOSITORY,
       ],
-      useFactory: (repository) => {
+      useFactory: (repository: IPingRepository) => {
         return new GetVersionCommand(repository);
       }
-    }
+    },
+
   ],
 
 })
