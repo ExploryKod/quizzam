@@ -7,13 +7,12 @@ export class PingController {
 
   @Get()
   async ping() {
-    const version = await this.versionRepository.execute();
+    const result = await this.versionRepository.execute();
     Logger.log(
-      `🚀 Ping request : \x1b[35m${version.status} \x1b[0m and 💽 database version ${version.version} is \x1b[35m${version.details.database}`
+      `🚀 Ping request : \x1b[35m${result.status} \x1b[0m and 💽 database version ${result.database.version} is \x1b[35m${result.database.status}`
     );
     return {
-      response: 'pong',
-      version: version,
-    };
+      status : result.status ? result.status : "KO",
+      details : { database:  result.database.status }}
   }
 }

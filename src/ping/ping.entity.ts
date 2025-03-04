@@ -1,8 +1,16 @@
 
-type VersionString = "OK" | "Partial";
+type ApiStatusString = "OK" | "Partial";
+type DatabaseString = "OK" | "KO";
 
-export class VersionResult {
+export class DatabaseStatus {
+  status: DatabaseString
+}
+
+export class DatabaseVersion {
   version: string;
-  status : VersionString;
-  details : { database: string };
+}
+
+export class PingResult {
+  status: ApiStatusString;
+  database: { version: string, status: DatabaseString };
 }
