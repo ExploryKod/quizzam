@@ -8,8 +8,8 @@ import {
   DeletedQuizResponseDTO,
   getUserQuizDTO,
   PatchOperation,
-  QuestionDTO,
-  UpdateQuestionDTO,
+  QuestionDTO, QuizDTO,
+  UpdateQuestionDTO
 } from '../../dto/quiz.dto';
 import {
   BadRequestException,
@@ -18,7 +18,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-export class FirebaseQuizRepository implements IQuizRepository {
+export class FirebaseQuizRepository implements Partial<IQuizRepository> {
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
@@ -236,20 +236,18 @@ export class FirebaseQuizRepository implements IQuizRepository {
     }
 
     const questionIndex = quizData.questions.findIndex(
-      (q: any) => q.id === questionId
+      (q: Question) => q.id === questionId
     );
 
     if (questionIndex === -1) {
       throw new NotFoundException('Question non trouvée');
     }
 
-    const updatedQuestion = {
+    quizData.questions[questionIndex] = {
       id: questionId,
       title: updateQuestionDto.title,
       answers: updateQuestionDto.answers || [],
     };
-
-    quizData.questions[questionIndex] = updatedQuestion;
 
     await quizRef.update({
       questions: quizData.questions,
@@ -284,7 +282,37 @@ export class FirebaseQuizRepository implements IQuizRepository {
     // Générer un ID aléatoire pour l'exécution
     const executionId = this.randomString(6);
 
+    await quizRef.update({
+      executionId: executionId
+    });
+
     return `${baseUrl}/api/execution/${executionId}`;
+  }
+
+
+  async getQuizByExecutionId(
+    executionId: string
+  ): Promise<QuizDTO> {
+    const quizRef = this.firebase.firestore.collection('quizzes');
+
+    // Recherche du quiz par executionId
+    const querySnapshot = await quizRef.where('executionId', '==', executionId).get();
+
+    // Vérification des résultats
+    if (querySnapshot.empty) {
+      throw new NotFoundException(`Quiz with executionId ${executionId} not found`);
+    }
+
+    // Extraction et retour des données
+    const quizDoc = querySnapshot.docs[0];
+    const quizData = quizDoc.data();
+
+    return {
+      id: quizDoc.id,
+      title: quizData.title,
+      description: quizData.description,
+      questions: quizData.questions
+    };
   }
 
   /**

@@ -43,10 +43,11 @@ import { Question } from '../entities/quiz.entity';
 import { StartQuizQuery } from '../queries/start-quiz-query';
 import { QuizGateway } from '../gateways/quiz.gateway';
 
+
+
 @Controller('quiz')
 export class QuizController {
   constructor(
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     private readonly getUserQuizzesQuery: GetUserQuizzes,
     private readonly createQuizCommand: CreateQuizCommand,
     private readonly getQuizByIdQuery: GetQuizByIdQuery,
@@ -356,6 +357,9 @@ export class QuizController {
       // startQuizQuery : It handles also the host websocket event
       const executionUrl = await this.startQuizQuery.execute(data)
       response.status(HttpStatus.CREATED).location(executionUrl).send();
+
+
+
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

@@ -21,7 +21,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 
-export class MongoQuizRepository implements IQuizRepository {
+export class MongoQuizRepository implements Partial<IQuizRepository> {
   constructor(
     @Inject(getModelToken(MongoQuiz.CollectionName)) private readonly model: Model<MongoQuiz.SchemaClass>,
   )  {

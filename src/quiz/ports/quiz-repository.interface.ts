@@ -1,11 +1,10 @@
 import { Quiz } from '../entities/quiz.entity';
 import {
-  basicQuizDTO,
   CreateQuizDTO,
   DecodedToken,
   PatchOperation,
   CreateQuestionDTO,
-  DeletedQuizResponseDTO, getUserQuizDTO
+  DeletedQuizResponseDTO, getUserQuizDTO, QuizDTO
 } from '../dto/quiz.dto';
 
 export const I_QUIZ_REPOSITORY = 'I_QUIZ_REPOSITORY';
@@ -19,4 +18,5 @@ export interface IQuizRepository {
   addQuestion(id:string, questionId: string, question: CreateQuestionDTO, decodedToken: DecodedToken): Promise<void>;
   updateQuestion(quizId:string, questionId: string, question: CreateQuestionDTO, decodedToken: DecodedToken): Promise<void>;
   startQuiz(quizId:string, decodedToken: DecodedToken, baseUrl: string): Promise<string>;
+  getQuizByExecutionId(executionId: string): Promise<QuizDTO | null>;
 }
