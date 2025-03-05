@@ -49,6 +49,15 @@ import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
       useClass: QuizGateway,
     },
     {
+      provide: GetQuizByIdQuery,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new GetQuizByIdQuery(repository);
+      },
+    },
+    {
       provide: GetUserQuizzes,
       inject: [
         I_QUIZ_REPOSITORY,

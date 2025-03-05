@@ -8,36 +8,24 @@ type Request = StartQuizDTO;
 type Response = string;
 
 export class StartQuizQuery implements Executable<Request, Response> {
-
+  private executionUrl: string;
   constructor(
     @Inject(I_QUIZ_REPOSITORY)
     private readonly repository: IQuizRepository,
-    // @Inject(I_QUIZ_GATEWAY)
-    // private readonly gateway: IQuizGateway,
   ) {}
 
   async execute(query: Request): Promise<Response> {
     const { quizId, baseUrl, decodedToken } = query;
 
     // Step 1: Start the quiz in the repository and get the execution URL
-    const executionUrl = await this.repository.startQuiz(quizId, decodedToken, baseUrl); // You no longer need decodedToken here
-
-    // Step 2: Retrieve the quiz data
-    const quiz = await this.repository.findById(quizId);
-    const executionId = executionUrl.split('/').pop()
-    console.log("execution url is >>> ", executionUrl.split('/').pop());
-
-    const notifyHostData = {
-      quizId: executionId,
-      title: quiz.props.title,
-    }
-
-    const notifyParticipantData = {
-      quizId: executionId,
-      status: "waiting",
-      count: 0
-    }
-
+    const executionUrl = await this.repository.startQuiz(quizId, decodedToken, baseUrl);
+    this.executionUrl = executionUrl;
+    console.log("execution id is >>> ", executionUrl.split('/').pop());
     return executionUrl;
+  }
+
+  async getQuizIdFromExecutionUrl(): Promise<string> {
+    console.log(this.executionUrl);
+    return this.executionUrl.split('/')[1];
   }
 }
