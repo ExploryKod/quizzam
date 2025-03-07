@@ -8,7 +8,7 @@ import {
   DeletedQuizResponseDTO,
   getUserQuizDTO,
   PatchOperation,
-  QuestionDTO, QuizDTO,
+  QuestionDTO, QuizDTO, QuizProps,
   UpdateQuestionDTO
 } from '../../dto/quiz.dto';
 import {
@@ -17,6 +17,7 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
+import { QuestionEvent } from '../../gateways/quiz.gateway';
 
 export class FirebaseQuizRepository implements Partial<IQuizRepository> {
   constructor(
@@ -313,6 +314,70 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       description: quizData.description,
       questions: quizData.questions
     };
+  }
+
+  // private async getNextQuestion(index: number): Promise<Question> {
+  //   const questionsRef = this.firebase.firestore.collection('questions');
+  //
+  //   try {
+  //     // Fetch all questions for the execution
+  //     const snapshot = await questionsRef.where('executionId', '==', index.toString()).get();
+  //
+  //     if (!snapshot.empty) {
+  //       // Get the next question based on the index
+  //       const nextQuestionDoc = snapshot.docs[index];
+  //
+  //       if (nextQuestionDoc.exists) {
+  //         const data = nextQuestionDoc.data();
+  //
+  //         return {
+  //           id: data.id,
+  //           title: data.question,
+  //           answers: data.answers
+  //         };
+  //       }
+  //     }
+  //
+  //     // If there are no more questions, throw an error
+  //     throw new Error('No more questions available');
+  //   } catch (error) {
+  //     console.error('Error fetching next question:', error);
+  //     throw error;
+  //   }
+  // }
+
+
+  async getNextQuestion(quizId: string, questionIndex: number): Promise<QuestionEvent> {
+    try {
+      // Fetch the quiz document from Firestore
+      const quizDoc = await this.firebase.firestore.collection('quizzes').doc(quizId).get();
+
+      if (!quizDoc.exists) {
+        throw new Error('Quiz not found');
+      }
+
+      const quizData = quizDoc.data() as QuizProps;
+
+      // Access the question by index
+      if (questionIndex < 0 || questionIndex >= quizData.questions.length) {
+        throw new Error('Question index out of bounds');
+      }
+
+      const question = quizData.questions[questionIndex];
+
+      const answerStrings : string[] = []
+      question.answers.forEach(answer => {
+        answerStrings.push(answer.title);
+      })
+
+      return {
+        question: question.title,
+        answers : answerStrings
+      }
+    } catch (error) {
+      console.error('Error fetching next question:', error);
+      throw error;
+    }
   }
 
   /**

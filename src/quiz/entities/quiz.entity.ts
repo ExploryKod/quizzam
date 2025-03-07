@@ -1,7 +1,7 @@
 import { Entity } from '../../shared/entity';
 import { User } from '../../users/entities/user.entity';
 
-type Answer = {
+export type Answer = {
   isCorrect: boolean;
   title: string;
 }
