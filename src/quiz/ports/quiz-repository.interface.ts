@@ -6,6 +6,7 @@ import {
   CreateQuestionDTO,
   DeletedQuizResponseDTO, getUserQuizDTO, QuizDTO
 } from '../dto/quiz.dto';
+import { QuestionEvent } from '../gateways/quiz.gateway';
 
 export const I_QUIZ_REPOSITORY = 'I_QUIZ_REPOSITORY';
 
@@ -19,4 +20,5 @@ export interface IQuizRepository {
   updateQuestion(quizId:string, questionId: string, question: CreateQuestionDTO, decodedToken: DecodedToken): Promise<void>;
   startQuiz(quizId:string, decodedToken: DecodedToken, baseUrl: string): Promise<string>;
   getQuizByExecutionId(executionId: string): Promise<QuizDTO | null>;
+  getNextQuestion(quizId:string, questionIndex: number): Promise<QuestionEvent | null>;
 }
