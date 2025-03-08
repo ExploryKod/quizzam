@@ -10,6 +10,8 @@ import { Server, Socket } from 'socket.io';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 import { Answer, Question } from '../entities/quiz.entity';
 import { QuizProps } from '../dto/quiz.dto';
+import { GetNextQuestionQuery } from '../queries/get-next-question';
+import { GetQuizByExecutionIdQuery } from '../queries/get-quiz-by-executionId';
 
 // issue 15
 export interface HostJoinPayload {
@@ -60,8 +62,8 @@ export class QuizGateway {
   private currentQuestionIndex: number | undefined = 0;
 
   constructor(
-    @Inject(I_QUIZ_REPOSITORY)
-    private readonly repository: IQuizRepository
+    private readonly getQuizByExecutionIdQuery : GetQuizByExecutionIdQuery,
+    private readonly getNextQuestionQuery: GetNextQuestionQuery,
   ) {
   }
 
@@ -82,7 +84,7 @@ export class QuizGateway {
     }
     this.executionRooms.get(executionId).add(client.id);
 
-    const quiz = await this.repository.getQuizByExecutionId(executionId);
+    const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
     console.log("quiz in websocket host is: ", quiz)
 
     const quizDetails: HostDetailsEvent = {
@@ -120,7 +122,7 @@ export class QuizGateway {
     this.executionRooms.get(executionId).add(client.id);
 
     // Get quiz details
-    const quiz = await this.repository.getQuizByExecutionId(executionId);
+    const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
     console.log("quiz in websocket player is: ", quiz);
 
     // Send quiz details to the player
@@ -148,8 +150,8 @@ export class QuizGateway {
   ) {
     const { executionId } = payload;
     console.log("[next Question event] execution id ", executionId);
-    const quiz = await this.repository.getQuizByExecutionId(executionId);
-    // Check if the client is the host for this execution
+    const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
+
     const hostClientId = this.hostClients.get(executionId);
     if (client.id !== hostClientId) {
       this.logger.warn(`Unauthorized client tried to move to next question for execution: ${executionId}`);
@@ -161,8 +163,14 @@ export class QuizGateway {
     let currentQuestionIndex = this.currentQuestionIndex;
 
     console.log("nextQuestion", quiz.questions.length, currentQuestionIndex);
-    if(currentQuestionIndex <= (quiz.questions.length)) {
-      nextQuestion = await this.repository.getNextQuestion(quiz.id, currentQuestionIndex);
+
+    const datas = {
+      quizId: quiz.id,
+      questionIndex : currentQuestionIndex
+    }
+
+    if(currentQuestionIndex < quiz.questions.length + 1) {
+      nextQuestion = await this.getNextQuestionQuery.execute(datas);
       currentQuestionIndex++
     }
 
