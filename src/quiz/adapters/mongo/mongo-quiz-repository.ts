@@ -8,7 +8,7 @@ import {
   CreateQuizDTO,
   DecodedToken,
   DeletedQuizResponseDTO, getUserQuizDTO,
-  PatchOperation
+  PatchOperation, QuizDTO
 } from '../../dto/quiz.dto';
 import { v4 as uuid } from 'uuid';
 import { getModelToken } from '@nestjs/mongoose';
@@ -20,8 +20,9 @@ import {
   Inject,
   NotFoundException
 } from '@nestjs/common';
+import { QuestionEvent } from '../../gateways/quiz.gateway';
 
-export class MongoQuizRepository implements Partial<IQuizRepository> {
+export class MongoQuizRepository implements IQuizRepository {
   constructor(
     @Inject(getModelToken(MongoQuiz.CollectionName)) private readonly model: Model<MongoQuiz.SchemaClass>,
   )  {
@@ -160,7 +161,6 @@ export class MongoQuizRepository implements Partial<IQuizRepository> {
     };
   }
 
-
   async create(quiz: CreateQuizDTO): Promise<string> {
     const id = uuid()
     const data = {_id: id, ...quiz};
@@ -291,6 +291,54 @@ export class MongoQuizRepository implements Partial<IQuizRepository> {
     const executionId = this.randomString(6);
 
     return `${baseUrl}/api/execution/${executionId}`;
+  }
+
+  async getQuizByExecutionId(executionId: string): Promise<QuizDTO> {
+    try {
+
+      const quiz = await this.model.findOne({ executionId }).exec();  // Using Mongoose to find the quiz by executionId
+
+      if (!quiz) {
+        throw new NotFoundException(`Quiz with executionId ${executionId} not found`);
+      }
+
+      return {
+        id: quiz._id.toString(),
+        title: quiz.title,
+        description: quiz.description,
+        questions: quiz.questions
+      };
+    } catch (error) {
+      console.error('Error fetching quiz by executionId:', error);
+      throw error;
+    }
+  }
+
+  async getNextQuestion(quizId: string, questionIndex: number): Promise<QuestionEvent> {
+    try {
+
+      const quiz = await this.model.findById(quizId).exec();
+
+      if (!quiz) {
+        throw new NotFoundException('Quiz not found');
+      }
+
+      if (questionIndex < 0 || questionIndex >= quiz.questions.length) {
+        throw new Error('Question index out of bounds');
+      }
+
+      const question = quiz.questions[questionIndex];
+
+      const answerStrings: string[] = question.answers.map((answer) => answer.title);
+
+      return {
+        question: question.title,
+        answers: answerStrings
+      };
+    } catch (error) {
+      console.error('Error fetching next question:', error);
+      throw error;
+    }
   }
 
   /**

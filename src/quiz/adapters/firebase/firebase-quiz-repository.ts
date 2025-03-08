@@ -290,21 +290,17 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
     return `${baseUrl}/api/execution/${executionId}`;
   }
 
-
   async getQuizByExecutionId(
     executionId: string
   ): Promise<QuizDTO> {
     const quizRef = this.firebase.firestore.collection('quizzes');
 
-    // Recherche du quiz par executionId
     const querySnapshot = await quizRef.where('executionId', '==', executionId).get();
 
-    // Vérification des résultats
     if (querySnapshot.empty) {
       throw new NotFoundException(`Quiz with executionId ${executionId} not found`);
     }
 
-    // Extraction et retour des données
     const quizDoc = querySnapshot.docs[0];
     const quizData = quizDoc.data();
 
@@ -315,37 +311,6 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       questions: quizData.questions
     };
   }
-
-  // private async getNextQuestion(index: number): Promise<Question> {
-  //   const questionsRef = this.firebase.firestore.collection('questions');
-  //
-  //   try {
-  //     // Fetch all questions for the execution
-  //     const snapshot = await questionsRef.where('executionId', '==', index.toString()).get();
-  //
-  //     if (!snapshot.empty) {
-  //       // Get the next question based on the index
-  //       const nextQuestionDoc = snapshot.docs[index];
-  //
-  //       if (nextQuestionDoc.exists) {
-  //         const data = nextQuestionDoc.data();
-  //
-  //         return {
-  //           id: data.id,
-  //           title: data.question,
-  //           answers: data.answers
-  //         };
-  //       }
-  //     }
-  //
-  //     // If there are no more questions, throw an error
-  //     throw new Error('No more questions available');
-  //   } catch (error) {
-  //     console.error('Error fetching next question:', error);
-  //     throw error;
-  //   }
-  // }
-
 
   async getNextQuestion(quizId: string, questionIndex: number): Promise<QuestionEvent> {
     try {

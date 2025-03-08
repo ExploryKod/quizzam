@@ -150,7 +150,7 @@ export class QuizGateway {
     @ConnectedSocket() client: Socket
   ) {
     const { executionId } = payload;
-    console.log("[next Question event] execution id ", executionId);
+
     const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
 
     const hostClientId = this.hostClients.get(executionId);
@@ -159,9 +159,7 @@ export class QuizGateway {
       return;
     }
 
-  // TODO: make currentQUestionIndex a real iterable index as now is remain at 0
     let newQuestionEvent: QuestionEvent;
-    // let currentQuestionIndex = this.currentQuestionIndex;
     let currentQuestionIndex = this.executionQuestionIndexes.get(executionId) || 0;
 
     if (currentQuestionIndex >= quiz.questions.length) {
