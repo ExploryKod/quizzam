@@ -60,6 +60,7 @@ export class QuizGateway {
   private executionRooms: Map<string, Set<string>> = new Map();
   private hostClients: Map<string, string> = new Map();
   private currentQuestionIndex: number | undefined = 0;
+  private executionQuestionIndexes: Map<string, number> = new Map();
 
   constructor(
     private readonly getQuizByExecutionIdQuery : GetQuizByExecutionIdQuery,
@@ -157,36 +158,35 @@ export class QuizGateway {
       this.logger.warn(`Unauthorized client tried to move to next question for execution: ${executionId}`);
       return;
     }
-    let nextQuestion: QuestionEvent;
+
   // TODO: make currentQUestionIndex a real iterable index as now is remain at 0
     let newQuestionEvent: QuestionEvent;
-    let currentQuestionIndex = this.currentQuestionIndex;
+    // let currentQuestionIndex = this.currentQuestionIndex;
+    let currentQuestionIndex = this.executionQuestionIndexes.get(executionId) || 0;
+
+    if (currentQuestionIndex >= quiz.questions.length) {
+      this.logger.warn(`No more questions in the quiz for execution: ${executionId}`);
+      return;
+    }
 
     console.log("nextQuestion", quiz.questions.length, currentQuestionIndex);
 
-    const datas = {
+    const nextQuestion: QuestionEvent = await this.getNextQuestionQuery.execute({
       quizId: quiz.id,
-      questionIndex : currentQuestionIndex
-    }
+      questionIndex: currentQuestionIndex,
+    });
 
-    if(currentQuestionIndex < quiz.questions.length + 1) {
-      nextQuestion = await this.getNextQuestionQuery.execute(datas);
-      currentQuestionIndex++
-    }
-
-    // Prepare the new question event
     if(nextQuestion) {
+      currentQuestionIndex++;
+      this.executionQuestionIndexes.set(executionId, currentQuestionIndex);
       newQuestionEvent = {
         question: nextQuestion.question,
         answers: nextQuestion.answers
       };
     }
 
-
-    // Emit the new question event to all clients in the room
     this.server.to(executionId).emit('newQuestion', newQuestionEvent);
 
-    // Update the status and broadcast it
     const statusEvent: StatusEvent = {
       status: 'started',
       participants: this.executionRooms.get(executionId).size
