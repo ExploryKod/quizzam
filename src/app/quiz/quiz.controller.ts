@@ -21,7 +21,7 @@ import {
   CreateQuizDto,
   CreateQuestionDto,
   UpdateQuestionDto,
-  PatchOperationDto
+  PatchOperationDto,
 } from './quiz.dto';
 import * as jwt from 'jsonwebtoken';
 
@@ -48,22 +48,22 @@ export class QuizController {
         return {
           data: [],
           _links: {
-            create: baseUrl
-          }
+            create: baseUrl,
+          },
         };
       }
 
-      const quizzesWithLinks = quizzes.map(quiz => {
+      const quizzesWithLinks = quizzes.map((quiz) => {
         const quizObject = {
           id: quiz.id,
-          title: quiz.title
+          title: quiz.title,
         };
 
         if (quiz.isStartable) {
           Object.assign(quizObject, {
             _links: {
-              start: `${baseUrl}/${quiz.id}/start`
-            }
+              start: `${baseUrl}/${quiz.id}/start`,
+            },
           });
         }
 
@@ -73,8 +73,8 @@ export class QuizController {
       return {
         data: quizzesWithLinks,
         _links: {
-          create: baseUrl
-        }
+          create: baseUrl,
+        },
       };
     } catch (error) {
       console.error('Erreur lors de la récupération des quiz:', error);
@@ -111,10 +111,7 @@ export class QuizController {
 
   @Get(':id')
   @Auth()
-  async getQuizById(
-    @Param('id') id: string,
-    @Req() request: RequestWithUser
-  ) {
+  async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser) {
     const userId = this.getUserIdFromToken(request);
 
     try {
@@ -122,11 +119,12 @@ export class QuizController {
       return {
         title: quiz.title,
         description: quiz.description,
-        questions: quiz.questions?.map(question => ({
-          id: question.id,
-          title: question.title,
-          answers: question.answers || []
-        })) || []
+        questions:
+          quiz.questions?.map((question) => ({
+            id: question.id,
+            title: question.title,
+            answers: question.answers || [],
+          })) || [],
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -175,9 +173,16 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     try {
-      const questionId = await this.quizService.addQuestion(quizId, userId, questionDto);
+      const questionId = await this.quizService.addQuestion(
+        quizId,
+        userId,
+        questionDto
+      );
       const baseUrl = `${request.protocol}://${request.get('host')}/api/quiz`;
-      response.header('Location', `${baseUrl}/${quizId}/questions/${questionId}`);
+      response.header(
+        'Location',
+        `${baseUrl}/${quizId}/questions/${questionId}`
+      );
       return null;
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -202,7 +207,12 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     try {
-      await this.quizService.updateQuestion(quizId, questionId, userId, updateQuestionDto);
+      await this.quizService.updateQuestion(
+        quizId,
+        questionId,
+        userId,
+        updateQuestionDto
+      );
       return null;
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -210,6 +220,35 @@ export class QuizController {
       }
       throw new HttpException(
         'Erreur lors de la mise à jour de la question',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(':id/start')
+  @Auth()
+  @HttpCode(201)
+  async startQuiz(
+    @Param('id') quizId: string,
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const userId = this.getUserIdFromToken(request);
+    const baseUrl = `${request.protocol}://${request.get('host')}/api`;
+
+    try {
+      const executionId = await this.quizService.startQuiz(quizId, userId);
+      response.header('Location', `${baseUrl}/execution/${executionId}`);
+      return null;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Erreur lors du démarrage du quiz',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
