@@ -19,6 +19,11 @@ export class UpdateQuestionCommand implements Executable<Request, Response> {
   ) {}
 
   async execute(datas: Request): Promise<Response> {
+    // const quizz: Quizz = await this.repository.getQuizz(datas.quizzId);
+    // if (!quizz) throw new QuizzNotFoundException(...)
+    // quizz.addQuestion(datas.question); <-- All verifications you want
+    // await this.repository.save(quizz);
+
     const { quizId, questionId, question, decodedToken } = datas;
     return this.repository.updateQuestion(quizId, questionId, question, decodedToken);
   }

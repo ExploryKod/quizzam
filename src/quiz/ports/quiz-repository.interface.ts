@@ -11,6 +11,12 @@ import { QuestionEvent } from '../gateways/quiz.gateway';
 export const I_QUIZ_REPOSITORY = 'I_QUIZ_REPOSITORY';
 
 export interface IQuizRepository {
+  // get(id: Quizz, userId: string): Promise<Quizz>
+  // save(quizz:Quizz): Promise<void>; <-- CREATE or UPDATE ? I DON'T CARE.
+  // getAll(userId: string): Promise<Quizz[]>;
+  // delete(quizzId: string): Promise<void>;
+
+
   findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<getUserQuizDTO>;
   findById(id: string): Promise<Quiz | null>;
   deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO>;
