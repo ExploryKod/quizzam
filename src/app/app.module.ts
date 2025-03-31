@@ -12,7 +12,7 @@ import { PingModule } from './ping/ping.module';
 import { UsersController } from './users/users.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthMiddleware } from './modules/auth/auth.middleware';
-import { QuizController } from './quiz/quiz.controller';
+import { QuizModule } from './quiz/quiz.module';
 
 @Module({
   imports: [
@@ -21,12 +21,13 @@ import { QuizController } from './quiz/quiz.controller';
       googleApplicationCredential: 'src/assets/quizzam-firebase-key.json',
     }),
     AuthModule,
+    QuizModule
   ],
   controllers: [
     AppController,
     PingoController,
     UsersController,
-    QuizController,
+
   ],
   providers: [AppService],
 })
