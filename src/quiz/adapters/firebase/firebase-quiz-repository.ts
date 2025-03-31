@@ -1,34 +1,79 @@
-import { Quiz } from '../../entities/quiz.entity';
+import { Question, Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import {
-  basicQuizDTO,
-  CreateQuizDTO, DecodedToken,
+  CreateQuestionDTO,
+  CreateQuizDTO,
+  DecodedToken,
+  DeletedQuizResponseDTO,
+  getUserQuizDTO,
   PatchOperation,
-  QuestionDTO
+  QuestionDTO, QuizDTO, QuizProps,
+  UpdateQuestionDTO
 } from '../../dto/quiz.dto';
-import { firestore } from 'firebase-admin';
-import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
+import { QuestionEvent } from '../../gateways/quiz.gateway';
+import { isQuizStartable, randomString } from '../utils/startable-quiz';
 
-export class FirebaseQuizRepository implements IQuizRepository {
+export class FirebaseQuizRepository implements Partial<IQuizRepository> {
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
-  async findAllFromUser(userId: string): Promise<basicQuizDTO[] | []> {
+  async findAllFromUser(
+    userId: string,
+    createUrl: string,
+    baseUrl: string
+  ): Promise<getUserQuizDTO> {
     const quizzesData = await this.firebase.firestore
       .collection('quizzes')
       .where('userId', '==', userId)
       .get();
 
     if (quizzesData.empty) {
-      return [];
+      return {
+        data: [],
+        _links: {
+          create: createUrl,
+        },
+      };
     }
 
-    return quizzesData.docs.map((doc) => ({
-      id: doc.id,
-      title: doc.data().title,
-    }));
+    const quizzes = quizzesData.docs.map((doc) => {
+      const quizData = doc.data();
+      const quizId = doc.id;
+      const quizTitle = quizData.title;
+      const questions = quizData.questions || [];
+
+      const isStartable = isQuizStartable(quizTitle, questions);
+
+      const quizObject = {
+        id: quizId,
+        title: quizTitle,
+      };
+
+      if (isStartable) {
+        Object.assign(quizObject, {
+          _links: {
+            start: `${baseUrl}/api/quiz/${quizId}/start`,
+          },
+        });
+      }
+
+      return quizObject;
+    });
+
+    return {
+      data: quizzes,
+      _links: {
+        create: createUrl,
+      },
+    };
   }
 
   async findById(id: string): Promise<Quiz | null> {
@@ -57,16 +102,46 @@ export class FirebaseQuizRepository implements IQuizRepository {
     });
   }
 
+  async deleteById(
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<DeletedQuizResponseDTO> {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(id);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      return null;
+    }
+    const quizData = quizDoc.data();
+
+    if (quizData.userId !== decodedToken.user_id) {
+      return {
+        id: id,
+        userId: decodedToken.user_id,
+      };
+    }
+
+    await quizRef.delete();
+
+    return {
+      id: id,
+      userId: decodedToken.user_id,
+    };
+  }
+
   async create(data: CreateQuizDTO): Promise<string> {
     const quizRef = await this.firebase.firestore
       .collection('quizzes')
       .add(data);
 
-    const result: string = quizRef.id.toString();
-    return result;
+    return quizRef.id.toString();
   }
 
-  async update(operations: PatchOperation[], id: string, decodedToken: DecodedToken): Promise<void> {
+  async update(
+    operations: PatchOperation[],
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<void> {
     const quizRef = this.firebase.firestore.collection('quizzes').doc(id);
     const quizDoc = await quizRef.get();
     const updateData = {};
@@ -100,6 +175,168 @@ export class FirebaseQuizRepository implements IQuizRepository {
     }
 
     await quizRef.update(updateData);
+  }
 
+  async addQuestion(
+    quizId: string,
+    questionId: string,
+    question: CreateQuestionDTO,
+    decodedToken: DecodedToken
+  ) {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const quizData = quizDoc.data();
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const questions = quizData.questions || [];
+
+    const newQuestion = {
+      id: questionId,
+      title: question.title,
+      answers: question.answers || [],
+    };
+
+    questions.push(newQuestion);
+
+    await quizRef.update({ questions });
+  }
+
+  async updateQuestion(
+    quizId: string,
+    questionId: string,
+    updateQuestionDto: UpdateQuestionDTO,
+    decodedToken: DecodedToken
+  ): Promise<void> {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    const quizData = quizDoc.data();
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    if (!Array.isArray(quizData.questions)) {
+      quizData.questions = [];
+    }
+
+    const questionIndex = quizData.questions.findIndex(
+      (q: Question) => q.id === questionId
+    );
+
+    if (questionIndex === -1) {
+      throw new NotFoundException('Question non trouvée');
+    }
+
+    quizData.questions[questionIndex] = {
+      id: questionId,
+      title: updateQuestionDto.title,
+      answers: updateQuestionDto.answers || [],
+    };
+
+    await quizRef.update({
+      questions: quizData.questions,
+    });
+  }
+
+  async startQuiz(
+    quizId: string,
+    decodedToken: DecodedToken,
+    baseUrl: string
+  ): Promise<string> {
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    const quizData = quizDoc.data();
+    const quizTitle = quizData.title;
+    const questions = quizData.questions || [];
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    if (!isQuizStartable(quizTitle, questions)) {
+      throw new BadRequestException('Quiz is not ready to be started');
+    }
+
+    // Générer un ID aléatoire pour l'exécution
+    const executionId = randomString(6);
+
+    await quizRef.update({
+      executionId: executionId
+    });
+
+    return `${baseUrl}/api/execution/${executionId}`;
+  }
+
+  async getQuizByExecutionId(
+    executionId: string
+  ): Promise<QuizDTO> {
+    const quizRef = this.firebase.firestore.collection('quizzes');
+
+    const querySnapshot = await quizRef.where('executionId', '==', executionId).get();
+
+    if (querySnapshot.empty) {
+      throw new NotFoundException(`Quiz with executionId ${executionId} not found`);
+    }
+
+    const quizDoc = querySnapshot.docs[0];
+    const quizData = quizDoc.data();
+
+    return {
+      id: quizDoc.id,
+      title: quizData.title,
+      description: quizData.description,
+      questions: quizData.questions
+    };
+  }
+
+  async getNextQuestion(quizId: string, questionIndex: number): Promise<QuestionEvent> {
+    try {
+      // Fetch the quiz document from Firestore
+      const quizDoc = await this.firebase.firestore.collection('quizzes').doc(quizId).get();
+
+      if (!quizDoc.exists) {
+        throw new Error('Quiz not found');
+      }
+
+      const quizData = quizDoc.data() as QuizProps;
+
+      // Access the question by index
+      if (questionIndex < 0 || questionIndex >= quizData.questions.length) {
+        throw new Error('Question index out of bounds');
+      }
+
+      const question = quizData.questions[questionIndex];
+
+      const answerStrings : string[] = []
+      question.answers.forEach(answer => {
+        answerStrings.push(answer.title);
+      })
+
+      return {
+        question: question.title,
+        answers : answerStrings
+      }
+    } catch (error) {
+      console.error('Error fetching next question:', error);
+      throw error;
+    }
   }
 }

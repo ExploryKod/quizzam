@@ -1,12 +1,17 @@
 import request from 'supertest';
 import { defaultFirebaseUrl, defaultUrl } from '../constants';
+import { variables } from '../../../src/shared/variables.config';
+
+const testUsername: string = variables.database === "MONGODB" ? 'mongouser@email.com' : 'usera@email.com';
+let quizId: string = variables.database === "MONGODB" ? '4ac734be-7f31-4b9d-92d3-0bd4364ecfd0' : "";
 
 describe('GET /api/quiz', () => {
   let token: string;
 
+  // TODO: créer un véritable utilisateur lors du déclenchement (donc un username dans la database qui soit créer) ou via in-memo
   beforeAll(async () => {
     const auth = await request(defaultFirebaseUrl).post('').send({
-      email: 'user@email.com',
+      email: testUsername,
       password: 'password',
       returnSecureToken: true,
     });
@@ -40,7 +45,7 @@ describe('POST /api/quiz', () => {
 
   beforeAll(async () => {
     const auth = await request(defaultFirebaseUrl).post('').send({
-      email: 'user@email.com',
+      email: testUsername,
       password: 'password',
       returnSecureToken: true,
     });
@@ -67,7 +72,7 @@ describe('POST /api/quiz', () => {
     it('should return 401 if user is not authenticated', async () => {
         try {
           await request(defaultUrl).post('/api/quiz').send({
-            email: 'user@email.com',
+            email:  testUsername,
             password: 'password',
             returnSecureToken: true,
           });
@@ -84,7 +89,7 @@ describe('GET /api/quiz/:id', () => {
 
     beforeAll(async () => {
         const auth = await request(defaultFirebaseUrl).post('').send({
-          email: 'user@email.com',
+          email:  testUsername,
           password: 'password',
           returnSecureToken: true,
         });
@@ -98,7 +103,7 @@ describe('GET /api/quiz/:id', () => {
 
     // TODO: the quiz id here is for user@email.com but it could disappear from bdd and be falsely false
     const response = await request(defaultUrl)
-        .get(`/api/quiz/AfdmK8kgZhac9Dfn9IO2`)
+        .get(`/api/quiz/${quizId}`)
         .set('Authorization', `Bearer ${token}`);
 
     console.log('Retrieved Quiz:', JSON.stringify(response.body, null, 2));
@@ -148,13 +153,12 @@ describe('GET /api/quiz/:id', () => {
 describe('PATCH /api/quiz/:id', () => {
   let token: string;
   let otherUserToken: string;
-  let quizId: string;
 
   beforeAll(async () => {
     const auth = await request(defaultFirebaseUrl)
       .post('')
       .send({
-        email: 'user@email.com',
+        email: testUsername,
         password: 'password',
         returnSecureToken: true,
       });
@@ -218,13 +222,12 @@ describe('PATCH /api/quiz/:id', () => {
 
 describe('POST /api/quiz/:id/questions', () => {
   let token: string;
-  let quizId: string;
 
   beforeAll(async () => {
     const auth = await request(defaultFirebaseUrl)
       .post('')
       .send({
-        email: 'user@email.com',
+        email: testUsername,
         password: 'password',
         returnSecureToken: true,
       });

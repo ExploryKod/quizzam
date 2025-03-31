@@ -1,14 +1,33 @@
 import { Model } from 'mongoose';
 import { IUserRepository } from '../../ports/user-repository.interface';
 import { MongoUser } from './mongo-user';
-import { CreateUserDto } from '../../dto/user.dto';
+import { CreateUserDto, FindUserDTO } from '../../dto/user.dto';
+import { HttpException, HttpStatus, Inject } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 
 // TODO: supprimer le partial en créant un véritable username séparément dans mongo (comme pour firebase)
 export class MongoUserRepository implements IUserRepository {
-  constructor(private readonly model: Model<MongoUser.SchemaClass>) {}
+  constructor(
+    @Inject(getModelToken(MongoUser.CollectionName)) private readonly model: Model<MongoUser.SchemaClass>,
+  ) {}
 
   async addUsername(user: CreateUserDto): Promise<void> {
-    const record = new this.model(user);
+    const data = {
+      _id: user.uid,
+      username: user.username,
+    }
+    const record = new this.model(data);
     await record.save();
+  }
+
+  async findById(id: string): Promise<FindUserDTO | null> {
+    console.log(id)
+    const record = await this.model.findById(id);
+    console.log(record)
+    if (!record) {
+      throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
+    }
+
+    return new FindUserDTO(record._id, record.username);
   }
 }

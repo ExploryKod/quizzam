@@ -10,4 +10,6 @@ export namespace userAPI {
     export type Response = void
   }
 
+
+
 }

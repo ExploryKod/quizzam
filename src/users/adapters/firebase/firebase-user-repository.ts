@@ -1,6 +1,7 @@
 import { IUserRepository } from '../../ports/user-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { CreateUserDto } from '../../dto/user.dto';
+import { CreateUserDto, FindUserDTO } from '../../dto/user.dto';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class FirebaseUserRepository implements IUserRepository {
 
@@ -17,4 +18,22 @@ export class FirebaseUserRepository implements IUserRepository {
       username,
     });
   }
+
+
+  async findById(userId: string): Promise<FindUserDTO | null> {
+
+    const userRef = this.firebase.firestore
+      .collection('users')
+      .doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
+    }
+
+    const userData = userDoc.data();
+
+    return new FindUserDTO(userData.uid, userData.username);
+  }
+
 }
