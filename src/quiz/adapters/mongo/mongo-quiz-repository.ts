@@ -3,7 +3,6 @@ import { Question, Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { MongoQuiz } from './mongo-quiz';
 import {
-  basicQuizDTO,
   CreateQuestionDTO,
   CreateQuizDTO,
   DecodedToken,
@@ -21,40 +20,13 @@ import {
   NotFoundException
 } from '@nestjs/common';
 import { QuestionEvent } from '../../gateways/quiz.gateway';
+import { isQuizStartable, randomString } from '../utils/startable-quiz';
 
 export class MongoQuizRepository implements IQuizRepository {
   constructor(
     @Inject(getModelToken(MongoQuiz.CollectionName)) private readonly model: Model<MongoQuiz.SchemaClass>,
   )  {
   }
-
-  // async findAllFromUser(userId: string, baseUrl: string, createUrl: string): Promise<getUserQuizDTO> {
-  //
-  //   if (!this.model) {
-  //     console.error('Mongo model is not injected correctly!');
-  //   }
-  //
-  //   const quizzes = await this.model.find({ userId }).exec();
-  //   console.log(`Found ${quizzes.length} quizzes`);
-  //   if(!quizzes) return {
-  //     data: [],
-  //     _links: { create: ""}
-  //   };
-  //
-  //   // return quizzes.map((quiz) => (
-  //   //   new basicQuizDTO(
-  //   //     quiz.id,
-  //   //     quiz.title || '',
-  //   //     quiz.description || '',
-  //   //     [...quiz.questions],
-  //   //     quiz.userId,
-  //   //   )
-  //   // ));
-  //   return {
-  //     data: quizzes,
-  //     _links: { create : ""}
-  //   }
-  // }
 
   async findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<getUserQuizDTO> {
     const quizzes = await this.model.find({ userId }).exec();
@@ -76,7 +48,7 @@ export class MongoQuizRepository implements IQuizRepository {
       const questions = quizData.questions || [];
 
       // Check if quiz is startable
-      const isStartable = this.isQuizStartable(quizTitle, questions);
+      const isStartable = isQuizStartable(quizTitle, questions);
 
       // Build quiz object with conditional links
       const quizObject = {
@@ -283,12 +255,12 @@ export class MongoQuizRepository implements IQuizRepository {
     }
 
     // Check if quiz is startable
-    if (!this.isQuizStartable(quizTitle, questions)) {
+    if (!isQuizStartable(quizTitle, questions)) {
       throw new BadRequestException('Quiz is not ready to be started');
     }
 
     // Generate random execution ID
-    const executionId = this.randomString(6);
+    const executionId = randomString(6);
 
     return `${baseUrl}/api/execution/${executionId}`;
   }
@@ -341,56 +313,6 @@ export class MongoQuizRepository implements IQuizRepository {
     }
   }
 
-  /**
-   * Détermine si un quiz est démarrable selon les critères spécifiés
-   * @param title Titre du quiz
-   * @param questions Tableau des questions du quiz
-   * @returns Booléen indiquant si le quiz est démarrable
-   */
-  private isQuizStartable(title: string, questions: Question[]): boolean {
-    // Critère 1: Le titre ne doit pas être vide
-    if (!title || title.trim() === '') {
-      return false;
-    }
 
-    // Critère 2: Il doit y avoir au moins une question
-    if (!questions || questions.length === 0) {
-      return false;
-    }
-
-    // Critère 3: Toutes les questions doivent être valides
-    return questions.every((question) => this.isQuestionValid(question));
-  }
-
-  /**
-   * Vérifie si une question est valide selon les critères spécifiés
-   * @param question Objet question à vérifier
-   * @returns Booléen indiquant si la question est valide
-   */
-  private isQuestionValid(question: Question): boolean {
-    // Critère 1: La question doit avoir un titre non vide
-    if (!question.title || question.title.trim() === '') {
-      return false;
-    }
-
-    // Critère 2: La question doit avoir au moins deux réponses
-    if (!question.answers || question.answers.length < 2) {
-      return false;
-    }
-
-    // Critère 3: Il doit y avoir exactement une réponse correcte
-    const correctAnswersCount = question.answers.filter(
-      (answer) => answer.isCorrect
-    ).length;
-    return correctAnswersCount === 1;
-  }
-
-  /**
-   * Génère un identifiant aléatoire de 6 caractères
-   */
-  private randomString(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  }
 
 }

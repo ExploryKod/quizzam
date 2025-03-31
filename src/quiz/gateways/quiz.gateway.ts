@@ -5,15 +5,12 @@ import {
   MessageBody,
   ConnectedSocket
 } from '@nestjs/websockets';
-import { Inject, Logger, NotFoundException } from '@nestjs/common';
+import { Logger, NotFoundException } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
-import { Answer, Question } from '../entities/quiz.entity';
-import { QuizProps } from '../dto/quiz.dto';
+import { Question } from '../entities/quiz.entity';
 import { GetNextQuestionQuery } from '../queries/get-next-question';
 import { GetQuizByExecutionIdQuery } from '../queries/get-quiz-by-executionId';
 
-// issue 15
 export interface HostJoinPayload {
   executionId: string;
 }
@@ -39,7 +36,6 @@ export interface QuestionEvent {
   answers: Array<AnswerEvent>;
 }
 
-// issue 16
 export interface JoinPayload {
   executionId: string;
 }
@@ -59,7 +55,6 @@ export class QuizGateway {
   private readonly quizId: string;
   private executionRooms: Map<string, Set<string>> = new Map();
   private hostClients: Map<string, string> = new Map();
-  private currentQuestionIndex: number | undefined = 0;
   private executionQuestionIndexes: Map<string, number> = new Map();
 
   constructor(
@@ -113,20 +108,16 @@ export class QuizGateway {
     const { executionId } = payload;
     console.log("[player - subscribed message] execution id ", executionId);
 
-    // Validate execution exists
     if (!this.executionRooms.has(executionId)) {
       throw new NotFoundException(`Quiz execution ${executionId} not found`);
     }
 
-    // Join the player to the room
     client.join(executionId);
     this.executionRooms.get(executionId).add(client.id);
 
-    // Get quiz details
     const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
     console.log("quiz in websocket player is: ", quiz);
 
-    // Send quiz details to the player
     const joinDetails: JoinDetailsEvent = {
       quizTitle: quiz.title,
       description: quiz.description,
@@ -134,12 +125,25 @@ export class QuizGateway {
     };
     client.emit('joinDetails', joinDetails);
 
-    // Broadcast updated status
     const statusEvent: StatusEvent = {
       status: 'starting',
       participants: this.executionRooms.get(executionId).size
     };
     this.server.to(executionId).emit('status', statusEvent);
+
+    const firstQuestion: QuestionEvent = await this.getNextQuestionQuery.execute({
+      quizId: quiz.id,
+      questionIndex: 0,
+    });
+
+    if (firstQuestion) {
+      const newQuestionEvent: QuestionEvent = {
+        question: firstQuestion.question,
+        answers: firstQuestion.answers
+      };
+      client.emit('newQuestion', newQuestionEvent);
+    }
+
 
     this.logger.log(`Player joined execution: ${executionId}`);
   }
@@ -160,10 +164,10 @@ export class QuizGateway {
     }
 
     let newQuestionEvent: QuestionEvent;
-    let currentQuestionIndex = this.executionQuestionIndexes.get(executionId) || 0;
+    let currentQuestionIndex = this.executionQuestionIndexes.get(executionId) || 1;
 
     if (currentQuestionIndex >= quiz.questions.length) {
-      this.logger.warn(`No more questions in the quiz for execution: ${executionId}`);
+      this.logger.warn(`No more questions in the quiz for execution: ${executionId}, current question index: ${currentQuestionIndex}`);
       return;
     }
 
@@ -175,12 +179,12 @@ export class QuizGateway {
     });
 
     if(nextQuestion) {
-      currentQuestionIndex++;
-      this.executionQuestionIndexes.set(executionId, currentQuestionIndex);
       newQuestionEvent = {
         question: nextQuestion.question,
         answers: nextQuestion.answers
       };
+      currentQuestionIndex++;
+      this.executionQuestionIndexes.set(executionId, currentQuestionIndex);
     }
 
     this.server.to(executionId).emit('newQuestion', newQuestionEvent);
