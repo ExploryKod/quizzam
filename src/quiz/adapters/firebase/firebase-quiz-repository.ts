@@ -18,6 +18,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { QuestionEvent } from '../../gateways/quiz.gateway';
+import { isQuizStartable, randomString } from '../utils/startable-quiz';
 
 export class FirebaseQuizRepository implements Partial<IQuizRepository> {
   constructor(
@@ -43,23 +44,19 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       };
     }
 
-    // Transformation des données avec vérification de démarrabilité
     const quizzes = quizzesData.docs.map((doc) => {
       const quizData = doc.data();
       const quizId = doc.id;
       const quizTitle = quizData.title;
       const questions = quizData.questions || [];
 
-      // Vérifier si le quiz est démarrable
-      const isStartable = this.isQuizStartable(quizTitle, questions);
+      const isStartable = isQuizStartable(quizTitle, questions);
 
-      // Construire l'objet quiz avec liens conditionnels
       const quizObject = {
         id: quizId,
         title: quizTitle,
       };
 
-      // Ajouter les liens HATEOAS si démarrable
       if (isStartable) {
         Object.assign(quizObject, {
           _links: {
@@ -71,7 +68,6 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       return quizObject;
     });
 
-    // Retourner les données avec les liens HATEOAS
     return {
       data: quizzes,
       _links: {
@@ -275,13 +271,12 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       throw new NotFoundException('Quiz non trouvé');
     }
 
-    // Vérifier si le quiz est démarrable
-    if (!this.isQuizStartable(quizTitle, questions)) {
+    if (!isQuizStartable(quizTitle, questions)) {
       throw new BadRequestException('Quiz is not ready to be started');
     }
 
     // Générer un ID aléatoire pour l'exécution
-    const executionId = this.randomString(6);
+    const executionId = randomString(6);
 
     await quizRef.update({
       executionId: executionId
@@ -343,60 +338,5 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       console.error('Error fetching next question:', error);
       throw error;
     }
-  }
-
-  /**
-   * Détermine si un quiz est démarrable selon les critères spécifiés
-   * @param title Titre du quiz
-   * @param questions Tableau des questions du quiz
-   * @returns Booléen indiquant si le quiz est démarrable
-   */
-  private isQuizStartable(title: string, questions: Question[]): boolean {
-    // Critère 1: Le titre ne doit pas être vide
-    if (!title || title.trim() === '') {
-      return false;
-    }
-
-    // Critère 2: Il doit y avoir au moins une question
-    if (!questions || questions.length === 0) {
-      return false;
-    }
-
-    // Critère 3: Toutes les questions doivent être valides
-    return questions.every((question) => this.isQuestionValid(question));
-  }
-
-  /**
-   * Vérifie si une question est valide selon les critères spécifiés
-   * @param question Objet question à vérifier
-   * @returns Booléen indiquant si la question est valide
-   */
-  private isQuestionValid(question: Question): boolean {
-    // Critère 1: La question doit avoir un titre non vide
-    if (!question.title || question.title.trim() === '') {
-      return false;
-    }
-
-    // Critère 2: La question doit avoir au moins deux réponses
-    if (!question.answers || question.answers.length < 2) {
-      return false;
-    }
-
-    // Critère 3: Il doit y avoir exactement une réponse correcte
-    const correctAnswersCount = question.answers.filter(
-      (answer) => answer.isCorrect
-    ).length;
-    return correctAnswersCount === 1;
-  }
-
-  /**
-   * Génère un identifiant aléatoire de 6 caractères
-   */
-  private randomString(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from(
-      { length },
-      () => chars[Math.floor(Math.random() * chars.length)]
-    ).join('');
   }
 }
