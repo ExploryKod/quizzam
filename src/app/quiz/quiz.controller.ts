@@ -6,91 +6,75 @@ import {
   Put,
   Req,
   Body,
-  HttpException,
-  HttpStatus,
+  Param,
   Res,
   HttpCode,
+  HttpException,
+  HttpStatus,
   NotFoundException,
-  Param,
 } from '@nestjs/common';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { RequestWithUser } from '../modules/auth/model/request-with-user';
-import { Auth } from '../modules/auth/auth.decorator';
 import { Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-
-class CreateQuizDto {
-  title: string;
-  description: string;
-}
-
-class PatchOperation {
-  op: string;
-  path: string;
-  value: string;
-}
-
-class Answer {
-  title: string;
-  isCorrect: boolean;
-}
-
-class CreateQuestionDto {
-  title: string;
-  answers: Answer[];
-}
-
-class UpdateQuestionDto {
-  title: string;
-  answers: Answer[];
-}
+import { QuizService } from './quiz.service';
+import { Auth } from '../modules/auth/auth.decorator';
+import { RequestWithUser } from '../modules/auth/model/request-with-user';
+import {
+  CreateQuizDto,
+  CreateQuestionDto,
+  UpdateQuestionDto,
+  PatchOperationDto
+} from './quiz.dto';
+import * as jwt from 'jsonwebtoken';
 
 @Controller('quiz')
 export class QuizController {
-  constructor(
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
-  ) {}
+  constructor(private readonly quizService: QuizService) {}
+
+  private getUserIdFromToken(request: RequestWithUser): string {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const decodedToken = jwt.decode(token);
+    return decodedToken['user_id'];
+  }
 
   @Get()
   @Auth()
   async getUserQuizzes(@Req() request: RequestWithUser) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-    const baseUrl = request.protocol + '://' + request.get('host');
-    const createUrl = `${baseUrl}/api/quiz`;
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const userId = this.getUserIdFromToken(request);
+    const baseUrl = `${request.protocol}://${request.get('host')}/api/quiz`;
 
     try {
-      const quizzesData = await this.firebase.firestore
-        .collection('quizzes')
-        .where('userId', '==', decodedToken.user_id)
-        .get();
+      const { quizzes, empty } = await this.quizService.getUserQuizzes(userId);
 
-      if (quizzesData.empty) {
-        return { data: [],
-                _links: { create: `${baseUrl}/api/quiz`}
-         };
+      if (empty) {
+        return {
+          data: [],
+          _links: {
+            create: baseUrl
+          }
+        };
       }
 
-      const quizzes = quizzesData.empty
-        ? []
-        : quizzesData.docs.map((doc) => ({
-            id: doc.id,
-            title: doc.data().title,
-          }));
+      const quizzesWithLinks = quizzes.map(quiz => {
+        const quizObject = {
+          id: quiz.id,
+          title: quiz.title
+        };
+
+        if (quiz.isStartable) {
+          Object.assign(quizObject, {
+            _links: {
+              start: `${baseUrl}/${quiz.id}/start`
+            }
+          });
+        }
+
+        return quizObject;
+      });
 
       return {
-        data: quizzes,
+        data: quizzesWithLinks,
         _links: {
-          create: createUrl,
-        },
+          create: baseUrl
+        }
       };
     } catch (error) {
       console.error('Erreur lors de la récupération des quiz:', error);
@@ -109,33 +93,12 @@ export class QuizController {
     @Body() createQuizDto: CreateQuizDto,
     @Res({ passthrough: true }) response: Response
   ) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const userId = this.getUserIdFromToken(request);
 
     try {
-      const quizData = {
-        title: createQuizDto.title,
-        description: createQuizDto.description,
-        userId: decodedToken.user_id,
-      };
-
-      const quizRef = await this.firebase.firestore
-        .collection('quizzes')
-        .add(quizData);
-
-      const baseUrl = request.protocol + '://' + request.get('host');
-      const locationUrl = `${baseUrl}/api/quiz/${quizRef.id}`;
-      console.log('locationUrl', locationUrl);
-      response.header('Location', locationUrl);
-
+      const quizId = await this.quizService.createQuiz(createQuizDto, userId);
+      const baseUrl = `${request.protocol}://${request.get('host')}/api/quiz`;
+      response.header('Location', `${baseUrl}/${quizId}`);
       return null;
     } catch (error) {
       console.error('Erreur lors de la création du quiz:', error);
@@ -148,49 +111,27 @@ export class QuizController {
 
   @Get(':id')
   @Auth()
-  async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+  async getQuizById(
+    @Param('id') id: string,
+    @Req() request: RequestWithUser
+  ) {
+    const userId = this.getUserIdFromToken(request);
 
     try {
-      const quizDoc = await this.firebase.firestore
-        .collection('quizzes')
-        .doc(id)
-        .get();
-
-      if (!quizDoc.exists) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      const quizData = quizDoc.data();
-
-      if (quizData.userId !== decodedToken.user_id) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
+      const quiz = await this.quizService.getQuizById(id, userId);
       return {
-        title: quizData.title,
-        description: quizData.description,
-        questions:
-          quizData.questions?.map((question) => ({
-            id: question.id,
-            title: question.title,
-            answers: question.answers || [],
-          })) || [],
+        title: quiz.title,
+        description: quiz.description,
+        questions: quiz.questions?.map(question => ({
+          id: question.id,
+          title: question.title,
+          answers: question.answers || []
+        })) || []
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Erreur lors de la récupération du quiz:', error);
       throw new HttpException(
         'Erreur lors de la récupération du quiz',
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -203,62 +144,18 @@ export class QuizController {
   @HttpCode(204)
   async updateQuiz(
     @Param('id') id: string,
-    @Body() operations: PatchOperation[],
+    @Body() operations: PatchOperationDto[],
     @Req() request: RequestWithUser
   ) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const userId = this.getUserIdFromToken(request);
 
     try {
-      const quizRef = this.firebase.firestore.collection('quizzes').doc(id);
-      const quizDoc = await quizRef.get();
-
-      if (!quizDoc.exists) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      const quizData = quizDoc.data();
-
-      if (quizData.userId !== decodedToken.user_id) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      const updateData = {};
-
-      for (const operation of operations) {
-        if (operation.op !== 'replace') {
-          throw new HttpException(
-            `Opération non supportée: ${operation.op}`,
-            HttpStatus.BAD_REQUEST
-          );
-        }
-
-        if (operation.path === '/title') {
-          updateData['title'] = operation.value;
-        } else {
-          throw new HttpException(
-            `Chemin non supporté: ${operation.path}`,
-            HttpStatus.BAD_REQUEST
-          );
-        }
-      }
-
-      await quizRef.update(updateData);
-
+      await this.quizService.updateQuiz(id, userId, operations);
       return null;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Erreur lors de la mise à jour du quiz:', error);
       throw new HttpException(
         'Erreur lors de la mise à jour du quiz',
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -275,55 +172,17 @@ export class QuizController {
     @Req() request: RequestWithUser,
     @Res({ passthrough: true }) response: Response
   ) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-    const questionId = uuidv4();
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const userId = this.getUserIdFromToken(request);
 
     try {
-      const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
-      const quizDoc = await quizRef.get();
-
-      if (!quizDoc.exists) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      const quizData = quizDoc.data();
-
-      if (quizData.userId !== decodedToken.user_id) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      const questions = quizData.questions || [];
-
-      const newQuestion = {
-        id: questionId,
-        title: questionDto.title,
-        answers: questionDto.answers || [],
-      };
-
-      questions.push(newQuestion);
-
-      await quizRef.update({ questions });
-
-      const baseUrl = request.protocol + '://' + request.get('host');
-      const locationUrl = `${baseUrl}/api/quiz/${quizId}/questions/${questionId}`;
-      console.log(locationUrl);
-      response.header('Location', locationUrl);
-
+      const questionId = await this.quizService.addQuestion(quizId, userId, questionDto);
+      const baseUrl = `${request.protocol}://${request.get('host')}/api/quiz`;
+      response.header('Location', `${baseUrl}/${quizId}/questions/${questionId}`);
       return null;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error("Erreur lors de l'ajout de la question:", error);
       throw new HttpException(
         "Erreur lors de l'ajout de la question",
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -340,70 +199,15 @@ export class QuizController {
     @Body() updateQuestionDto: UpdateQuestionDto,
     @Req() request: RequestWithUser
   ) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const userId = this.getUserIdFromToken(request);
 
     try {
-      const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
-      const quizDoc = await quizRef.get();
-
-      if (!quizDoc.exists) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      const quizData = quizDoc.data();
-
-      if (quizData.userId !== decodedToken.user_id) {
-        throw new NotFoundException('Quiz non trouvé');
-      }
-
-      if (!Array.isArray(quizData.questions)) {
-        quizData.questions = [];
-      }
-
-      const questionIndex = quizData.questions.findIndex(
-        (q) => q.id === questionId
-      );
-
-      if (questionIndex === -1) {
-        throw new NotFoundException('Question non trouvée');
-      }
-
-      const updatedQuestion = {
-        id: questionId,
-        title: updateQuestionDto.title,
-        answers: updateQuestionDto.answers || [],
-      };
-
-      quizData.questions[questionIndex] = updatedQuestion;
-
-      await quizRef.update({
-        questions: quizData.questions,
-      });
-
+      await this.quizService.updateQuestion(quizId, questionId, userId, updateQuestionDto);
       return null;
     } catch (error) {
-      console.error(
-        'Erreur complète lors de la mise à jour de la question:',
-        error
-      );
-
       if (error instanceof NotFoundException) {
         throw error;
       }
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
       throw new HttpException(
         'Erreur lors de la mise à jour de la question',
         HttpStatus.INTERNAL_SERVER_ERROR
