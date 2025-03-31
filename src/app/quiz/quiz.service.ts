@@ -1,16 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  HttpStatus,
+  BadRequestException,
+} from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { v4 as uuidv4 } from 'uuid';
-import { CreateQuizDto, CreateQuestionDto, UpdateQuestionDto, PatchOperationDto } from './quiz.dto';
-import { IQuiz} from './quiz.interface';
+import {
+  CreateQuizDto,
+  CreateQuestionDto,
+  UpdateQuestionDto,
+  PatchOperationDto,
+} from './quiz.dto';
+import { IQuiz } from './quiz.interface';
 
 @Injectable()
 export class QuizService {
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
-  ) {
-  }
-
+  ) {}
 
   private isQuizStartable(title: string, questions: any[]): boolean {
     // Critère 1: Le titre ne doit pas être vide
@@ -26,7 +35,6 @@ export class QuizService {
     // Critère 3: Toutes les questions doivent être valides
     return questions.every((question) => this.isQuestionValid(question));
   }
-
 
   private isQuestionValid(question: any): boolean {
     if (!question.title || question.title.trim() === '') {
@@ -47,7 +55,40 @@ export class QuizService {
     return true;
   }
 
-  async getUserQuizzes(userId: string): Promise<{ quizzes: any[], empty: boolean }> {
+  private generateExecutionId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  async startQuiz(quizId: string, userId: string): Promise<string> {
+    const quiz = await this.getQuizById(quizId, userId);
+
+    if (!this.isQuizStartable(quiz.title, quiz.questions || [])) {
+      throw new BadRequestException("Le quiz n'est pas prêt à être démarré");
+    }
+
+    const executionId = this.generateExecutionId();
+
+    await this.firebase.firestore
+      .collection('executions')
+      .doc(executionId)
+      .set({
+        quizId,
+        userId,
+        status: 'waiting',
+        createdAt: new Date(),
+      });
+
+    return executionId;
+  }
+
+  async getUserQuizzes(
+    userId: string
+  ): Promise<{ quizzes: any[]; empty: boolean }> {
     const quizzesData = await this.firebase.firestore
       .collection('quizzes')
       .where('userId', '==', userId)
@@ -68,7 +109,7 @@ export class QuizService {
       const quizObject = {
         id: quizId,
         title: quizTitle,
-        isStartable
+        isStartable,
       };
 
       return quizObject;
@@ -77,13 +118,14 @@ export class QuizService {
     return { quizzes, empty: false };
   }
 
-  async createQuiz(createQuizDto: CreateQuizDto, userId: string): Promise<string> {
-    const quizRef = await this.firebase.firestore
-      .collection('quizzes')
-      .add({
-        ...createQuizDto,
-        userId
-      });
+  async createQuiz(
+    createQuizDto: CreateQuizDto,
+    userId: string
+  ): Promise<string> {
+    const quizRef = await this.firebase.firestore.collection('quizzes').add({
+      ...createQuizDto,
+      userId,
+    });
 
     return quizRef.id;
   }
@@ -106,14 +148,18 @@ export class QuizService {
 
     return {
       id: quizDoc.id,
-      ...quizData
+      ...quizData,
     };
   }
 
-  async updateQuiz(id: string, userId: string, operations: PatchOperationDto[]): Promise<void> {
+  async updateQuiz(
+    id: string,
+    userId: string,
+    operations: PatchOperationDto[]
+  ): Promise<void> {
     const updateData = {};
 
-    operations.forEach(operation => {
+    operations.forEach((operation) => {
       if (operation.path === '/title') {
         updateData['title'] = operation.value;
       }
@@ -125,13 +171,17 @@ export class QuizService {
       .update(updateData);
   }
 
-  async addQuestion(quizId: string, userId: string, questionDto: CreateQuestionDto): Promise<string> {
+  async addQuestion(
+    quizId: string,
+    userId: string,
+    questionDto: CreateQuestionDto
+  ): Promise<string> {
     const quiz = await this.getQuizById(quizId, userId);
     const questionId = uuidv4();
 
     const newQuestion = {
       id: questionId,
-      ...questionDto
+      ...questionDto,
     };
 
     const questions = quiz.questions || [];
@@ -151,28 +201,43 @@ export class QuizService {
     userId: string,
     updateQuestionDto: UpdateQuestionDto
   ): Promise<void> {
-    const quiz = await this.getQuizById(quizId, userId);
+    try {
+      const quiz = await this.getQuizById(quizId, userId);
 
-    const questions = quiz.questions || [];
-    const questionIndex = questions.findIndex(
-      (q) => q.id === questionId
-    );
+      const questions = quiz.questions || [];
+      const questionIndex = questions.findIndex((q) => q.id === questionId);
 
-    if (questionIndex === -1) {
-      throw new NotFoundException('Question non trouvée');
+      if (questionIndex === -1) {
+        throw new NotFoundException('Question non trouvée');
+      }
+
+      // Conversion en objet simple
+      const plainAnswers = updateQuestionDto.answers.map((answer) => ({
+        title: answer.title,
+        isCorrect: answer.isCorrect,
+      }));
+
+      questions[questionIndex] = {
+        id: questionId,
+        title: updateQuestionDto.title,
+        answers: plainAnswers,
+      };
+
+      await this.firebase.firestore
+        .collection('quizzes')
+        .doc(quizId)
+        .update({ questions });
+    } catch (error) {
+      console.error('Erreur détaillée:', error);
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        `Erreur lors de la mise à jour de la question: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
-
-    questions[questionIndex] = {
-      id: questionId,
-      title: updateQuestionDto.title,
-      answers: updateQuestionDto.answers || [],
-    };
-
-    await this.firebase.firestore
-      .collection('quizzes')
-      .doc(quizId)
-      .update({
-        questions
-      });
   }
 }

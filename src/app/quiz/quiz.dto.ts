@@ -1,4 +1,14 @@
-import { IsString, IsBoolean, IsArray, ValidateNested, IsNotEmpty, MinLength, MaxLength, ArrayMinSize, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  ArrayMinSize,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateQuizDto {
@@ -48,7 +58,6 @@ export class CreateQuestionDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AnswerDto)
-  @ArrayMinSize(2)
   answers: AnswerDto[];
 }
 

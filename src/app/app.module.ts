@@ -13,6 +13,7 @@ import { UsersController } from './users/users.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthMiddleware } from './modules/auth/auth.middleware';
 import { QuizModule } from './quiz/quiz.module';
+import { WebSocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -21,14 +22,10 @@ import { QuizModule } from './quiz/quiz.module';
       googleApplicationCredential: 'src/assets/quizzam-firebase-key.json',
     }),
     AuthModule,
-    QuizModule
+    QuizModule,
+    WebSocketModule,
   ],
-  controllers: [
-    AppController,
-    PingoController,
-    UsersController,
-
-  ],
+  controllers: [AppController, PingoController, UsersController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
