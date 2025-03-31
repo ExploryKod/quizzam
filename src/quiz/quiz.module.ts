@@ -9,15 +9,23 @@ import { QuizController } from './controllers/quiz.controller';
 import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
 
 
-
 import { FirebaseQuizRepository } from './adapters/firebase/firebase-quiz-repository';
 import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
 
-import { variables }from '../shared/variables.config';
+import { variables } from '../shared/variables.config';
 import { GetUserQuizzes } from './queries/get-user-quizzes';
 import { CreateQuizCommand } from './commands/create-quiz-command';
-import { UpdateQuizCommand } from './commands/update-quiz-command'
+import { UpdateQuizCommand } from './commands/update-quiz-command';
 import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
+import { AddQuestionCommand } from './commands/add-question-command';
+import { UpdateQuestionCommand } from './commands/update-question-command';
+import { DeleteQuizByIdQuery } from './queries/delete-quiz-by-id';
+import { StartQuizQuery } from './queries/start-quiz-query';
+import { QuizGateway } from './gateways/quiz.gateway';
+import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
+import { GetNextQuestionQuery } from './queries/get-next-question';
+import { GetQuizByExecutionIdQuery } from './queries/get-quiz-by-executionId';
+
 
 @Module({
   imports: [
@@ -36,6 +44,28 @@ import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
     {
       provide: I_QUIZ_REPOSITORY,
       useClass: variables.database === "MONGODB" ? MongoQuizRepository : FirebaseQuizRepository,
+    },
+    {
+      provide: I_QUIZ_GATEWAY,
+      useClass: QuizGateway,
+    },
+    {
+      provide: GetQuizByIdQuery,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new GetQuizByIdQuery(repository);
+      },
+    },
+    {
+      provide: GetNextQuestionQuery,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new GetNextQuestionQuery(repository);
+      },
     },
     {
       provide: GetUserQuizzes,
@@ -65,10 +95,43 @@ import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
       },
     },
     {
+      provide: AddQuestionCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new AddQuestionCommand(repository);
+      },
+    },
+    {
+      provide: UpdateQuestionCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new UpdateQuestionCommand(repository);
+      },
+    },
+    {
       provide: GetQuizByIdQuery,
       inject : [I_QUIZ_REPOSITORY],
       useFactory: (repository) => { return new GetQuizByIdQuery(repository)}
-    }
+    },
+    {
+      provide: GetQuizByExecutionIdQuery,
+      inject : [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => { return new GetQuizByExecutionIdQuery(repository)}
+    },
+    {
+      provide: DeleteQuizByIdQuery,
+      inject : [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => { return new DeleteQuizByIdQuery(repository)}
+    },
+    {
+      provide: StartQuizQuery,
+      inject: [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => new StartQuizQuery(repository),
+    },
   ],
   exports: [I_QUIZ_REPOSITORY],
 })
