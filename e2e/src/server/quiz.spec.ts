@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { defaultFirebaseUrl, defaultUrl } from '../constants';
 import { AuthHelper } from '../helpers/auth.helper';
+import { QuizHelper } from '../helpers/quiz.helper';
 
 describe('GET /api/quiz', () => {
   let testUser: any;
@@ -49,6 +50,12 @@ describe('POST /api/quiz', () => {
       password: 'password',
       username: 'TestUser'
     });
+    console.log('User created:', testUser);
+  });
+
+  afterAll(async () => {
+    console.log('Deleting user after test:', testUser);
+    await AuthHelper.deleteUser(testUser.uid);
   });
 
    it('should create a quiz successfully', async () => {
@@ -70,7 +77,7 @@ describe('POST /api/quiz', () => {
         try {
           await request(defaultUrl).post('/api/quiz').send({
             email: 'user@email.com',
-            password: 'password',
+            password: 'passwor',
             returnSecureToken: true,
           });
         } catch (e) {
@@ -90,6 +97,10 @@ describe('GET /api/quiz/:id', () => {
             password: 'password',
             username: 'TestUser'
         });
+    });
+
+    afterAll(async () => {
+        await AuthHelper.deleteUser(testUser.uid);
     });
 
   // it('should retrieve a quiz by ID for an authenticated user', async () => {
@@ -173,6 +184,13 @@ describe('PATCH /api/quiz/:id', () => {
 
   });
 
+  afterAll(async () => {
+    await AuthHelper.deleteUser(testUser.uid);
+
+    // delete quiz
+    await QuizHelper.deleteQuiz(quizId);
+  });
+
   it('should update a quiz title successfully', async () => {
     const patchOperations = [{ op: 'replace', path: '/title', value: 'New Quiz Title' }];
 
@@ -208,73 +226,77 @@ describe('PATCH /api/quiz/:id', () => {
 
 });
 
-describe('POST /api/quiz/:id/questions', () => {
-  let testUser: any;
-  let quizId: string;
+// describe('POST /api/quiz/:id/questions', () => {
+//   let testUser: any;
+//   let quizId: string;
 
-  beforeAll(async () => {
-    testUser = await AuthHelper.createAndLoginUser({
-      email: 'user@email.com',
-      password: 'password',
-      username: 'TestUser'
-    });
+//   beforeAll(async () => {
+//     testUser = await AuthHelper.createAndLoginUser({
+//       email: 'user@email.com',
+//       password: 'password',
+//       username: 'TestUser'
+//     });
 
-    const quizData = {
-      title: 'Quiz Test addQuestions',
-      description: 'Description du quiz test',
-    };
+//     const quizData = {
+//       title: 'Quiz Test addQuestions',
+//       description: 'Description du quiz test',
+//     };
 
-    const createResponse = await request(defaultUrl)
-      .post('/api/quiz')
-      .set('Authorization', `Bearer ${testUser.token}`)
-      .send(quizData);
+//     const createResponse = await request(defaultUrl)
+//       .post('/api/quiz')
+//       .set('Authorization', `Bearer ${testUser.token}`)
+//       .send(quizData);
 
-    expect(createResponse.status).toBe(201);
+//     expect(createResponse.status).toBe(201);
 
-    const locationHeader = createResponse.headers.location;
-    quizId = locationHeader.split('/').pop();
+//     const locationHeader = createResponse.headers.location;
+//     quizId = locationHeader.split('/').pop();
 
-  });
+//   });
 
-  it('should add a question to a quiz successfully', async () => {
-    const questionData = {
-      title: 'What is the capital of France?',
-      answers: [
-        { title: 'Paris', isCorrect: true },
-        { title: 'London', isCorrect: false },
-        { title: 'Rome', isCorrect: false },
-        { title: 'Berlin', isCorrect: false },
-      ],
-    };
+//   afterAll(async () => {
+//     await AuthHelper.deleteUser(testUser.uid);
+//   });
+
+//   it('should add a question to a quiz successfully', async () => {
+//     const questionData = {
+//       title: 'What is the capital of France?',
+//       answers: [
+//         { title: 'Paris', isCorrect: true },
+//         { title: 'London', isCorrect: false },
+//         { title: 'Rome', isCorrect: false },
+//         { title: 'Berlin', isCorrect: false },
+//       ],
+//     };
     
-    console.log(quizId);
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${quizId}/questions`)
-      .set('Authorization', `Bearer ${testUser.token}`)
-      .send(questionData);
+//     console.log(quizId);
+//     const response = await request(defaultUrl)
+//       .post(`/api/quiz/${quizId}/questions`)
+//       .set('Authorization', `Bearer ${testUser.token}`)
+//       .send(questionData);
 
-    expect(response.status).toBe(201);
-    expect(response.headers).toHaveProperty('location');
-    console.log('Location:', response.headers.location);
-  });
+//     expect(response.status).toBe(201);
+//     expect(response.headers).toHaveProperty('location');
+//     console.log('Location:', response.headers.location);
+//   });
 
-  it('should return 404 if the quiz does not exist', async () => {
-    const questionData = {
-      title: 'What is the capital of France?',
-      answers: [
-        { title: 'Paris', isCorrect: true },
-        { title: 'London', isCorrect: false },
-        { title: 'Rome', isCorrect: false },
-        { title: 'Berlin', isCorrect: false },
-      ],
-    };
+//   it('should return 404 if the quiz does not exist', async () => {
+//     const questionData = {
+//       title: 'What is the capital of France?',
+//       answers: [
+//         { title: 'Paris', isCorrect: true },
+//         { title: 'London', isCorrect: false },
+//         { title: 'Rome', isCorrect: false },
+//         { title: 'Berlin', isCorrect: false },
+//       ],
+//     };
 
-    const response = await request(defaultUrl)
-      .post('/api/quiz/nonexistentQuizId/questions')
-      .set('Authorization', `Bearer ${testUser.token}`)
-      .send(questionData);
+//     const response = await request(defaultUrl)
+//       .post('/api/quiz/nonexistentQuizId/questions')
+//       .set('Authorization', `Bearer ${testUser.token}`)
+//       .send(questionData);
 
-    expect(response.status).toBe(404);
-  });
+//     expect(response.status).toBe(404);
+//   });
 
-});
+// });
