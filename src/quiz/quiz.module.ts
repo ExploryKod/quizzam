@@ -11,6 +11,7 @@ import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
 
 import { FirebaseQuizRepository } from './adapters/firebase/firebase-quiz-repository';
 import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
+import { InMemoryQuizRepository } from './adapters/in-memory/in-memory-quiz-repository';
 
 import { variables } from '../shared/variables.config';
 import { GetUserQuizzes } from './queries/get-user-quizzes';
@@ -26,6 +27,16 @@ import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
 import { GetNextQuestionQuery } from './queries/get-next-question';
 import { GetQuizByExecutionIdQuery } from './queries/get-quiz-by-executionId';
 
+function database(database: string) {
+  switch (database) {
+    case "MONGODB" :
+      return MongoQuizRepository
+    case "FIREBASE":
+      return FirebaseQuizRepository
+    case "IN-MEMORY":
+      return InMemoryQuizRepository
+  }
+}
 
 @Module({
   imports: [
@@ -43,7 +54,7 @@ import { GetQuizByExecutionIdQuery } from './queries/get-quiz-by-executionId';
   providers: [
     {
       provide: I_QUIZ_REPOSITORY,
-      useClass: variables.database === "MONGODB" ? MongoQuizRepository : FirebaseQuizRepository,
+      useClass: database(variables.database)
     },
     {
       provide: I_QUIZ_GATEWAY,

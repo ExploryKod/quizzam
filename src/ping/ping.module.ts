@@ -18,6 +18,8 @@ import { FirebasePingRepository } from './adapters/firebase-ping-repository';
             return MongoPingRepository;
           case 'FIREBASE':
             return FirebasePingRepository;
+          case 'IN-MEMORY':
+            return MongoPingRepository;
           default:
             throw new Error(`Unsupported database: ${variables.database} - Please add it in module providers and shared variables`);
         }
