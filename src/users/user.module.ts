@@ -11,9 +11,19 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { CommonModule } from '../core/common.module';
 import { variables } from '../shared/variables.config';
 import { FirebaseUserRepository } from './adapters/firebase/firebase-user-repository';
-import { GetQuizByIdQuery } from '../quiz/queries/get-quiz-by-id';
-import { I_QUIZ_REPOSITORY } from '../quiz/ports/quiz-repository.interface';
 import { GetUserByIdQuery } from './queries/get-user-by-id';
+import { InMemoryUserRepository } from './adapters/in-memory/in-memory-user-repository';
+
+function database(database: string) {
+  switch (database) {
+    case "MONGODB" :
+      return MongoUserRepository
+    case "FIREBASE":
+      return FirebaseUserRepository
+    case "IN-MEMORY":
+      return InMemoryUserRepository
+  }
+}
 
 @Module({
   imports: [
@@ -31,7 +41,7 @@ import { GetUserByIdQuery } from './queries/get-user-by-id';
   providers: [
     {
       provide: I_USER_REPOSITORY,
-      useClass: variables.database === "MONGODB" ? MongoUserRepository : FirebaseUserRepository,
+      useClass: database(variables.database),
     },
     {
       provide: AddUsername,
