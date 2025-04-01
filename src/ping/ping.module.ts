@@ -5,6 +5,7 @@ import { I_PING_REPOSITORY, IPingRepository } from './ping-repository.interface'
 import { variables } from '../shared/variables.config';
 import { MongoPingRepository } from './adapters/mongo-ping-repository';
 import { FirebasePingRepository } from './adapters/firebase-ping-repository';
+import { InMemoryPingRepository } from './adapters/in-memory-ping-repository';
 
 @Module({
   controllers: [PingController],
@@ -18,6 +19,8 @@ import { FirebasePingRepository } from './adapters/firebase-ping-repository';
             return MongoPingRepository;
           case 'FIREBASE':
             return FirebasePingRepository;
+          case 'IN-MEMORY':
+            return InMemoryPingRepository;
           default:
             throw new Error(`Unsupported database: ${variables.database} - Please add it in module providers and shared variables`);
         }
