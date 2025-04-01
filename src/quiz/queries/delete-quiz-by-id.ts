@@ -19,7 +19,7 @@ export class DeleteQuizByIdQuery implements Executable<Request, Response> {
   async execute(data : Request): Promise<Response> {
     const { id, decodedToken } = data;
     const deletedQuiz = await this.quizRepository.deleteById(id, decodedToken);
-
+    console.log("deleted quiz:", deletedQuiz);
     if (!deletedQuiz) {
       throw new NotFoundException();
     }

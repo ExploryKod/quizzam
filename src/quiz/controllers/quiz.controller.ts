@@ -165,14 +165,14 @@ export class QuizController {
     }
   }
 
-  @Delete('delete/:id')
+  @Delete(':id')
   @Auth()
   async deleteQuizById(
     @Param('id') id: string,
     @Req() request: RequestWithUser
   ) {
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);
-
+    console.log("We entered controller to delete quiz by id")
     try {
       const data = {
         id: id,
