@@ -7,7 +7,6 @@ export class PingController {
 
   @Get()
   async ping() {
-    console.log('Received ping request');
     return {
       response: 'pong',
       version: await this.versionRepository.getVersion(),
