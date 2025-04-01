@@ -275,7 +275,6 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       throw new BadRequestException('Quiz is not ready to be started');
     }
 
-    // Générer un ID aléatoire pour l'exécution
     const executionId = randomString(6);
 
     await quizRef.update({
@@ -318,7 +317,6 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
 
       const quizData = quizDoc.data() as QuizProps;
 
-      // Access the question by index
       if (questionIndex < 0 || questionIndex >= quizData.questions.length) {
         throw new Error('Question index out of bounds');
       }
