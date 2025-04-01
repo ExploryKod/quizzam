@@ -12,6 +12,9 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
@@ -51,14 +54,13 @@ export class QuizController {
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
+
   @Get()
   @Auth()
   async getUserQuizzes(@Req() request: RequestWithUser) {
     const token = request.headers.authorization.split('Bearer ')[1];
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token);
-    const baseUrl = request.protocol + '://' + request.get('host');
-    const createUrl = `${baseUrl}/api/quiz`;
 
     if (!decodedToken.user_id) {
       throw new HttpException(
@@ -73,19 +75,47 @@ export class QuizController {
         .where('userId', '==', decodedToken.user_id)
         .get();
 
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const createUrl = `${baseUrl}/api/quiz`;
+
       if (quizzesData.empty) {
-        return { data: [],
-                _links: { create: `${baseUrl}/api/quiz`}
-         };
+        return {
+          data: [],
+          _links: {
+            create: createUrl,
+          },
+        };
       }
 
-      const quizzes = quizzesData.empty
-        ? []
-        : quizzesData.docs.map((doc) => ({
-            id: doc.id,
-            title: doc.data().title,
-          }));
+      // Transformation des données avec vérification de démarrabilité
+      const quizzes = quizzesData.docs.map((doc) => {
+        const quizData = doc.data();
+        const quizId = doc.id;
+        const quizTitle = quizData.title;
+        const questions = quizData.questions || [];
 
+        // Vérifier si le quiz est démarrable
+        const isStartable = this.isQuizStartable(quizTitle, questions);
+
+        // Construire l'objet quiz avec liens conditionnels
+        const quizObject = {
+          id: quizId,
+          title: quizTitle,
+        };
+
+        // Ajouter les liens HATEOAS si démarrable
+        if (isStartable) {
+          Object.assign(quizObject, {
+            _links: {
+              start: `${baseUrl}/api/quiz/${quizId}/start`,
+            },
+          });
+        }
+
+        return quizObject;
+      });
+
+      // Retourner les données avec les liens HATEOAS
       return {
         data: quizzes,
         _links: {
@@ -99,6 +129,54 @@ export class QuizController {
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  /**
+   * Détermine si un quiz est démarrable selon les critères spécifiés
+   * @param title Titre du quiz
+   * @param questions Tableau des questions du quiz
+   * @returns Booléen indiquant si le quiz est démarrable
+   */
+  private isQuizStartable(title: string, questions: any[]): boolean {
+    // Critère 1: Le titre ne doit pas être vide
+    if (!title || title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: Il doit y avoir au moins une question
+    if (!questions || questions.length === 0) {
+      return false;
+    }
+
+    // Critère 3: Toutes les questions doivent être valides
+    return questions.every((question) => this.isQuestionValid(question));
+  }
+
+  /**
+   * Vérifie si une question est valide selon les critères spécifiés
+   * @param question Objet question à vérifier
+   * @returns Booléen indiquant si la question est valide
+   */
+  private isQuestionValid(question: any): boolean {
+    // Critère 1: La question doit avoir un titre non vide
+    if (!question.title || question.title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: La question doit avoir au moins deux réponses
+    if (!question.answers || question.answers.length < 2) {
+      return false;
+    }
+
+    // Critère 3: Il doit y avoir exactement une réponse correcte
+    const correctAnswersCount = question.answers.filter(
+      (answer) => answer.isCorrect
+    ).length;
+    if (correctAnswersCount !== 1) {
+      return false;
+    }
+
+    return true;
   }
 
   @Post()
@@ -132,7 +210,7 @@ export class QuizController {
         .add(quizData);
 
       const baseUrl = request.protocol + '://' + request.get('host');
-      const locationUrl = `${baseUrl}/api/quiz/${quizRef.id}`;
+      const locationUrl = `${baseUrl}/quiz/${quizRef.id}`;
       console.log('locationUrl', locationUrl);
       response.header('Location', locationUrl);
 
@@ -173,7 +251,7 @@ export class QuizController {
       const quizData = quizDoc.data();
 
       if (quizData.userId !== decodedToken.user_id) {
-        throw new NotFoundException('Quiz non trouvé');
+        throw new UnauthorizedException('Quiz non trouvé');
       }
 
       return {
@@ -187,6 +265,10 @@ export class QuizController {
           })) || [],
       };
     } catch (error) {
+      // Better error handling to properly propagate the status code
+      if (error instanceof UnauthorizedException) {
+        throw error; // Re-throw UnauthorizedException to maintain 401 status
+      }
       if (error instanceof NotFoundException) {
         throw error;
       }
@@ -409,5 +491,83 @@ export class QuizController {
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+/**
+   * Endpoint pour démarrer un quiz
+   * @param quizId Identifiant du quiz
+   * @param res Réponse HTTP
+   */
+@Post(':quizId/start')
+@Auth()
+async startQuiz(
+  @Param('quizId') quizId: string, 
+  @Req() request: RequestWithUser, 
+  @Res({ passthrough: true }) response: Response ) {
+  try {
+
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
+    const quizDoc = await quizRef.get();
+
+    if (!quizDoc.exists) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    const quizData = quizDoc.data();
+    const quizTitle = quizData.title;
+    const questions = quizData.questions || [];
+
+    if (quizData.userId !== decodedToken.user_id) {
+      throw new NotFoundException('Quiz non trouvé');
+    }
+
+    // Vérifier si le quiz est démarrable
+    if (!this.isQuizStartable(quizTitle, questions)) {
+      throw new BadRequestException('Quiz is not ready to be started');
+    }
+
+    // Générer un ID aléatoire pour l'exécution
+    const executionId = this.randomString(6);
+
+    // Construire l'URL de l'exécution
+    const baseUrl = request.protocol + '://' + request.get('host');
+    const executionUrl = `${baseUrl}/api/execution/${executionId}`;
+
+    // Retourner la réponse avec le header Location
+    response.status(HttpStatus.CREATED).location(executionUrl).send();
+  
+  } catch (error) {
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+
+    if (error instanceof HttpException) {
+      throw error;
+    }
+   
+    if (error instanceof BadRequestException) {
+      throw error;
+    } 
+    
+  }
+  
+}
+
+   /**
+   * Génère un identifiant aléatoire de 6 caractères
+   */
+   private randomString(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 }

@@ -17,14 +17,14 @@ describe('POST /api/users', () => {
   });
 
   it('should return 401 if user is not authenticated', async () => {
+    console.log('Sending request without authentication...');
     const response = await request(defaultUrl)
       .post('/api/users')
       .send({ username: 'TestUser' });
-    
+
     console.log('Unauthorized request response:', response.body);
     expect(response.status).toBe(401);
   });
-
 });
 
 describe('GET /api/users/me', () => { 
@@ -62,7 +62,7 @@ describe('GET /api/users/me', () => {
       throw e;
     }
   });
-  
+
   it('should return 401 if user is not authenticated', async () => {
     try {
       await request(defaultUrl).get('/api/users/me');
@@ -70,5 +70,4 @@ describe('GET /api/users/me', () => {
       expect(e.response.status).toBe(401);
     }
   });
-
 });
