@@ -325,6 +325,136 @@ describe('POST /api/quiz/:id/questions', () => {
   });
 });
 
+// ========== MODIFICATION D'UNE QUESTION ========== //
+describe('PUT /api/quiz/:quizId/questions/:questionId', () => {
+  let token: string;
+  let quizId: string;
+  let questionId: string;
+
+  beforeAll(async () => {
+    const auth = await request(defaultFirebaseUrl).post('').send({
+      email: 'user@test.com',
+      password: 'password',
+      returnSecureToken: true,
+    });
+
+    expect(auth.status).toBe(200);
+    token = auth.body.idToken;
+
+    // Création d'un quiz pour avoir un ID valide
+    const quizData = {
+      title: 'Quiz Test Replace Question',
+      description: 'Description du quiz test',
+    };
+
+    const createResponse = await request(defaultUrl)
+      .post('/api/quiz')
+      .set('Authorization', `Bearer ${token}`)
+      .send(quizData);
+
+    expect(createResponse.status).toBe(201);
+
+    const locationHeader = createResponse.headers.location;
+    quizId = locationHeader.split('/').pop();
+
+    // Ajout d'une question au quiz
+    const questionData = {
+      title: 'What is the capital of France?',
+      answers: [
+        { title: 'Paris', isCorrect: true },
+        { title: 'London', isCorrect: false },
+        { title: 'Rome', isCorrect: false },
+        { title: 'Berlin', isCorrect: false },
+      ],
+    };
+
+    const questionResponse = await request(defaultUrl)
+      .post(`/api/quiz/${quizId}/questions`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(questionData);
+
+    expect(questionResponse.status).toBe(201);
+
+    const questionLocationHeader = questionResponse.headers.location;
+    questionId = questionLocationHeader.split('/').pop();
+  });
+
+  it('should replace a question successfully', async () => {
+    const updatedQuestionData = {
+      title: 'What is the capital of Germany?',
+      answers: [
+        { title: 'Berlin', isCorrect: true },
+        { title: 'Paris', isCorrect: false },
+        { title: 'Rome', isCorrect: false },
+        { title: 'London', isCorrect: false },
+      ],
+    };
+
+    const response = await request(defaultUrl)
+      .put(`/api/quiz/${quizId}/questions/${questionId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedQuestionData);
+
+    expect(response.status).toBe(204);
+  });
+
+  it('should return 404 if the quiz does not exist', async () => {
+    const updatedQuestionData = {
+      title: 'What is the capital of Germany?',
+      answers: [
+        { title: 'Berlin', isCorrect: true },
+        { title: 'Paris', isCorrect: false },
+        { title: 'Rome', isCorrect: false },
+        { title: 'London', isCorrect: false },
+      ],
+    };
+
+    const response = await request(defaultUrl)
+      .put(`/api/quiz/nonexistentQuizId/questions/${questionId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedQuestionData);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should return 404 if the question does not exist', async () => {
+    const updatedQuestionData = {
+      title: 'What is the capital of Germany?',
+      answers: [
+        { title: 'Berlin', isCorrect: true },
+        { title: 'Paris', isCorrect: false },
+        { title: 'Rome', isCorrect: false },
+        { title: 'London', isCorrect: false },
+      ],
+    };
+
+    const response = await request(defaultUrl)
+      .put(`/api/quiz/${quizId}/questions/nonexistentQuestionId`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedQuestionData);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should return 401 if the user is not authenticated', async () => {
+    const updatedQuestionData = {
+      title: 'What is the capital of Germany?',
+      answers: [
+        { title: 'Berlin', isCorrect: true },
+        { title: 'Paris', isCorrect: false },
+        { title: 'Rome', isCorrect: false },
+        { title: 'London', isCorrect: false },
+      ],
+    };
+
+    const response = await request(defaultUrl)
+      .put(`/api/quiz/${quizId}/questions/${questionId}`)
+      .send(updatedQuestionData);
+
+    expect(response.status).toBe(401);
+  });
+});
+
 // ========== DEMARRAGE D'UN QUIZ =============== //
 describe('POST /api/quiz/:id/start', () => {
   let token: string;
