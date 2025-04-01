@@ -16,7 +16,7 @@ export class AuthHelper {
   
   private static readonly FIREBASE_SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
 
-  static async createAndLoginUser(userData: Partial<TestUser> = {}): Promise<TestUser> {
+  static async createAndLoginUser(userData: Partial<TestUser> = {}): Promise<TestUser | string> {
     const testUser: TestUser = {
       email: userData.email || `test-${Date.now()}@example.com`,
       password: userData.password || 'testPassword123',
@@ -32,6 +32,9 @@ export class AuthHelper {
       });
 
     if (authResponse.status !== 200) {
+      if (authResponse.body.error.message === 'EMAIL_EXISTS') {
+        return this.loginExistingUser(testUser.email, testUser.password);
+      }
       console.error('Firebase signup error:', authResponse.body);
       throw new Error('Failed to create Firebase user');
     }
