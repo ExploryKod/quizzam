@@ -9,7 +9,4 @@ export namespace userAPI {
     export type Request = z.infer<typeof schema>;
     export type Response = void
   }
-
-
-
 }
