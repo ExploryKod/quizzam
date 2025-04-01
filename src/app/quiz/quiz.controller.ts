@@ -20,30 +20,42 @@ import { RequestWithUser } from '../modules/auth/model/request-with-user';
 import { Auth } from '../modules/auth/auth.decorator';
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { ApiProperty } from '@nestjs/swagger';
 
 class CreateQuizDto {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   description: string;
 }
 
 class PatchOperation {
+  @ApiProperty()
   op: string;
+  @ApiProperty()
   path: string;
+  @ApiProperty()
   value: string;
 }
 
 class Answer {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   isCorrect: boolean;
 }
 
 class CreateQuestionDto {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   answers: Answer[];
 }
 
 class UpdateQuestionDto {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   answers: Answer[];
 }
 
@@ -496,8 +508,8 @@ export class QuizController {
 @Post(':quizId/start')
 @Auth()
 async startQuiz(
-  @Param('quizId') quizId: string, 
-  @Req() request: RequestWithUser, 
+  @Param('quizId') quizId: string,
+  @Req() request: RequestWithUser,
   @Res({ passthrough: true }) response: Response ) {
   try {
 
@@ -540,7 +552,7 @@ async startQuiz(
 
     // Retourner la réponse avec le header Location
     response.status(HttpStatus.CREATED).location(executionUrl).send();
-  
+
   } catch (error) {
     if (error instanceof NotFoundException) {
       throw error;
@@ -549,13 +561,13 @@ async startQuiz(
     if (error instanceof HttpException) {
       throw error;
     }
-   
+
     if (error instanceof BadRequestException) {
       throw error;
-    } 
-    
+    }
+
   }
-  
+
 }
 
    /**

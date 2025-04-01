@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
+import { ApiProperty } from '@nestjs/swagger';
 
 type DatabaseStatus = {
   database: string;
