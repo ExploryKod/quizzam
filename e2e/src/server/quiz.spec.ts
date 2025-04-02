@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { defaultFirebaseUrl, defaultUrl } from '../constants';
+import { defaultUrl } from '../constants';
 import { AuthHelper, TestUser } from '../helpers/auth.helper';
 import { QuizHelper, TestQuiz } from '../helpers/quiz.helper';
 
@@ -98,7 +98,8 @@ describe('GET /api/quiz/:id', () => {
       username: 'OtherUser'
     });
 
-    testQuiz = await QuizHelper.createQuiz(testUser.token);
+    const createResponse = await QuizHelper.createQuiz(testUser.token);
+    testQuiz = createResponse.quiz;
     quizId = testQuiz.id;
 
     await QuizHelper.addQuestion(testUser.token, quizId);
@@ -243,9 +244,8 @@ describe('POST /api/quiz/:id/questions', () => {
 
   beforeAll(async () => {
     testUser = await AuthHelper.createAndLoginUser();
-
+    console.log('TEST USER : ' + testUser.token);
     token = testUser.token;
-
     const quizData = {
       title: 'Quiz Test addQuestions',
       description: 'Description du quiz test',
@@ -262,100 +262,56 @@ describe('POST /api/quiz/:id/questions', () => {
     quizId = locationHeader.split('/').pop();
   });
 
+  afterAll(async () => {
+    await AuthHelper.deleteUser(testUser.uid);
+  });
+
   it('should add a question to a quiz successfully', async () => {
-    const questionData = {
-      title: 'What is the capital of France?',
-      answers: [
-        { title: 'Paris', isCorrect: true },
-        { title: 'London', isCorrect: false },
-        { title: 'Rome', isCorrect: false },
-        { title: 'Berlin', isCorrect: false },
-      ],
-    };
+    const response = await QuizHelper.addQuestion(token, quizId);
 
-    console.log(quizId);
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${quizId}/questions`)
-      .set('Authorization', `Bearer ${token}`)
-      .send(questionData);
+    expect(response.response.status).toBe(201);
+    expect(response.response.headers).toHaveProperty('location');
+    console.log('Location:', response.response.headers.location);
+  });
 
-//     expect(response.status).toBe(201);
-//     expect(response.headers).toHaveProperty('location');
-//     console.log('Location:', response.headers.location);
-//   });
+  it('should return 404 if the quiz does not exist', async () => {
+    const response = await QuizHelper.addQuestion(token, 'nonexistentQuizId');
 
-//   it('should return 404 if the quiz does not exist', async () => {
-//     const questionData = {
-//       title: 'What is the capital of France?',
-//       answers: [
-//         { title: 'Paris', isCorrect: true },
-//         { title: 'London', isCorrect: false },
-//         { title: 'Rome', isCorrect: false },
-//         { title: 'Berlin', isCorrect: false },
-//       ],
-//     };
-
-//     const response = await request(defaultUrl)
-//       .post('/api/quiz/nonexistentQuizId/questions')
-//       .set('Authorization', `Bearer ${testUser.token}`)
-//       .send(questionData);
-
-    expect(response.status).toBe(404);
+    expect(response.response.status).toBe(404);  
   });
 });
+
 
 // ========== MODIFICATION D'UNE QUESTION ========== //
 describe('PUT /api/quiz/:quizId/questions/:questionId', () => {
   let token: string;
   let quizId: string;
   let questionId: string;
+  let testUser: TestUser;
+  let testQuiz: TestQuiz;
 
   beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl).post('').send({
-      email: 'user@test.com',
-      password: 'password',
-      returnSecureToken: true,
-    });
+    testUser = await AuthHelper.createAndLoginUser();
+    token = testUser.token;
 
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
-
-    // Création d'un quiz pour avoir un ID valide
-    const quizData = {
-      title: 'Quiz Test Replace Question',
-      description: 'Description du quiz test',
-    };
-
-    const createResponse = await request(defaultUrl)
-      .post('/api/quiz')
-      .set('Authorization', `Bearer ${token}`)
-      .send(quizData);
-
-    expect(createResponse.status).toBe(201);
-
-    const locationHeader = createResponse.headers.location;
-    quizId = locationHeader.split('/').pop();
+    const createResponse = await QuizHelper.createQuiz(token);
+    testQuiz = createResponse.quiz;
+    quizId = testQuiz.id;
 
     // Ajout d'une question au quiz
-    const questionData = {
-      title: 'What is the capital of France?',
-      answers: [
-        { title: 'Paris', isCorrect: true },
-        { title: 'London', isCorrect: false },
-        { title: 'Rome', isCorrect: false },
-        { title: 'Berlin', isCorrect: false },
-      ],
-    };
+    const questionData = await QuizHelper.addQuestion(token, quizId);
+    
+    expect(questionData.response.status).toBe(201);
+    expect(questionData.response.headers).toHaveProperty('location');
+    console.log('Location:', questionData.response.headers.location);
 
-    const questionResponse = await request(defaultUrl)
-      .post(`/api/quiz/${quizId}/questions`)
-      .set('Authorization', `Bearer ${token}`)
-      .send(questionData);
-
-    expect(questionResponse.status).toBe(201);
-
-    const questionLocationHeader = questionResponse.headers.location;
+    const questionLocationHeader = questionData.response.headers.location;
     questionId = questionLocationHeader.split('/').pop();
+  });
+
+  afterAll(async () => {
+    await QuizHelper.deleteQuiz(quizId);
+    await AuthHelper.deleteUser(testUser.uid);
   });
 
   it('should replace a question successfully', async () => {
@@ -369,12 +325,9 @@ describe('PUT /api/quiz/:quizId/questions/:questionId', () => {
       ],
     };
 
-    const response = await request(defaultUrl)
-      .put(`/api/quiz/${quizId}/questions/${questionId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send(updatedQuestionData);
+    const response = await QuizHelper.updateQuestion(token, quizId, questionId, updatedQuestionData);
 
-    expect(response.status).toBe(204);
+    expect(response.response.status).toBe(204);
   });
 
   it('should return 404 if the quiz does not exist', async () => {
@@ -388,12 +341,9 @@ describe('PUT /api/quiz/:quizId/questions/:questionId', () => {
       ],
     };
 
-    const response = await request(defaultUrl)
-      .put(`/api/quiz/nonexistentQuizId/questions/${questionId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send(updatedQuestionData);
+    const response = await QuizHelper.updateQuestion(token, 'nonexistentQuizId', questionId, updatedQuestionData);
 
-    expect(response.status).toBe(404);
+    expect(response.response.status).toBe(404);
   });
 
   it('should return 404 if the question does not exist', async () => {
@@ -407,12 +357,9 @@ describe('PUT /api/quiz/:quizId/questions/:questionId', () => {
       ],
     };
 
-    const response = await request(defaultUrl)
-      .put(`/api/quiz/${quizId}/questions/nonexistentQuestionId`)
-      .set('Authorization', `Bearer ${token}`)
-      .send(updatedQuestionData);
+    const response = await QuizHelper.updateQuestion(token, quizId, 'nonexistentQuestionId', updatedQuestionData);
 
-    expect(response.status).toBe(404);
+    expect(response.response.status).toBe(404);
   });
 
   it('should return 401 if the user is not authenticated', async () => {
@@ -426,11 +373,9 @@ describe('PUT /api/quiz/:quizId/questions/:questionId', () => {
       ],
     };
 
-    const response = await request(defaultUrl)
-      .put(`/api/quiz/${quizId}/questions/${questionId}`)
-      .send(updatedQuestionData);
+    const response = await QuizHelper.updateQuestion('no-token', quizId, questionId, updatedQuestionData);
 
-    expect(response.status).toBe(401);
+    expect(response.response.status).toBe(401);
   });
 });
 
@@ -439,71 +384,46 @@ describe('POST /api/quiz/:id/start', () => {
   let token: string;
   let nonexistentQuizId: string;
   let quizId: string;
-
-  const currentUser = 'user@test.com';
-  const currentPassword = 'password';
+  let testUser: TestUser;
 
   beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl).post('').send({
-      email: currentUser,
-      password: currentPassword,
-      returnSecureToken: true,
-    });
-
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
+    testUser = await AuthHelper.createAndLoginUser();
+    token = testUser.token;
 
     const quizData = {
       title: 'Quiz Test start',
       description: 'Description du quiz test',
     };
 
-    const createResponse = await request(defaultUrl)
-      .post('/api/quiz')
-      .set('Authorization', `Bearer ${token}`)
-      .send(quizData);
+    const createResponse = await QuizHelper.createQuiz(token, quizData);
 
-    expect(createResponse.status).toBe(201);
+    expect(createResponse.response.status).toBe(201);  
 
-    const locationHeader = createResponse.headers.location;
-    quizId = locationHeader.split('/').pop();
+    quizId = createResponse.quiz.id;
 
-    // Ajout d'une question au quiz
-    const questionData = {
-      title: 'What is the capital of France?',
-      answers: [
-        { title: 'Paris', isCorrect: true },
-        { title: 'London', isCorrect: false },
-        { title: 'Rome', isCorrect: false },
-        { title: 'Berlin', isCorrect: false },
-      ],
-    };
+    const questionResponse = await QuizHelper.addQuestion(token, quizId);
 
-    const questionResponse = await request(defaultUrl)
-      .post(`/api/quiz/${quizId}/questions`)
-      .set('Authorization', `Bearer ${token}`)
-      .send(questionData);
+    expect(questionResponse.response.status).toBe(201);
+  });
 
-    expect(questionResponse.status).toBe(201);
+  afterAll(async () => {
+    await QuizHelper.deleteQuiz(quizId);
+    await AuthHelper.deleteUser(testUser.uid);
   });
 
   it('should start an existing quiz successfully with a correct pattern for its id', async () => {
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${quizId}/start`)
-      .set('Authorization', `Bearer ${token}`);
+    const response = await QuizHelper.startQuiz(token, quizId);
 
-    expect(response.status).toBe(201);
-    expect(response.headers).toHaveProperty('location');
-    expect(response.headers.location).toMatch(/\/api\/execution\/[A-Z0-9]{6}/);
+    expect(response.response.status).toBe(201);
+    expect(response.response.headers).toHaveProperty('location');
+    expect(response.response.headers.location).toMatch(/\/api\/execution\/[A-Z0-9]{6}/);
   });
 
   it('should return 404 if quiz does not exist', async () => {
     nonexistentQuizId = 'ade1246';
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${nonexistentQuizId}/start`)
-      .set('Authorization', `Bearer ${token}`);
+    const response = await QuizHelper.startQuiz(token, nonexistentQuizId);
 
-    expect(response.status).toBe(404);
+    expect(response.response.status).toBe(404);
   });
 
   it('should return 400 if quiz is not ready to be started', async () => {
@@ -513,21 +433,15 @@ describe('POST /api/quiz/:id/start', () => {
       description: 'This quiz has no questions',
     };
 
-    const createResponse = await request(defaultUrl)
-      .post('/api/quiz')
-      .set('Authorization', `Bearer ${token}`)
-      .send(incompleteQuizData);
+    const createResponse = await QuizHelper.createQuiz(token, incompleteQuizData);
 
-    expect(createResponse.status).toBe(201);
+    expect(createResponse.response.status).toBe(201);
 
-    const locationHeader = createResponse.headers.location;
-    const incompleteQuizId = locationHeader.split('/').pop();
+    const incompleteQuizId = createResponse.quiz.id;
 
     // Essayer de démarrer ce quiz qui n'a pas de questions
-    const response = await request(defaultUrl)
-      .post(`/api/quiz/${incompleteQuizId}/start`)
-      .set('Authorization', `Bearer ${token}`);
+    const response = await QuizHelper.startQuiz(token, incompleteQuizId);
 
-    expect(response.status).toBe(400);
+    expect(response.response.status).toBe(400);
   });
 });
