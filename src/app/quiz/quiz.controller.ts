@@ -603,89 +603,12 @@ async startQuiz(
 
 }
 
-   /**
+  /**
    * Génère un identifiant aléatoire de 6 caractères
    */
-   private randomString(length: number): string {
+  private randomString(length: number): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 
-/**
-   * Endpoint pour démarrer un quiz
-   * @param quizId Identifiant du quiz
-   * @param res Réponse HTTP
-   */
-@Post(':quizId/start')
-@Auth()
-async startQuiz(
-  @Param('quizId') quizId: string,
-  @Req() request: RequestWithUser,
-  @Res({ passthrough: true }) response: Response ) {
-  try {
-
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
-    const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
-    const quizDoc = await quizRef.get();
-
-    if (!quizDoc.exists) {
-      throw new NotFoundException('Quiz not found');
-    }
-
-    const quizData = quizDoc.data();
-    const quizTitle = quizData.title;
-    const questions = quizData.questions || [];
-
-    if (quizData.userId !== decodedToken.user_id) {
-      throw new NotFoundException('Quiz non trouvé');
-    }
-
-    // Vérifier si le quiz est démarrable
-    if (!this.isQuizStartable(quizTitle, questions)) {
-      throw new BadRequestException('Quiz is not ready to be started');
-    }
-
-    // Générer un ID aléatoire pour l'exécution
-    const executionId = this.randomString(6);
-
-    // Construire l'URL de l'exécution
-    const baseUrl = request.protocol + '://' + request.get('host');
-    const executionUrl = `${baseUrl}/api/execution/${executionId}`;
-
-    // Retourner la réponse avec le header Location
-    response.status(HttpStatus.CREATED).location(executionUrl).send();
-
-  } catch (error) {
-    if (error instanceof NotFoundException) {
-      throw error;
-    }
-
-    if (error instanceof HttpException) {
-      throw error;
-    }
-
-    if (error instanceof BadRequestException) {
-      throw error;
-    }
-
-  }
-
-}
-
-   /**
-   * Génère un identifiant aléatoire de 6 caractères
-   */
-   private randomString(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  }
 }
