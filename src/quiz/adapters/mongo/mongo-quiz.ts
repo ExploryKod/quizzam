@@ -64,8 +64,11 @@ export namespace MongoQuiz {
 
   @MongooseSchema({ collection: CollectionName })
   export class SchemaClass {
-    @Prop({ type: String, required: true }) // Ensure unique quiz ID : cannot do this as id is set from another way
+    @Prop({ type: String, required: true })
     _id: string;
+
+    @Prop({ index: true, unique: true })
+    executionId?: string;
 
     @Prop({ required: true })
     title: string;
@@ -73,7 +76,7 @@ export namespace MongoQuiz {
     @Prop({ default: '' })
     description: string;
 
-    @Prop({ type: [QuestionSchema], default: [], unique: true }) // Ensure unique questions
+    @Prop({ type: [QuestionSchema], default: [], unique: true })
     questions: Array<Question>;
 
     @Prop({ required: true })

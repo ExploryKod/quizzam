@@ -332,46 +332,4 @@ export class FirebaseQuizRepository implements IQuizRepository {
       id: executionDoc.id
     } as ExecutionData;
   }
-
-  async getNextQuestion(
-    quizId: string,
-    questionIndex: number
-  ): Promise<QuestionEvent> {
-    try {
-      // Fetch the quiz document from Firestore
-      const quizDoc = await this.firebase.firestore
-        .collection('quizzes')
-        .doc(quizId)
-        .get();
-
-      if (!quizDoc.exists) {
-        throw new Error('Quiz not found');
-      }
-
-      const quizData = quizDoc.data() as QuizProps;
-
-      if (questionIndex < 0 || questionIndex >= quizData.questions.length) {
-        throw new Error('Question index out of bounds');
-      }
-
-      const question = quizData.questions[questionIndex];
-
-      const answerStrings: string[] = [];
-      question.answers.forEach((answer) => {
-        answerStrings.push(answer.title);
-      });
-      console.log(
-        '[Repository - Firebase] question and answers : ',
-        question,
-        answerStrings
-      );
-      return {
-        question: question.title,
-        answers: answerStrings,
-      };
-    } catch (error) {
-      console.error('Error fetching next question:', error);
-      throw error;
-    }
-  }
 }
