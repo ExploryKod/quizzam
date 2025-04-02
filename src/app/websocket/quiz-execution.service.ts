@@ -105,7 +105,6 @@ export class QuizExecutionService {
       throw new Error('Not authorized to control this quiz');
     }
 
-    // Si le quiz est déjà terminé, on ne fait rien
     if (this.quizCompleted.get(executionId)) {
       throw new Error('Quiz is already completed');
     }
@@ -129,17 +128,14 @@ export class QuizExecutionService {
     const quizData = quizDoc.data();
     const questions = quizData.questions || [];
 
-    // Déterminer l'index de la prochaine question
     const currentIndex = this.currentQuestionIndex.get(executionId) ?? -1;
     const nextIndex = currentIndex + 1;
 
-    // Si on a dépassé le nombre de questions, on envoie la question de fin
     if (nextIndex >= questions.length) {
       this.quizCompleted.set(executionId, true);
       return {
         question: 'Fin du quiz',
-        answers: ["Merci d'avoir participé !"],
-        isLastQuestion: true,
+        answers: ["Merci d'avoir participé(e) !"],
       };
     }
 
@@ -154,7 +150,6 @@ export class QuizExecutionService {
       throw new Error('Invalid question format');
     }
 
-    // Préparation de la charge utile
     const answers = currentQuestion.answers.map((answer) =>
       typeof answer === 'string'
         ? answer
@@ -173,7 +168,6 @@ export class QuizExecutionService {
   }
 
   handleClientDisconnect(clientId: string): void {
-    // Supprimer le client de toutes les structures
     for (const [executionId, hostId] of this.executionHosts.entries()) {
       if (hostId === clientId) {
         this.executionHosts.delete(executionId);
