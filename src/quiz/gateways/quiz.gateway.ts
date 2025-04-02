@@ -78,7 +78,6 @@ export class QuizGateway {
     if (!this.executionRooms.has(executionId)) {
       this.executionRooms.set(executionId, new Set());
     }
-    this.executionRooms.get(executionId).add(client.id);
 
     const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
     console.log("quiz in websocket host is: ", quiz)
@@ -106,7 +105,7 @@ export class QuizGateway {
     @ConnectedSocket() client: Socket
   ) {
     const { executionId } = payload;
-    console.log("[player - subscribed message] execution id ", executionId);
+    console.log("[participant - subscribed message] execution id ", executionId);
 
     if (!this.executionRooms.has(executionId)) {
       throw new NotFoundException(`Quiz execution ${executionId} not found`);
@@ -116,7 +115,7 @@ export class QuizGateway {
     this.executionRooms.get(executionId).add(client.id);
 
     const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
-    console.log("quiz in websocket player is: ", quiz);
+    console.log("quiz in websocket participant is: ", quiz);
 
     const joinDetails: JoinDetailsEvent = {
       quizTitle: quiz.title,
@@ -131,19 +130,20 @@ export class QuizGateway {
     };
     this.server.to(executionId).emit('status', statusEvent);
 
-    const firstQuestion: QuestionEvent = await this.getNextQuestionQuery.execute({
-      quizId: quiz.id,
-      questionIndex: 0,
-    });
-
-    if (firstQuestion) {
-      const newQuestionEvent: QuestionEvent = {
-        question: firstQuestion.question,
-        answers: firstQuestion.answers
-      };
-      client.emit('newQuestion', newQuestionEvent);
-    }
-
+    // const firstQuestion: QuestionEvent = await this.getNextQuestionQuery.execute({
+    //   quizId: quiz.id,
+    //   questionIndex: 0,
+    // });
+    //
+    // if (firstQuestion) {
+    //   console.log("gateway - firstQuestion", firstQuestion);
+    //   const newQuestionEvent: QuestionEvent = {
+    //     question: firstQuestion.question,
+    //     answers: firstQuestion.answers
+    //   };
+    //   console.log("event newQuestion", newQuestionEvent);
+    //   client.emit('newQuestion', newQuestionEvent);
+    // }
 
     this.logger.log(`Player joined execution: ${executionId}`);
   }
@@ -164,36 +164,39 @@ export class QuizGateway {
     }
 
     let newQuestionEvent: QuestionEvent;
-    let currentQuestionIndex = this.executionQuestionIndexes.get(executionId) || 1;
+    let currentQuestionIndex = 0;
 
     if (currentQuestionIndex >= quiz.questions.length) {
       this.logger.warn(`No more questions in the quiz for execution: ${executionId}, current question index: ${currentQuestionIndex}`);
       return;
     }
 
-    console.log("nextQuestion", quiz.questions.length, currentQuestionIndex);
-
     const nextQuestion: QuestionEvent = await this.getNextQuestionQuery.execute({
       quizId: quiz.id,
       questionIndex: currentQuestionIndex,
     });
 
+    console.log(">> nextQuestion questions length: ", quiz.questions.length);
+    console.log(">> nextQuestion current index: ", currentQuestionIndex);
+    console.log(">> nextQuestion question: ", nextQuestion);
     if(nextQuestion) {
+      console.log("gateway - event nextQuestion", nextQuestion);
       newQuestionEvent = {
         question: nextQuestion.question,
         answers: nextQuestion.answers
       };
-      currentQuestionIndex++;
+      const index = currentQuestionIndex + 1;
       this.executionQuestionIndexes.set(executionId, currentQuestionIndex);
     }
-
-    this.server.to(executionId).emit('newQuestion', newQuestionEvent);
 
     const statusEvent: StatusEvent = {
       status: 'started',
       participants: this.executionRooms.get(executionId).size
     };
     this.server.to(executionId).emit('status', statusEvent);
+    this.logger.log(`Trigger started for execution: ${executionId}`);
+
+    this.server.to(executionId).emit('newQuestion', newQuestionEvent);
 
     this.logger.log(`Moved to next question for execution: ${executionId}`);
   }
