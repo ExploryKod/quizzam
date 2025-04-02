@@ -99,6 +99,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(payload.executionId).emit('newQuestion', {
         question: result.question,
         answers: result.answers,
+        isLastQuestion: result.isLastQuestion,
       });
     } catch (error) {
       client.emit('error', { message: error.message });
