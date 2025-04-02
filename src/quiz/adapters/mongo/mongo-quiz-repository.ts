@@ -90,23 +90,7 @@ export class MongoQuizRepository implements IQuizRepository {
       questions: [...record.questions],
       userId: record.userId,
     });
-
-    // Ensure questions are unique (if they are duplicated in the database)
-    // const uniqueQuestions = new Map();
-    // record.questions.forEach((question) => {
-    //     uniqueQuestions.set(question.id, { ...question });
-    // });
-    //
-    // return new Quiz({
-    //   id: record._id,
-    //   title: record.title,
-    //   description: record.description,
-    //   questions: [...uniqueQuestions.values()], // Ensure unique questions
-    //   userId: record.userId,
-    // });
   }
-
-
 
   async deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO> {
 
@@ -262,13 +246,20 @@ export class MongoQuizRepository implements IQuizRepository {
     // Generate random execution ID
     const executionId = randomString(6);
 
+    // Update the quiz document with the new execution ID
+    await this.model.findByIdAndUpdate(quizId, {
+      $set: {
+        executionId: executionId,
+      }
+    }, { new: true }).exec();
+
     return `${baseUrl}/api/execution/${executionId}`;
   }
 
   async getQuizByExecutionId(executionId: string): Promise<QuizDTO> {
     try {
 
-      const quiz = await this.model.findOne({ executionId }).exec();  // Using Mongoose to find the quiz by executionId
+      const quiz = await this.model.findOne({ executionId }).exec();
 
       if (!quiz) {
         throw new NotFoundException(`Quiz with executionId ${executionId} not found`);
@@ -285,34 +276,4 @@ export class MongoQuizRepository implements IQuizRepository {
       throw error;
     }
   }
-
-  async getNextQuestion(quizId: string, questionIndex: number): Promise<QuestionEvent> {
-    try {
-
-      const quiz = await this.model.findById(quizId).exec();
-
-      if (!quiz) {
-        throw new NotFoundException('Quiz not found');
-      }
-
-      if (questionIndex < 0 || questionIndex >= quiz.questions.length) {
-        throw new Error('Question index out of bounds');
-      }
-
-      const question = quiz.questions[questionIndex];
-
-      const answerStrings: string[] = question.answers.map((answer) => answer.title);
-
-      return {
-        question: question.title,
-        answers: answerStrings
-      };
-    } catch (error) {
-      console.error('Error fetching next question:', error);
-      throw error;
-    }
-  }
-
-
-
 }
