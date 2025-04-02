@@ -8,8 +8,10 @@ import {
 import { Logger, NotFoundException } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { Question } from '../entities/quiz.entity';
-import { GetNextQuestionQuery } from '../queries/get-next-question';
 import { GetQuizByExecutionIdQuery } from '../queries/get-quiz-by-executionId';
+import { AnswerDTO, NextQuestionEventDto } from '../dto/quiz.dto';
+
+type QuizStatus = "waiting" | "started" | "completed";
 
 export interface HostJoinPayload {
   executionId: string;
@@ -56,10 +58,10 @@ export class QuizGateway {
   private executionRooms: Map<string, Set<string>> = new Map();
   private hostClients: Map<string, string> = new Map();
   private executionQuestionIndexes: Map<string, number> = new Map();
+  private executionStatus: Map<string, QuizStatus> = new Map();
 
   constructor(
     private readonly getQuizByExecutionIdQuery : GetQuizByExecutionIdQuery,
-    private readonly getNextQuestionQuery: GetNextQuestionQuery,
   ) {
   }
 
@@ -130,21 +132,6 @@ export class QuizGateway {
     };
     this.server.to(executionId).emit('status', statusEvent);
 
-    // const firstQuestion: QuestionEvent = await this.getNextQuestionQuery.execute({
-    //   quizId: quiz.id,
-    //   questionIndex: 0,
-    // });
-    //
-    // if (firstQuestion) {
-    //   console.log("gateway - firstQuestion", firstQuestion);
-    //   const newQuestionEvent: QuestionEvent = {
-    //     question: firstQuestion.question,
-    //     answers: firstQuestion.answers
-    //   };
-    //   console.log("event newQuestion", newQuestionEvent);
-    //   client.emit('newQuestion', newQuestionEvent);
-    // }
-
     this.logger.log(`Player joined execution: ${executionId}`);
   }
 
@@ -163,32 +150,6 @@ export class QuizGateway {
       return;
     }
 
-    let newQuestionEvent: QuestionEvent;
-    let currentQuestionIndex = 0;
-
-    if (currentQuestionIndex >= quiz.questions.length) {
-      this.logger.warn(`No more questions in the quiz for execution: ${executionId}, current question index: ${currentQuestionIndex}`);
-      return;
-    }
-
-    const nextQuestion: QuestionEvent = await this.getNextQuestionQuery.execute({
-      quizId: quiz.id,
-      questionIndex: currentQuestionIndex,
-    });
-
-    console.log(">> nextQuestion questions length: ", quiz.questions.length);
-    console.log(">> nextQuestion current index: ", currentQuestionIndex);
-    console.log(">> nextQuestion question: ", nextQuestion);
-    if(nextQuestion) {
-      console.log("gateway - event nextQuestion", nextQuestion);
-      newQuestionEvent = {
-        question: nextQuestion.question,
-        answers: nextQuestion.answers
-      };
-      const index = currentQuestionIndex + 1;
-      this.executionQuestionIndexes.set(executionId, currentQuestionIndex);
-    }
-
     const statusEvent: StatusEvent = {
       status: 'started',
       participants: this.executionRooms.get(executionId).size
@@ -196,9 +157,16 @@ export class QuizGateway {
     this.server.to(executionId).emit('status', statusEvent);
     this.logger.log(`Trigger started for execution: ${executionId}`);
 
-    this.server.to(executionId).emit('newQuestion', newQuestionEvent);
-
-    this.logger.log(`Moved to next question for execution: ${executionId}`);
+    const nextQuestionResults = this.getNextQuestion(
+      executionId,
+      quiz.questions
+    );
+    if(nextQuestionResults.questionNumber <= nextQuestionResults.totalQuestions) {
+      this.server.to(executionId).emit('newQuestion', nextQuestionResults);
+      this.logger.log(`Moved to next question for execution: ${executionId}`);
+    } else {
+      this.logger.log(`The quiz session n° ${executionId} is completed`);
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -214,5 +182,40 @@ export class QuizGateway {
         this.server.to(executionId).emit('status', statusEvent);
       }
     });
+  }
+
+  private getNextQuestion(executionId: string, questions: Question[]): NextQuestionEventDto {
+
+    const currentIndex = this.executionQuestionIndexes.get(executionId) ?? -1;
+    const nextIndex = currentIndex + 1;
+    if (nextIndex >= questions.length) {
+      return {
+        question: "",
+        questionNumber: nextIndex,
+        answers: [],
+        totalQuestions: questions.length,
+      }
+    }
+    this.executionQuestionIndexes.set(executionId, nextIndex);
+    const currentQuestion = questions[nextIndex];
+    if (
+      !currentQuestion ||
+      !currentQuestion.title ||
+      !currentQuestion.answers
+    ) {
+      throw new Error('Invalid question format');
+    }
+
+    const answers: string[] = currentQuestion.answers.map((answer: AnswerDTO) =>
+      typeof answer === 'string'
+        ? answer
+        : answer.title || 'No answer available'
+    );
+    return {
+      question: currentQuestion.title,
+      questionNumber: nextIndex + 1,
+      answers,
+      totalQuestions: questions.length,
+    };
   }
 }

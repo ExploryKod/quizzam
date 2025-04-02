@@ -5,7 +5,7 @@ export type DecodedToken = {
   user_id: string;
 }
 
-class AnswerDTO {
+export class AnswerDTO {
   title: string;
   isCorrect: boolean;
 }
@@ -94,4 +94,11 @@ export class CreateExecutionDto {
   quizId: string;
   executionId: string;
   status: string;
+}
+
+export class NextQuestionEventDto {
+  question: string;
+  questionNumber: number;
+  answers: string[];
+  totalQuestions: number;
 }
