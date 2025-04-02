@@ -1,4 +1,4 @@
-import {
+    import {
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -13,6 +13,7 @@ import { UsersController } from './users/users.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthMiddleware } from './modules/auth/auth.middleware';
 import { QuizController } from './quiz/quiz.controller';
+import { TestController } from './test/test.controller';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { QuizController } from './quiz/quiz.controller';
     PingoController,
     UsersController,
     QuizController,
+    TestController
   ],
   providers: [AppService],
 })
