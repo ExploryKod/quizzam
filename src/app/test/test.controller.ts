@@ -27,4 +27,20 @@ export class TestController {
       throw error;
     }
   }
+
+  @Delete('quiz/:id')
+  @HttpCode(200)
+  async deleteTestQuiz(@Param('id') id: string) {
+    try {
+      await this.firebase.firestore
+        .collection('quizzes')  
+        .doc(id)
+        .delete();
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting test quiz:', error);
+      throw error;
+    }
+  }
 }

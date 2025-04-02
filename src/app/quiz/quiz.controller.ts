@@ -15,6 +15,7 @@ import {
   BadRequestException,
   ForbiddenException,
   UnauthorizedException,
+  Delete,
 } from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
@@ -310,7 +311,7 @@ export class QuizController {
       const quizData = quizDoc.data();
 
       if (quizData.userId !== decodedToken.user_id) {
-        throw new NotFoundException('Quiz non trouvé');
+        throw new UnauthorizedException('Quiz non trouvé');
       }
 
       const updateData = {};
@@ -337,7 +338,7 @@ export class QuizController {
 
       return null;
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
         throw error;
       }
       console.error('Erreur lors de la mise à jour du quiz:', error);
@@ -368,6 +369,9 @@ export class QuizController {
         HttpStatus.UNAUTHORIZED
       );
     }
+
+    // Validate question data
+    this.validateQuestionData(questionDto);
 
     try {
       const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
@@ -410,6 +414,35 @@ export class QuizController {
         "Erreur lors de l'ajout de la question",
         HttpStatus.INTERNAL_SERVER_ERROR
       );
+    }
+  }
+
+  /**
+   * Validates question data before saving
+   * @param questionDto The question data to validate
+   * @throws BadRequestException if validation fails
+   */
+  private validateQuestionData(questionDto: CreateQuestionDto): void {
+    // Check if title is missing or empty
+    if (!questionDto.title || questionDto.title.trim() === '') {
+      throw new BadRequestException('Question title is required');
+    }
+
+    // Check if answers array exists and has at least 2 answers
+    if (!questionDto.answers || !Array.isArray(questionDto.answers) || questionDto.answers.length < 2) {
+      throw new BadRequestException('Question must have at least 2 answers');
+    }
+
+    // Check if exactly one answer is marked as correct
+    const correctAnswersCount = questionDto.answers.filter(answer => answer.isCorrect).length;
+    if (correctAnswersCount !== 1) {
+      throw new BadRequestException('Question must have exactly one correct answer');
+    }
+
+    // Check if all answers have titles
+    const invalidAnswers = questionDto.answers.filter(answer => !answer.title || answer.title.trim() === '');
+    if (invalidAnswers.length > 0) {
+      throw new BadRequestException('All answers must have a title');
     }
   }
 
