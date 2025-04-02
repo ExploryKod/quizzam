@@ -88,4 +88,8 @@ export class AuthHelper {
       throw error;
     }
   }
+
+  static getAuthHeader(token: string): Record<string, string> {
+    return { 'Authorization': `Bearer ${token}` };
+  }
 } 
