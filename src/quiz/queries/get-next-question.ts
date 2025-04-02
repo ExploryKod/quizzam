@@ -16,11 +16,12 @@ export class GetNextQuestionQuery implements Executable<Request, Response> {
 
   async execute(datas : Request): Promise<Response> {
     const { quizId, questionIndex } = datas;
+    console.log("[query] data given", datas);
     const question = await this.repository.getNextQuestion(quizId, questionIndex);
     if (!question) {
       throw new NotFoundException();
     }
-
+    console.log("[query] get next question ", question);
     return question
   }
 

@@ -8,8 +8,10 @@ import {
   DeletedQuizResponseDTO,
   getUserQuizDTO,
   PatchOperation,
-  QuestionDTO, QuizDTO, QuizProps,
-  UpdateQuestionDTO
+  QuestionDTO,
+  QuizDTO,
+  QuizProps,
+  UpdateQuestionDTO,
 } from '../../dto/quiz.dto';
 import {
   BadRequestException,
@@ -19,8 +21,14 @@ import {
 } from '@nestjs/common';
 import { QuestionEvent } from '../../gateways/quiz.gateway';
 import { isQuizStartable, randomString } from '../utils/startable-quiz';
+import { firestore } from 'firebase-admin';
 
-export class FirebaseQuizRepository implements Partial<IQuizRepository> {
+interface ExecutionData {
+  id?: string;
+  [key: string]: any;
+}
+
+export class FirebaseQuizRepository implements IQuizRepository {
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
@@ -278,21 +286,23 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
     const executionId = randomString(6);
 
     await quizRef.update({
-      executionId: executionId
+      executionId: executionId,
     });
 
     return `${baseUrl}/api/execution/${executionId}`;
   }
 
-  async getQuizByExecutionId(
-    executionId: string
-  ): Promise<QuizDTO> {
+  async getQuizByExecutionId(executionId: string): Promise<QuizDTO> {
     const quizRef = this.firebase.firestore.collection('quizzes');
 
-    const querySnapshot = await quizRef.where('executionId', '==', executionId).get();
+    const querySnapshot = await quizRef
+      .where('executionId', '==', executionId)
+      .get();
 
     if (querySnapshot.empty) {
-      throw new NotFoundException(`Quiz with executionId ${executionId} not found`);
+      throw new NotFoundException(
+        `Quiz with executionId ${executionId} not found`
+      );
     }
 
     const quizDoc = querySnapshot.docs[0];
@@ -302,14 +312,37 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
       id: quizDoc.id,
       title: quizData.title,
       description: quizData.description,
-      questions: quizData.questions
+      questions: quizData.questions,
     };
   }
 
-  async getNextQuestion(quizId: string, questionIndex: number): Promise<QuestionEvent> {
+  async getExecutionId(executionId: string): Promise<ExecutionData> {
+    const executionDoc = await this.firebase.firestore
+      .collection('executions')
+      .doc(executionId)
+      .get();
+
+    if (!executionDoc.exists) {
+      throw new Error('Execution not found');
+    }
+    const data: firestore.DocumentData = executionDoc.data();
+    console.log("Firebase repo - getExecutionId data: ", data)
+    return {
+      ...data,
+      id: executionDoc.id
+    } as ExecutionData;
+  }
+
+  async getNextQuestion(
+    quizId: string,
+    questionIndex: number
+  ): Promise<QuestionEvent> {
     try {
       // Fetch the quiz document from Firestore
-      const quizDoc = await this.firebase.firestore.collection('quizzes').doc(quizId).get();
+      const quizDoc = await this.firebase.firestore
+        .collection('quizzes')
+        .doc(quizId)
+        .get();
 
       if (!quizDoc.exists) {
         throw new Error('Quiz not found');
@@ -323,15 +356,19 @@ export class FirebaseQuizRepository implements Partial<IQuizRepository> {
 
       const question = quizData.questions[questionIndex];
 
-      const answerStrings : string[] = []
-      question.answers.forEach(answer => {
+      const answerStrings: string[] = [];
+      question.answers.forEach((answer) => {
         answerStrings.push(answer.title);
-      })
-
+      });
+      console.log(
+        '[Repository - Firebase] question and answers : ',
+        question,
+        answerStrings
+      );
       return {
         question: question.title,
-        answers : answerStrings
-      }
+        answers: answerStrings,
+      };
     } catch (error) {
       console.error('Error fetching next question:', error);
       throw error;
