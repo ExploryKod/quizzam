@@ -24,7 +24,6 @@ import { DeleteQuizByIdQuery } from './queries/delete-quiz-by-id';
 import { StartQuizQuery } from './queries/start-quiz-query';
 import { QuizGateway } from './gateways/quiz.gateway';
 import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
-import { GetNextQuestionQuery } from './queries/get-next-question';
 import { GetQuizByExecutionIdQuery } from './queries/get-quiz-by-executionId';
 
 function database(database: string) {
@@ -67,15 +66,6 @@ function database(database: string) {
       ],
       useFactory: (repository) => {
         return new GetQuizByIdQuery(repository);
-      },
-    },
-    {
-      provide: GetNextQuestionQuery,
-      inject: [
-        I_QUIZ_REPOSITORY
-      ],
-      useFactory: (repository) => {
-        return new GetNextQuestionQuery(repository);
       },
     },
     {
