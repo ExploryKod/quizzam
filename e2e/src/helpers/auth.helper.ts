@@ -16,11 +16,16 @@ export class AuthHelper {
   
   private static readonly FIREBASE_SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
 
-  static async createAndLoginUser(userData: Partial<TestUser> = {}): Promise<TestUser> {
+  static async createAndLoginUser(userData: Partial<TestUser> = {
+    email: 'user@email.com',
+    password: 'password',
+    username: 'TestUser'
+  }): Promise<TestUser> {
+    
     const testUser: TestUser = {
-      email: userData.email || `test-${Date.now()}@example.com`,
-      password: userData.password || 'testPassword123',
-      username: userData.username || `testUser-${Date.now()}`,
+      email: userData.email,
+      password: userData.password,
+      username: userData.username,
     };
 
     const authResponse = await request(this.FIREBASE_SIGNUP_URL)

@@ -28,7 +28,10 @@ export class QuizHelper {
    * @param quizData Quiz data to create
    * @returns The created quiz with its ID
    */
-  static async createQuiz(token: string, quizData: TestQuiz): Promise<TestQuiz> {
+  static async createQuiz(token: string, quizData: TestQuiz = {
+    title: 'Quiz Test',
+    description: 'Description du quiz test',
+  }): Promise<TestQuiz> {
     try {
       const response = await request(defaultUrl)
         .post('/api/quiz')
@@ -113,7 +116,15 @@ export class QuizHelper {
    * @param question Question data to add
    * @returns The added question with its ID
    */
-  static async addQuestion(token: string, quizId: string, question: TestQuestion): Promise<TestQuestion> {
+  static async addQuestion(token: string, quizId: string, question: TestQuestion = {
+    title: 'What is the capital of France?',
+      answers: [
+        { title: 'Paris', isCorrect: true },
+        { title: 'London', isCorrect: false },
+        { title: 'Rome', isCorrect: false },
+        { title: 'Berlin', isCorrect: false },
+      ]
+  }): Promise<TestQuestion> {
     try {
       const response = await request(defaultUrl)
         .post(`/api/quiz/${quizId}/questions`)
