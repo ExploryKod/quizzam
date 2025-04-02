@@ -190,8 +190,8 @@ export class QuizGateway {
     const nextIndex = currentIndex + 1;
     if (nextIndex >= questions.length) {
       return {
-        question: "",
-        questionNumber: nextIndex,
+        question: "Merci pour votre participation, le quiz est terminé",
+        questionNumber: questions.length,
         answers: [],
         totalQuestions: questions.length,
       }
