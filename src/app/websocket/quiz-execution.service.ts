@@ -12,6 +12,7 @@ export class QuizExecutionService {
   private executionHosts: Map<string, string> = new Map(); // executionId -> host clientId
   private executionParticipants: Map<string, Set<string>> = new Map(); // executionId -> Set<clientId>
   private currentQuestionIndex: Map<string, number> = new Map(); // executionId -> currentQuestionIndex
+  private quizCompleted: Map<string, boolean> = new Map(); // executionId -> boolean
 
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
@@ -104,6 +105,11 @@ export class QuizExecutionService {
       throw new Error('Not authorized to control this quiz');
     }
 
+    // Si le quiz est déjà terminé, on ne fait rien
+    if (this.quizCompleted.get(executionId)) {
+      throw new Error('Quiz is already completed');
+    }
+
     // Récupérer le quiz via Firestore
     const executionDoc = await this.firebase.firestore
       .collection('executions')
@@ -127,8 +133,14 @@ export class QuizExecutionService {
     const currentIndex = this.currentQuestionIndex.get(executionId) ?? -1;
     const nextIndex = currentIndex + 1;
 
+    // Si on a dépassé le nombre de questions, on envoie la question de fin
     if (nextIndex >= questions.length) {
-      throw new Error('No more questions available');
+      this.quizCompleted.set(executionId, true);
+      return {
+        question: 'Fin du quiz',
+        answers: ["Merci d'avoir participé !"],
+        isLastQuestion: true,
+      };
     }
 
     this.currentQuestionIndex.set(executionId, nextIndex);
@@ -152,6 +164,7 @@ export class QuizExecutionService {
     return {
       question: currentQuestion.title,
       answers,
+      isLastQuestion: false,
     };
   }
 
