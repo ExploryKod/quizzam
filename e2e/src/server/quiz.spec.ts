@@ -47,45 +47,39 @@ describe('POST /api/quiz', () => {
   let testUser: TestUser;
 
   beforeAll(async () => {
-    testUser = await AuthHelper.createAndLoginUser({
-      email: 'user@email.com',
-      password: 'password',
-      username: 'TestUser'
-    });
-    console.log('User created:', testUser);
+    testUser = await AuthHelper.createAndLoginUser();
   });
 
   afterAll(async () => {
-    console.log('Deleting user after test:', testUser);
     await AuthHelper.deleteUser(testUser.uid);
   });
 
-   it('should create a quiz successfully', async () => {
-        const quizData = {
-            title: 'Quiz Test POST /api/quiz',
-            description: 'Description du quiz test',
-        };
-        const response = await request(defaultUrl)
-            .post('/api/quiz')
-            .set('Authorization', `Bearer ${testUser.token}`)
-            .send(quizData);
+  it('should create a quiz successfully', async () => {
+    const quizData = {
+        title: 'Quiz Test POST /api/quiz',
+        description: 'Description du quiz test',
+    };
+    const response = await request(defaultUrl)
+        .post('/api/quiz')
+        .set('Authorization', `Bearer ${testUser.token}`)
+        .send(quizData);
 
     console.log('Location header:', response.headers.location);
     expect(response.status).toBe(201);
     expect(response.headers).toHaveProperty('location');
   });
 
-    it('should return 401 if user is not authenticated', async () => {
-        try {
-          await request(defaultUrl).post('/api/quiz').send({
-            email: 'user@email.com',
-            password: 'passwor',
-            returnSecureToken: true,
-          });
-        } catch (e) {
-          expect(e.response.status).toBe(401);
-        }
+  it('should return 401 if user is not authenticated', async () => {
+    try {
+      await request(defaultUrl).post('/api/quiz').send({
+        email: 'user@email.com',
+        password: 'passwor',
+        returnSecureToken: true,
       });
+    } catch (e) {
+      expect(e.response.status).toBe(401);
+    }
+  });
 });
 
 // ========== RECUPERATION D'UN QUIZ PAR ID =============== //
@@ -96,33 +90,18 @@ describe('GET /api/quiz/:id', () => {
   let testQuiz: TestQuiz;
 
   beforeAll(async () => {
-    testUser = await AuthHelper.createAndLoginUser({
-      email: 'user@email.com',
-      password: 'password',
-      username: 'TestUser'
-    });
+    testUser = await AuthHelper.createAndLoginUser();
 
     otherUser = await AuthHelper.createAndLoginUser({
-      email: 'other-user@test.com',
+      email: 'other-user@email.com',
       password: 'password',
       username: 'OtherUser'
     });
 
-    testQuiz = await QuizHelper.createQuiz(testUser.token, {
-      title: 'Quiz Test',
-      description: 'Description du quiz test',
-    });
+    testQuiz = await QuizHelper.createQuiz(testUser.token);
     quizId = testQuiz.id;
 
-    await QuizHelper.addQuestion(testUser.token, quizId, {
-      title: 'What is the capital of France?',
-      answers: [
-        { title: 'Paris', isCorrect: true },
-        { title: 'London', isCorrect: false },
-        { title: 'Rome', isCorrect: false },
-        { title: 'Berlin', isCorrect: false },
-      ],
-    });
+    await QuizHelper.addQuestion(testUser.token, quizId);
   });
 
   afterAll(async () => {
@@ -178,7 +157,7 @@ describe('GET /api/quiz/:id', () => {
   });
 });
 
-// ========== MODIFICATION D'UN QUIZ =============== // !!!!!!! Pas encore refactoré !!!!!!! (et tout ceux qui suivent)
+// ========== MODIFICATION D'UN QUIZ =============== // 
 describe('PATCH /api/quiz/:id', () => {
   let testUser: any;
   let otherUserToken: string;
@@ -207,13 +186,6 @@ describe('PATCH /api/quiz/:id', () => {
     // Récupération de l'ID du quiz
     const locationHeader = createResponse.headers.location;
     quizId = locationHeader.split('/').pop();
-  });
-
-  afterAll(async () => {
-    await AuthHelper.deleteUser(testUser.uid);
-
-    // delete quiz
-    await QuizHelper.deleteQuiz(quizId);
   });
 
   afterAll(async () => {
@@ -263,21 +235,16 @@ describe('PATCH /api/quiz/:id', () => {
   });
 });
 
-// ========== CREATION D'UNE QUESTION =============== //
+// ========== CREATION D'UNE QUESTION =============== // !!!!!!! Pas encore refactoré !!!!!!! (et tout ceux qui suivent)
 describe('POST /api/quiz/:id/questions', () => {
   let token: string;
   let quizId: string;
   let testUser: TestUser;
 
   beforeAll(async () => {
-    const auth = await request(defaultFirebaseUrl).post('').send({
-      email: 'user@test.com',
-      password: 'password',
-      returnSecureToken: true,
-    });
+    testUser = await AuthHelper.createAndLoginUser();
 
-    expect(auth.status).toBe(200);
-    token = auth.body.idToken;
+    token = testUser.token;
 
     const quizData = {
       title: 'Quiz Test addQuestions',
