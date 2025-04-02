@@ -142,16 +142,16 @@ export class QuizController {
     try {
       const quizDoc = await this.getQuizByIdQuery.execute(id);
 
-      if (quizDoc.props.userId !== decodedToken.user_id) {
+      if (quizDoc.userId !== decodedToken.user_id) {
         throw new NotFoundException(
           "Quiz non trouvé : n'appartient pas à son propriétaire"
         );
       }
       console.log('GET ID', quizDoc);
       return {
-        title: quizDoc.props.title,
-        description: quizDoc.props.description,
-        questions: quizDoc.props.questions,
+        title: quizDoc.title,
+        description: quizDoc.description,
+        questions: quizDoc.questions,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -165,14 +165,14 @@ export class QuizController {
     }
   }
 
-  @Delete('delete/:id')
+  @Delete(':id')
   @Auth()
   async deleteQuizById(
     @Param('id') id: string,
     @Req() request: RequestWithUser
   ) {
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);
-
+    console.log("We entered controller to delete quiz by id")
     try {
       const data = {
         id: id,

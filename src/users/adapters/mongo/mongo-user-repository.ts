@@ -5,7 +5,6 @@ import { CreateUserDto, FindUserDTO } from '../../dto/user.dto';
 import { HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 
-// TODO: supprimer le partial en créant un véritable username séparément dans mongo (comme pour firebase)
 export class MongoUserRepository implements IUserRepository {
   constructor(
     @Inject(getModelToken(MongoUser.CollectionName)) private readonly model: Model<MongoUser.SchemaClass>,
