@@ -2,22 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { Server, Socket } from 'socket.io';
 
-export type QuizStatus = 'waiting' | 'started' | 'completed';
+export type QuizStatus = 'waiting' | 'started';
 
 @Injectable()
 export class QuizExecutionService {
   private readonly logger = new Logger(QuizExecutionService.name);
+
   // Gestion de l'état d'exécution
   private executionHosts: Map<string, string> = new Map(); // executionId -> host clientId
   private executionParticipants: Map<string, Set<string>> = new Map(); // executionId -> Set<clientId>
   private currentQuestionIndex: Map<string, number> = new Map(); // executionId -> currentQuestionIndex
-  private executionStatus: Map<string, QuizStatus> = new Map(); // executionId -> status
-  private firstQuestionSent: Map<string, boolean> = new Map(); // executionId -> boolean
 
   constructor(
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
-  // Extrait la logique de vérification et d'initialisation pour l'hôte
+
   async handleHostConnection(
     client: Socket,
     executionId: string
@@ -52,10 +51,10 @@ export class QuizExecutionService {
     if (existingHost && existingHost !== client.id) {
       throw new Error('This quiz already has an active host');
     }
-    // Stocker le host
+
+    // Stocker le host et initialiser les structures
     this.executionHosts.set(executionId, client.id);
-    this.executionStatus.set(executionId, 'waiting');
-    this.currentQuestionIndex.delete(executionId);
+    this.currentQuestionIndex.set(executionId, -1);
     if (!this.executionParticipants.has(executionId)) {
       this.executionParticipants.set(executionId, new Set());
     }
@@ -64,26 +63,12 @@ export class QuizExecutionService {
     return quizData;
   }
 
-  // Méthode pour gérer la demande de join
   async handleJoinRequest(client: Socket, executionId: string): Promise<any> {
     this.logger.log(
       `Join request for execution ${executionId} from ${client.id}`
     );
-    // Vérifier ou initialiser l'exécution
-    let status = this.executionStatus.get(executionId);
-    if (!status || status !== 'waiting') {
-      // Tentative de récupération en direct depuis Firestore (optionnel)
-      const executionDoc = await this.firebase.firestore
-        .collection('executions')
-        .doc(executionId)
-        .get();
-      if (!executionDoc.exists) {
-        throw new Error('Execution not found');
-      }
-      this.executionStatus.set(executionId, 'waiting');
-      this.executionParticipants.set(executionId, new Set());
-    }
-    // Récupérer le quiz
+
+    // Vérifier l'existence de l'exécution
     const executionDoc = await this.firebase.firestore
       .collection('executions')
       .doc(executionId)
@@ -91,6 +76,8 @@ export class QuizExecutionService {
     if (!executionDoc.exists) {
       throw new Error('Execution not found');
     }
+
+    // Récupérer le quiz
     const executionData = executionDoc.data();
     const quizDoc = await this.firebase.firestore
       .collection('quizzes')
@@ -110,31 +97,11 @@ export class QuizExecutionService {
     return quizData;
   }
 
-  // Méthode pour gérer le passage à la question suivante
   async handleNextQuestion(client: Socket, executionId: string): Promise<any> {
     // Vérifier que le client est bien le host
     const hostId = this.executionHosts.get(executionId);
     if (hostId !== client.id) {
       throw new Error('Not authorized to control this quiz');
-    }
-
-    // Vérifier si c'est la première fois qu'on clique sur "Next Question"
-    const currentStatus = this.executionStatus.get(executionId);
-    if (currentStatus === 'waiting') {
-      this.logger.log(
-        `First click on nextQuestion - changing status to started only`
-      );
-
-      // Changer d'abord le statut à "started"
-      this.executionStatus.set(executionId, 'started');
-
-      // Retourner un message pour indiquer qu'il faut cliquer à nouveau
-      return {
-        firstClick: true,
-        questionNumber: 0,
-        message:
-          "Le quiz a démarré. Cliquez à nouveau sur 'Question Suivante' pour afficher la première question.",
-      };
     }
 
     // Récupérer le quiz via Firestore
@@ -159,12 +126,14 @@ export class QuizExecutionService {
     // Déterminer l'index de la prochaine question
     const currentIndex = this.currentQuestionIndex.get(executionId) ?? -1;
     const nextIndex = currentIndex + 1;
+
     if (nextIndex >= questions.length) {
-      this.executionStatus.set(executionId, 'completed');
-      return { completed: true };
+      throw new Error('No more questions available');
     }
+
     this.currentQuestionIndex.set(executionId, nextIndex);
     const currentQuestion = questions[nextIndex];
+
     if (
       !currentQuestion ||
       !currentQuestion.title ||
@@ -172,41 +141,29 @@ export class QuizExecutionService {
     ) {
       throw new Error('Invalid question format');
     }
+
     // Préparation de la charge utile
     const answers = currentQuestion.answers.map((answer) =>
       typeof answer === 'string'
         ? answer
         : answer.title || 'No answer available'
     );
+
     return {
       question: currentQuestion.title,
-      questionNumber: nextIndex + 1,
       answers,
-      totalQuestions: questions.length,
     };
   }
 
-  // Méthode pour le reset de l'exécution
-  async resetExecution(executionId: string): Promise<any> {
-    this.executionStatus.set(executionId, 'waiting');
-    this.currentQuestionIndex.delete(executionId);
-    this.firstQuestionSent.delete(executionId);
-    return true;
-  }
-
-  // Méthode utilitaire pour obtenir le nombre de participants
   getParticipantCount(executionId: string): number {
     return this.executionParticipants.get(executionId)?.size || 0;
   }
 
-  // Méthode pour la gestion de la déconnexion des clients,
-  // éventuellement à appeler depuis le gateway
   handleClientDisconnect(clientId: string): void {
     // Supprimer le client de toutes les structures
     for (const [executionId, hostId] of this.executionHosts.entries()) {
       if (hostId === clientId) {
         this.executionHosts.delete(executionId);
-        this.executionStatus.delete(executionId);
       }
     }
     for (const [
@@ -217,10 +174,5 @@ export class QuizExecutionService {
         participants.delete(clientId);
       }
     }
-  }
-
-  // Méthode pour obtenir le statut actuel
-  getStatus(executionId: string): QuizStatus {
-    return this.executionStatus.get(executionId) || 'waiting';
   }
 }
