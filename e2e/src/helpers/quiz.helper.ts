@@ -31,7 +31,7 @@ export class QuizHelper {
   static async createQuiz(token: string, quizData: TestQuiz = {
     title: 'Quiz Test',
     description: 'Description du quiz test',
-  }): Promise<TestQuiz> {
+  }): Promise<{response: any, quiz: TestQuiz}> {
     try {
       const response = await request(defaultUrl)
         .post('/api/quiz')
@@ -49,10 +49,11 @@ export class QuizHelper {
       const locationHeader = response.headers.location;
       const quizId = locationHeader.split('/').pop();
 
-      return {
+      return {response : response,
+        quiz : {
         ...quizData,
         id: quizId
-      };
+      }};
     } catch (error) {
       console.error('Error creating test quiz:', error);
       throw error;
@@ -91,7 +92,7 @@ export class QuizHelper {
    * @param quizId Quiz ID to update
    * @param newTitle New title for the quiz
    */
-  static async updateQuizTitle(token: string, quizId: string, newTitle: string): Promise<void> {
+  static async updateQuizTitle(token: string, quizId: string, newTitle: string): Promise<{response: any}> {
     try {
       const patchOperations = [{ op: 'replace', path: '/title', value: newTitle }];
       
@@ -103,6 +104,8 @@ export class QuizHelper {
       if (response.status !== 204) {
         throw new Error(`Failed to update quiz title: ${response.status}`);
       }
+
+      return {response : response};
     } catch (error) {
       console.error('Error updating test quiz title:', error);
       throw error;
@@ -124,7 +127,7 @@ export class QuizHelper {
         { title: 'Rome', isCorrect: false },
         { title: 'Berlin', isCorrect: false },
       ]
-  }): Promise<TestQuestion> {
+  }): Promise<{response: any, question: TestQuestion}> {
     try {
       const response = await request(defaultUrl)
         .post(`/api/quiz/${quizId}/questions`)
@@ -133,6 +136,11 @@ export class QuizHelper {
           title: question.title,
           answers: question.answers
         });
+      
+      if (response.status === 404) {
+        return {response : response,
+          question : null};
+      }
 
       if (response.status !== 201) {
         throw new Error(`Failed to add question: ${response.status}`);
@@ -142,11 +150,13 @@ export class QuizHelper {
       const locationHeader = response.headers.location;
       const questionId = locationHeader.split('/').pop();
 
-      return {
+      return {response : response,
+        question : {
         ...question,
         id: questionId
-      };
+      }};
     } catch (error) {
+
       console.error('Error adding test question:', error);
       throw error;
     }
@@ -164,7 +174,7 @@ export class QuizHelper {
     quizId: string, 
     questionId: string, 
     question: TestQuestion
-  ): Promise<void> {
+  ): Promise<{response: any, question: TestQuestion}> {
     try {
       const response = await request(defaultUrl)
         .put(`/api/quiz/${quizId}/questions/${questionId}`)
@@ -175,8 +185,12 @@ export class QuizHelper {
         });
 
       if (response.status !== 204) {
-        throw new Error(`Failed to update question: ${response.status}`);
+        return {response : response,
+          question : null};
       }
+
+      return {response : response,
+        question : question};
     } catch (error) {
       console.error('Error updating test question:', error);
       throw error;
@@ -227,6 +241,23 @@ export class QuizHelper {
       return response.body.data;
     } catch (error) {
       console.error('Error getting user quizzes:', error);
+      throw error;
+    }
+  }
+
+  static async startQuiz(token: string, quizId: string): Promise<{response: any, executionId: string}> {
+    try {
+      const response = await request(defaultUrl)
+        .post(`/api/quiz/${quizId}/start`)
+        .set('Authorization', `Bearer ${token}`);
+
+      if (response.status !== 201) {
+        return {response : response, executionId : null};
+      }
+
+      return {response : response, executionId : response.headers.location.split('/').pop()};
+    } catch (error) {
+      console.error('Error starting test quiz:', error);
       throw error;
     }
   }
