@@ -130,5 +130,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+quizzam
+
 # Nx
 .nx
+
+src/assets/quizzam-firebase-key.json
