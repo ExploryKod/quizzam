@@ -1,54 +1,80 @@
 import { Question } from '../entities/quiz.entity';
 import { Entity } from '../../shared/entity';
+import { ApiProperty } from '@nestjs/swagger';
 
-export type DecodedToken = {
+export class DecodedToken {
+  @ApiProperty()
   user_id: string;
 }
 
 export class AnswerDTO {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   isCorrect: boolean;
 }
 
-export type QuestionDTO = {
+export class QuestionDTO {
+  @ApiProperty()
   id: string;
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   answers: Array<AnswerDTO>;
 }
 
 
 export class CreateQuestionDTO {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   answers: AnswerDTO[];
 }
 
 export class UpdateQuestionDTO {
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   answers: AnswerDTO[];
 }
 
 
-export type QuizDTO = {
+export class QuizDTO {
+  @ApiProperty()
   id: string;
+  @ApiProperty()
   description: string;
+  @ApiProperty()
   questions: Array<QuestionDTO>;
+  @ApiProperty()
   title: string;
 };
 
-export type QuizProps = {
+export class QuizProps {
+  @ApiProperty()
   id: string;
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   description: string;
+  @ApiProperty()
   questions: Array<Question>;
+  @ApiProperty()
   userId: string;
 };
 
 export class basicQuizDTO {
+  @ApiProperty()
   id: string;
+  @ApiProperty()
   title: string;
+  @ApiProperty()
   description: string;
+  @ApiProperty()
   questions: Array<Question>;
+  @ApiProperty()
   userId: string;
+
   constructor(id: string, title: string, description: string, questions: Array<Question>, userId: string) {
     this.id = id;
     this.title = title;
@@ -58,47 +84,81 @@ export class basicQuizDTO {
   }
 }
 
-export type Link = {
-  create: string,
+export class Link {
+  @ApiProperty()
+  create: string;
 }
 
-export type getUserQuizDTO = {
-  data: Array<any>,
-  _links: Link
+export class getUserQuizDTO {
+  @ApiProperty()
+  data: Array<any>;
+  @ApiProperty()
+  _links: Link;
 }
 
-export type CreateQuizDTO = {
+export class CreateQuizDTO {
+  @ApiProperty()
   title: string;
+
+  @ApiProperty()
   description: string;
+
+  @ApiProperty()
   userId: string;
 }
 
 export class PatchOperation {
+  @ApiProperty()
   op: string;
+
+  @ApiProperty()
   path: string;
+
+  @ApiProperty()
   value: string;
 }
 
 export class DeletedQuizResponseDTO {
+  @ApiProperty()
   id: string;
+
+  @ApiProperty()
   userId: string;
 }
 
+
 export class StartQuizDTO {
+  @ApiProperty()
   quizId: string;
+
+  @ApiProperty({ type: DecodedToken })
   decodedToken: DecodedToken;
+
+  @ApiProperty()
   baseUrl: string;
 }
 
 export class CreateExecutionDto {
+  @ApiProperty()
   quizId: string;
+
+  @ApiProperty()
   executionId: string;
+
+  @ApiProperty()
   status: string;
 }
 
 export class NextQuestionEventDto {
+  @ApiProperty()
   question: string;
+
+  @ApiProperty()
   questionNumber: number;
+
+  @ApiProperty({ type: [String] })
   answers: string[];
+
+  @ApiProperty()
   totalQuestions: number;
 }

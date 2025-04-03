@@ -4,9 +4,22 @@ import { NestFactory } from '@nestjs/core';
 import { MainModule } from './core/main.module';
 import { variables } from './shared/variables.config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
+
 
 async function bootstrap() {
-  const app = await NestFactory.create(MainModule);
+
+  const app = await NestFactory.create<NestExpressApplication>(MainModule);
+
+  // Set up EJS as the templating engine
+  app.setBaseViewsDir(join(__dirname, '..', 'shared', 'views'));
+  app.setViewEngine('ejs');
+
+  // Serve static files
+  app.useStaticAssets(join(__dirname, '..', 'shared', 'static'));
+
+
   app.setGlobalPrefix(variables.globalPrefix);
 
   app.enableCors({
@@ -25,6 +38,7 @@ async function bootstrap() {
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, documentFactory);
+
 
 
   await app.listen(variables.port);
