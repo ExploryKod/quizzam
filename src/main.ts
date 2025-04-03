@@ -16,8 +16,6 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'static'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   app.setViewEngine('ejs');
-  console.log("Views directory:", join(__dirname, '..', 'views'));
-
   app.setGlobalPrefix(variables.globalPrefix);
 
   app.enableCors({
@@ -40,9 +38,19 @@ async function bootstrap() {
 
 
   await app.listen(variables.port);
+  console.log("\x1b[36m *************************************** \n 🌞 Hello in Quizzam API - Version 1.0.0 \n 🏡 Architecture : hexagonale \n *************************************** ");
   Logger.log(
-    `🚀 Running on: http://localhost:${variables.port}/${variables.globalPrefix} with 💽 \x1b[35m${variables.database}\x1b[32m as database`
+    `🚀 Running on: http://localhost:${variables.port}/${variables.globalPrefix} with 💽 \x1b[35m${variables.database}\x1b[32m as database`,
   );
+  Logger.log(
+    `🔧 e2e tests are in \x1b[38;5;226m${join(__dirname, '..', 'e2e/src/server')}\x1b[0m`,
+  );
+  Logger.log(
+    `🔧 Only use 💽 \x1b[35mFIREBASE\x1b[32m when using tests`,
+  );
+  Logger.log(
+    `📄 Internal api views are in \x1b[35m${join(__dirname, '..', 'views')}\x1b[0m`
+  )
 }
 
 bootstrap();
