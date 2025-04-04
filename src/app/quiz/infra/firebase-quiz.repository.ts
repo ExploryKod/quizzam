@@ -3,13 +3,13 @@ import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 import { QuizRepository } from '../ports/quiz.repository';
-import { IQuiz, IQuestion } from '../quiz.interface';
+import { IQuiz, IQuestion } from '../interfaces/quiz.interface';
 import {
   CreateQuizDto,
   CreateQuestionDto,
   UpdateQuestionDto,
   PatchOperationDto,
-} from '../quiz.dto';
+} from '../dto/quiz.dto';
 import { QuizMapper, QuestionMapper } from '../mappers/quiz.mapper';
 import {
   QuizNotFoundError,
