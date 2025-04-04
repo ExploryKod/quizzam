@@ -1,4 +1,4 @@
-    import {
+import {
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -14,6 +14,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AuthMiddleware } from './modules/auth/auth.middleware';
 import { QuizController } from './quiz/quiz.controller';
 import { TestController } from './test/test.controller';
+import { QuizModule } from './quiz/quiz.module';
+import { WebSocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { TestController } from './test/test.controller';
       googleApplicationCredential: 'src/assets/quizzam-firebase-key.json',
     }),
     AuthModule,
+    QuizModule,
+    WebSocketModule,
   ],
   controllers: [
     AppController,
