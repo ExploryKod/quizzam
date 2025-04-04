@@ -14,15 +14,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { QuizService } from './quiz.service';
-import { Auth } from '../modules/auth/auth.decorator';
-import { RequestWithUser } from '../modules/auth/model/request-with-user';
+import { QuizService } from '../services/quiz.service';
+import { Auth } from '../../modules/auth/auth.decorator';
+import { RequestWithUser } from '../../modules/auth/model/request-with-user';
 import {
   CreateQuizDto,
   CreateQuestionDto,
   UpdateQuestionDto,
   PatchOperationDto,
-} from './quiz.dto';
+} from '../dto/quiz.dto';
 import * as jwt from 'jsonwebtoken';
 
 @Controller('quiz')
