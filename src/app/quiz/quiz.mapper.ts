@@ -28,46 +28,41 @@ export class QuizMapper {
   }
 
   /**
-   * Convertit un DTO de création en objet de domaine IQuiz
+   * Convertit un DTO de création en objet persistable pour Firestore
    */
-  static fromCreateDto(dto: CreateQuizDto, userId: string): IQuiz {
+  static fromCreateDto(dto: CreateQuizDto, userId: string): any {
     return {
-      id: null, // Sera généré par Firestore
       title: dto.title,
       description: dto.description || '',
       userId,
       questions: [],
+      updatedAt: new Date(),
     };
   }
 
   /**
-   * Convertit un objet de domaine IQuiz en objet persistable dans Firestore
+   * Applique des opérations de patch et retourne un objet persistable
    */
-  static toPersistence(quiz: IQuiz): any {
-    return {
-      title: quiz.title,
-      description: quiz.description,
-      userId: quiz.userId,
-      questions: quiz.questions
-        ? quiz.questions.map((q) => QuestionMapper.toPersistence(q))
-        : [],
-      updatedAt: new Date(),
-    };
-  }
-  
-  /**
-   * Applique des opérations de patch à un objet quiz
-   */
-  static applyPatchOperations(quiz: IQuiz, operations: PatchOperationDto[]): IQuiz {
+  static applyPatchOperations(quiz: IQuiz, operations: PatchOperationDto[]): any {
     const updatedQuiz = { ...quiz };
     
     for (const operation of operations) {
-        if (operation.op === 'replace') {
-            updatedQuiz.title = operation.value;
+      if (operation.op === 'replace') {
+        if (operation.path === '/title') {
+          updatedQuiz.title = operation.value;
+        } else if (operation.path === '/description') {
+          updatedQuiz.description = operation.value;
         }
+      }
     }
     
-    return updatedQuiz;
+    return {
+      title: updatedQuiz.title,
+      description: updatedQuiz.description,
+      userId: updatedQuiz.userId,
+      questions: updatedQuiz.questions,
+      updatedAt: new Date(),
+    };
   }
 }
 
@@ -89,22 +84,10 @@ export class QuestionMapper {
   }
 
   /**
-   * Convertit un DTO de création en objet de domaine IQuestion
+   * Convertit un DTO de création en objet persistable
    */
-  static fromCreateDto(dto: CreateQuestionDto): IQuestion {
-    return {
-      id: uuidv4(),
-      title: dto.title,
-      answers: dto.answers
-        ? dto.answers.map((a) => AnswerMapper.fromDto(a))
-        : [],
-    };
-  }
-
-  /**
-   * Convertit un DTO de mise à jour en objet de domaine IQuestion
-   */
-  static fromUpdateDto(dto: UpdateQuestionDto, questionId: string): IQuestion {
+  static fromCreateDto(dto: CreateQuestionDto): any {
+    const questionId = uuidv4();
     return {
       id: questionId,
       title: dto.title,
@@ -115,14 +98,14 @@ export class QuestionMapper {
   }
 
   /**
-   * Convertit un objet de domaine IQuestion en objet persistable
+   * Convertit un DTO de mise à jour en objet persistable
    */
-  static toPersistence(question: IQuestion): any {
+  static fromUpdateDto(dto: UpdateQuestionDto, questionId: string): any {
     return {
-      id: question.id,
-      title: question.title,
-      answers: question.answers
-        ? question.answers.map((a) => AnswerMapper.toPersistence(a))
+      id: questionId,
+      title: dto.title,
+      answers: dto.answers
+        ? dto.answers.map((a) => AnswerMapper.fromDto(a))
         : [],
     };
   }
@@ -143,22 +126,12 @@ export class AnswerMapper {
   }
 
   /**
-   * Convertit un DTO de réponse en objet de domaine IAnswer
+   * Convertit un DTO de réponse en objet persistable
    */
-  static fromDto(dto: AnswerDto): IAnswer {
+  static fromDto(dto: AnswerDto): any {
     return {
       title: dto.title,
       isCorrect: dto.isCorrect,
-    };
-  }
-
-  /**
-   * Convertit un objet de domaine IAnswer en objet persistable
-   */
-  static toPersistence(answer: IAnswer): any {
-    return {
-      title: answer.title,
-      isCorrect: answer.isCorrect,
     };
   }
 } 

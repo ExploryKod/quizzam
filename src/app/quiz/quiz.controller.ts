@@ -103,11 +103,8 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     try {
-      // Mapper le DTO en une entité de domaine
-      const quizEntity = QuizMapper.fromCreateDto(createQuizDto, userId);
-      
-      // Convertir l'entité en un objet persistable
-      const persistableQuiz = QuizMapper.toPersistence(quizEntity);
+      // Convertir directement le DTO en objet persistable
+      const persistableQuiz = QuizMapper.fromCreateDto(createQuizDto, userId);
       
       // Appeler le service avec l'objet transformé
       const quizId = await this.quizService.createQuiz(persistableQuiz, userId);
@@ -167,11 +164,8 @@ export class QuizController {
       // Récupérer le quiz existant
       const existingQuiz = await this.quizService.getQuizById(id, userId);
       
-      // Appliquer les opérations de patch à l'entité
-      const updatedQuizEntity = QuizMapper.applyPatchOperations(existingQuiz, operations);
-      
-      // Convertir en objet persistable
-      const persistableQuiz = QuizMapper.toPersistence(updatedQuizEntity);
+      // Appliquer les opérations de patch et obtenir directement l'objet persistable
+      const persistableQuiz = QuizMapper.applyPatchOperations(existingQuiz, operations);
       
       // Envoyer l'objet transformé au service
       await this.quizService.updateQuiz(id, userId, persistableQuiz);
@@ -204,11 +198,8 @@ export class QuizController {
     this.validateQuestionData(questionDto);
 
     try {
-      // Mapper le DTO en une entité de domaine
-      const questionEntity = QuestionMapper.fromCreateDto(questionDto);
-      
-      // Convertir l'entité en un objet persistable
-      const persistableQuestion = QuestionMapper.toPersistence(questionEntity);
+      // Convertir directement le DTO en objet persistable
+      const persistableQuestion = QuestionMapper.fromCreateDto(questionDto);
       
       // Appeler le service avec l'objet transformé
       const questionId = await this.quizService.addQuestion(
@@ -275,11 +266,8 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     try {
-      // Mapper le DTO en une entité de domaine
-      const questionEntity = QuestionMapper.fromUpdateDto(updateQuestionDto, questionId);
-      
-      // Convertir l'entité en un objet persistable
-      const persistableQuestion = QuestionMapper.toPersistence(questionEntity);
+      // Convertir directement le DTO en objet persistable
+      const persistableQuestion = QuestionMapper.fromUpdateDto(updateQuestionDto, questionId);
       
       // Appeler le service avec l'objet transformé
       await this.quizService.updateQuestion(
