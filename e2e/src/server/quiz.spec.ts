@@ -127,7 +127,6 @@ describe('Quiz API', () => {
       testQuiz = createResponse.quiz;
       quizId = testQuiz.id;
 
-      console.log('testQuiz', testQuiz, 'testUserToken', testUser.token);
 
       await QuizHelper.addQuestion(testUser.token, quizId);
     });
@@ -210,20 +209,12 @@ describe('Quiz API', () => {
       });
 
       // Création d'un quiz pour avoir un ID valide
-      const quizData = {
-        title: 'Quiz Test',
-        description: 'Description du quiz test',
-      };
+      const createResponse = await QuizHelper.createQuiz(testUser.token);
 
-      const createResponse = await request(defaultUrl)
-        .post('/api/quiz')
-        .set('Authorization', `Bearer ${testUser.token}`)
-        .send(quizData);
-
-      expect(createResponse.status).toBe(201);
+      expect(createResponse.response.status).toBe(201);
 
       // Récupération de l'ID du quiz
-      const locationHeader = createResponse.headers.location;
+      const locationHeader = createResponse.response.headers.location;
       quizId = locationHeader.split('/').pop();
     });
 
@@ -394,6 +385,7 @@ describe('Quiz API', () => {
 
       const questionLocationHeader = questionData.response.headers.location;
       questionId = questionLocationHeader.split('/').pop();
+      console.log('questionId', questionId);
     });
 
     afterAll(async () => {
