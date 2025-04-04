@@ -159,7 +159,6 @@ export class QuizExecutionService {
     return {
       question: currentQuestion.title,
       answers,
-      isLastQuestion: false,
     };
   }
 
