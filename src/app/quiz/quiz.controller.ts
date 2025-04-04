@@ -28,6 +28,7 @@ import {
   PatchOperationDto,
 } from './quiz.dto';
 import * as jwt from 'jsonwebtoken';
+import { QuizMapper, QuestionMapper } from './quiz.mapper';
 
 
 @Controller('quiz')
@@ -102,7 +103,15 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     try {
-      const quizId = await this.quizService.createQuiz(createQuizDto, userId);
+      // Mapper le DTO en une entité de domaine
+      const quizEntity = QuizMapper.fromCreateDto(createQuizDto, userId);
+      
+      // Convertir l'entité en un objet persistable
+      const persistableQuiz = QuizMapper.toPersistence(quizEntity);
+      
+      // Appeler le service avec l'objet transformé
+      const quizId = await this.quizService.createQuiz(persistableQuiz, userId);
+      
       const baseUrl = `${request.protocol}://${request.get('host')}/api/quiz`;
       response.header('Location', `${baseUrl}/${quizId}`);
 
@@ -155,7 +164,18 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     try {
-      await this.quizService.updateQuiz(id, userId, operations);
+      // Récupérer le quiz existant
+      const existingQuiz = await this.quizService.getQuizById(id, userId);
+      
+      // Appliquer les opérations de patch à l'entité
+      const updatedQuizEntity = QuizMapper.applyPatchOperations(existingQuiz, operations);
+      
+      // Convertir en objet persistable
+      const persistableQuiz = QuizMapper.toPersistence(updatedQuizEntity);
+      
+      // Envoyer l'objet transformé au service
+      await this.quizService.updateQuiz(id, userId, persistableQuiz);
+      
       return null;
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
@@ -184,11 +204,19 @@ export class QuizController {
     this.validateQuestionData(questionDto);
 
     try {
+      // Mapper le DTO en une entité de domaine
+      const questionEntity = QuestionMapper.fromCreateDto(questionDto);
+      
+      // Convertir l'entité en un objet persistable
+      const persistableQuestion = QuestionMapper.toPersistence(questionEntity);
+      
+      // Appeler le service avec l'objet transformé
       const questionId = await this.quizService.addQuestion(
         quizId,
         userId,
-        questionDto
+        persistableQuestion
       );
+      
       const baseUrl = `${request.protocol}://${request.get('host')}/api/quiz`;
       response.header(
         'Location',
@@ -200,7 +228,7 @@ export class QuizController {
         throw error;
       }
       throw new HttpException(
-        "Erreur lors de l'ajout de la question: "+error.message,
+        "Erreur lors de l'ajout de la question: " + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -247,12 +275,20 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     try {
+      // Mapper le DTO en une entité de domaine
+      const questionEntity = QuestionMapper.fromUpdateDto(updateQuestionDto, questionId);
+      
+      // Convertir l'entité en un objet persistable
+      const persistableQuestion = QuestionMapper.toPersistence(questionEntity);
+      
+      // Appeler le service avec l'objet transformé
       await this.quizService.updateQuestion(
         quizId,
         questionId,
         userId,
-        updateQuestionDto
+        persistableQuestion
       );
+      
       return null;
     } catch (error) {
       if (error instanceof NotFoundException) {
