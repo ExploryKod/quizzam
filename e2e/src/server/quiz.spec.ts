@@ -127,6 +127,8 @@ describe('Quiz API', () => {
       testQuiz = createResponse.quiz;
       quizId = testQuiz.id;
 
+      console.log('testQuiz', testQuiz, 'testUserToken', testUser.token);
+
       await QuizHelper.addQuestion(testUser.token, quizId);
     });
 

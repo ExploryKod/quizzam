@@ -136,6 +136,8 @@ export class QuizHelper {
           title: question.title,
           answers: question.answers
         });
+
+      console.log('response', response.body);
       
       if (response.status === 404) {
         return {response : response,
