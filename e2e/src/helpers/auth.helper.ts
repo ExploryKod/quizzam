@@ -17,7 +17,7 @@ export class AuthHelper {
   private static readonly FIREBASE_SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
 
   static async createAndLoginUser(userData: Partial<TestUser> = {
-    email: 'user@email.com',
+    email: `user${Math.random()}@email.com`,
     password: 'password',
     username: 'TestUser'
   }): Promise<TestUser> {
