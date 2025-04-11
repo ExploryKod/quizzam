@@ -38,12 +38,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { AddQuestionCommand } from '../commands/add-question-command';
 import { UpdateQuestionCommand } from '../commands/update-question-command';
 import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { Question } from '../entities/quiz.entity';
 import { StartQuizQuery } from '../queries/start-quiz-query';
-import { QuizGateway } from '../gateways/quiz.gateway';
-
-
 
 @Controller('quiz')
 export class QuizController {
@@ -91,7 +87,6 @@ export class QuizController {
     }
   }
 
-  // It creates a quiz in database but will not find despite being redirected to the quiz (for that we need the GET by quiz id to work)
   @Post()
   @Auth()
   @HttpCode(201)
@@ -100,10 +95,6 @@ export class QuizController {
     @Body() createQuizDto: CreateQuizDTO,
     @Res({ passthrough: true }) response: Response
 
-    // @Req() request: RequestWithUser,
-    // @Body(new ZodValidationPipe(QuizAPI.CreateQuiz.schema))
-    // body: QuizAPI.CreateQuiz.Request,
-    // @Res({ passthrough: true }) response: Response
   ): Promise<QuizAPI.CreateQuiz.Response> {
     try {
       const decodedToken: DecodedToken = await this.generateDecodedToken(
@@ -133,7 +124,6 @@ export class QuizController {
     }
   }
 
-  // It direct to the quiz, the post request use location of a slug that use this GET request
   @Get(':id')
   @Auth()
   async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser) {
