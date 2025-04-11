@@ -8,6 +8,27 @@ import {
 } from './quiz.dto';
 import { v4 as uuidv4 } from 'uuid';
 
+// Définissez des interfaces pour les données persistées dans Firestore
+export interface FirestoreQuiz {
+  id?: string;
+  title: string;
+  description: string;
+  userId: string;
+  questions: FirestoreQuestion[];
+  updatedAt: Date;
+}
+
+export interface FirestoreQuestion {
+  id: string;
+  title: string;
+  answers: FirestoreAnswer[];
+}
+
+export interface FirestoreAnswer {
+  title: string;
+  isCorrect: boolean;
+}
+
 /**
  * Classe utilitaire pour mapper les Quiz entre différentes représentations
  */
@@ -15,7 +36,7 @@ export class QuizMapper {
   /**
    * Convertit un document Firestore en objet de domaine IQuiz
    */
-  static toEntity(data: any, id?: string): IQuiz {
+  static toEntity(data: FirestoreQuiz, id?: string): IQuiz {
     return {
       id: id || data.id,
       title: data.title || '',
@@ -30,7 +51,7 @@ export class QuizMapper {
   /**
    * Convertit un DTO de création en objet persistable pour Firestore
    */
-  static fromCreateDto(dto: CreateQuizDto, userId: string): any {
+  static fromCreateDto(dto: CreateQuizDto, userId: string): FirestoreQuiz {
     return {
       title: dto.title,
       description: dto.description || '',
@@ -43,7 +64,7 @@ export class QuizMapper {
   /**
    * Applique des opérations de patch et retourne un objet persistable
    */
-  static applyPatchOperations(quiz: IQuiz, operations: PatchOperationDto[]): any {
+  static applyPatchOperations(quiz: IQuiz, operations: PatchOperationDto[]): FirestoreQuiz {
     const updatedQuiz = { ...quiz };
     
     for (const operation of operations) {
@@ -86,7 +107,7 @@ export class QuestionMapper {
   /**
    * Convertit un DTO de création en objet persistable
    */
-  static fromCreateDto(dto: CreateQuestionDto): any {
+  static fromCreateDto(dto: CreateQuestionDto): FirestoreQuestion {
     const questionId = uuidv4();
     return {
       id: questionId,
@@ -100,7 +121,7 @@ export class QuestionMapper {
   /**
    * Convertit un DTO de mise à jour en objet persistable
    */
-  static fromUpdateDto(dto: UpdateQuestionDto, questionId: string): any {
+  static fromUpdateDto(dto: UpdateQuestionDto, questionId: string): FirestoreQuestion {
     return {
       id: questionId,
       title: dto.title,
@@ -128,7 +149,7 @@ export class AnswerMapper {
   /**
    * Convertit un DTO de réponse en objet persistable
    */
-  static fromDto(dto: AnswerDto): any {
+  static fromDto(dto: AnswerDto): FirestoreAnswer {
     return {
       title: dto.title,
       isCorrect: dto.isCorrect,
