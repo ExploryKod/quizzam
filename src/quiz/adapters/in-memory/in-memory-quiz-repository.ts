@@ -84,7 +84,6 @@ export class InMemoryQuizRepository implements IQuizRepository {
       throw new BadRequestException('Le titre du quiz est requis');
     }
 
-    // Génération d'un ID unique
     let id: string;
     do {
       id = Math.random().toString(36).substr(2, 9);
@@ -99,14 +98,6 @@ export class InMemoryQuizRepository implements IQuizRepository {
       questions: [],
     });
 
-    // // Validation du quiz
-    // if (quiz.quizHasNoQuestion() && data.questions) {
-    //   throw new BadRequestException(
-    //     'Le quiz doit contenir au moins une question valide'
-    //   );
-    // }
-
-    // Stockage du quiz
     this.quizzes.set(id, quiz);
 
     return id;
