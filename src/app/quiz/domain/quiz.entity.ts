@@ -1,18 +1,18 @@
-export interface IQuiz {
+export interface Quiz {
   id: string;
   title: string;
   description: string;
   userId: string;
-  questions?: IQuestion[];
+  questions?: Question[];
 }
 
-export interface IQuestion {
+export interface Question {
   id: string;
   title: string;
-  answers: IAnswer[];
+  answers: Answer[];
 }
 
-export interface IAnswer {
+export interface Answer {
   title: string;
   isCorrect: boolean;
-}
+} 

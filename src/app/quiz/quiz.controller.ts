@@ -26,9 +26,9 @@ import {
   CreateQuestionDto,
   UpdateQuestionDto,
   PatchOperationDto,
-} from './quiz.dto';
+} from './dto/quiz.dto';
 import * as jwt from 'jsonwebtoken';
-import { QuizMapper, QuestionMapper } from './quiz.mapper';
+import { QuizMapper, QuestionMapper } from './mapper/quiz.mapper';
 
 
 @Controller('quiz')

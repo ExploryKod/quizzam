@@ -1,42 +1,16 @@
-import { IQuiz, IQuestion, IAnswer } from './quiz.interface';
-import {
-  CreateQuizDto,
-  UpdateQuestionDto,
-  CreateQuestionDto,
-  AnswerDto,
-  PatchOperationDto,
-} from './quiz.dto';
 import { v4 as uuidv4 } from 'uuid';
-
-// Définissez des interfaces pour les données persistées dans Firestore
-export interface FirestoreQuiz {
-  id?: string;
-  title: string;
-  description: string;
-  userId: string;
-  questions: FirestoreQuestion[];
-  updatedAt: Date;
-}
-
-export interface FirestoreQuestion {
-  id: string;
-  title: string;
-  answers: FirestoreAnswer[];
-}
-
-export interface FirestoreAnswer {
-  title: string;
-  isCorrect: boolean;
-}
+import { Quiz, Question, Answer } from '../domain/quiz.entity';
+import { CreateQuizDto, UpdateQuestionDto, CreateQuestionDto, AnswerDto, PatchOperationDto } from '../dto/quiz.dto';
+import { FirestoreQuiz, FirestoreQuestion, FirestoreAnswer } from '../persistence/quiz.model';
 
 /**
  * Classe utilitaire pour mapper les Quiz entre différentes représentations
  */
 export class QuizMapper {
   /**
-   * Convertit un document Firestore en objet de domaine IQuiz
+   * Convertit un document Firestore en objet de domaine Quiz
    */
-  static toEntity(data: FirestoreQuiz, id?: string): IQuiz {
+  static toEntity(data: FirestoreQuiz, id?: string): Quiz {
     return {
       id: id || data.id,
       title: data.title || '',
@@ -64,7 +38,7 @@ export class QuizMapper {
   /**
    * Applique des opérations de patch et retourne un objet persistable
    */
-  static applyPatchOperations(quiz: IQuiz, operations: PatchOperationDto[]): FirestoreQuiz {
+  static applyPatchOperations(quiz: Quiz, operations: PatchOperationDto[]): FirestoreQuiz {
     const updatedQuiz = { ...quiz };
     
     for (const operation of operations) {
@@ -81,7 +55,7 @@ export class QuizMapper {
       title: updatedQuiz.title,
       description: updatedQuiz.description,
       userId: updatedQuiz.userId,
-      questions: updatedQuiz.questions,
+      questions: updatedQuiz.questions || [],
       updatedAt: new Date(),
     };
   }
@@ -92,9 +66,9 @@ export class QuizMapper {
  */
 export class QuestionMapper {
   /**
-   * Convertit un objet brut en objet de domaine IQuestion
+   * Convertit un objet brut en objet de domaine Question
    */
-  static toEntity(data: any): IQuestion {
+  static toEntity(data: any): Question {
     return {
       id: data.id || '',
       title: data.title || '',
@@ -137,9 +111,9 @@ export class QuestionMapper {
  */
 export class AnswerMapper {
   /**
-   * Convertit un objet brut en objet de domaine IAnswer
+   * Convertit un objet brut en objet de domaine Answer
    */
-  static toEntity(data: any): IAnswer {
+  static toEntity(data: any): Answer {
     return {
       title: data.title || '',
       isCorrect: Boolean(data.isCorrect),

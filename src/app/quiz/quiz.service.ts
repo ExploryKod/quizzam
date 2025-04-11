@@ -13,8 +13,8 @@ import {
   CreateQuestionDto,
   UpdateQuestionDto,
   PatchOperationDto,
-} from './quiz.dto';
-import { IQuiz } from './quiz.interface';
+} from './dto/quiz.dto';
+import { Quiz } from './domain/quiz.entity';
 
 @Injectable()
 export class QuizService {
@@ -131,7 +131,7 @@ export class QuizService {
     return quizRef.id;
   }
 
-  async getQuizById(id: string, userId: string): Promise<IQuiz> {
+  async getQuizById(id: string, userId: string): Promise<Quiz> {
     const quizDoc = await this.firebase.firestore
       .collection('quizzes')
       .doc(id)
@@ -141,7 +141,7 @@ export class QuizService {
       throw new NotFoundException('Quiz non trouvé');
     }
 
-    const quizData = quizDoc.data() as IQuiz;
+    const quizData = quizDoc.data() as Quiz;
 
     if (quizData.userId !== userId) {
       throw new UnauthorizedException('Quiz non trouvé');
