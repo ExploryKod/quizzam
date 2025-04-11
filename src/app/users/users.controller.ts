@@ -6,15 +6,18 @@ import {
   HttpStatus,
   HttpException,
   Body,
+  HttpCode,
 } from '@nestjs/common';
 import { RequestWithUser } from '../modules/auth/model/request-with-user';
 import { Auth } from '../modules/auth/auth.decorator';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { JwtPayload } from 'jsonwebtoken';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty } from 'class-validator';
+import * as jwt from 'jsonwebtoken';
 
 class CreateUserDto {
-  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   username: string;
 }
 
@@ -26,29 +29,27 @@ export class UsersController {
 
   @Post()
   @Auth()
+  @HttpCode(201)
   async create(
     @Req() request: RequestWithUser,
-    @Body() CreateUserDto: CreateUserDto
+    @Body() createUserDto: CreateUserDto
   ) {
-    const { username } = CreateUserDto;
-    const token = request.headers.authorization.split('Bearer ')[1];
-
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    const uid = decodedToken.user_id;
-
     try {
-      const userRef = this.firebase.firestore.collection('users').doc(uid);
+      const token = request.headers.authorization.split('Bearer ')[1];
+      const decodedToken = jwt.decode(token) as JwtPayload;
+      const uid = decodedToken.user_id;
 
-      await userRef.set({
-        username,
+      await this.firebase.firestore.collection('users').doc(uid).set({
+        username: createUserDto.username,
       });
 
       return null;
     } catch (error) {
       console.error('Error creating user:', error);
-      throw error;
+      throw new HttpException(
+        "Erreur lors de la création de l'utilisateur",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -58,6 +59,7 @@ export class UsersController {
     const token = request.headers.authorization.split('Bearer ')[1];
     const jwt = require('jsonwebtoken');
     const decodedToken = jwt.decode(token) as JwtPayload;
+    console.log(decodedToken);
 
     if (!decodedToken.user_id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -67,7 +69,9 @@ export class UsersController {
       const userRef = this.firebase.firestore
         .collection('users')
         .doc(decodedToken.user_id);
+      // console.log(userRef);
       const userDoc = await userRef.get();
+      console.log(userDoc);
 
       if (!userDoc.exists) {
         throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
