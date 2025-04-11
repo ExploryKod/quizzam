@@ -80,7 +80,8 @@ describe('Quiz API', () => {
 
       expect(createResponse.response.status).toBe(201);
       expect(createResponse.response.headers).toHaveProperty('location');
-      
+      expect(createResponse.response.headers.location).toMatch(/\/api\/quiz\/[A-Za-z0-9]{6}/);
+
       // Clean up the created quiz
       if (createResponse.quiz.id) {
         await QuizHelper.deleteQuiz(createResponse.quiz.id);
@@ -508,6 +509,7 @@ describe('Quiz API', () => {
 
       expect(response.response.status).toBe(201);
       expect(response.response.headers).toHaveProperty('location');
+      console.log('response.response.headers.location', response.response.headers.location);
       expect(response.response.headers.location).toMatch(/\/api\/execution\/[A-Z0-9]{6}/);
     });
 
