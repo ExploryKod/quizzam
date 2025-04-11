@@ -138,11 +138,16 @@ export class FirebaseQuizRepository implements IQuizRepository {
   }
 
   async create(data: CreateQuizDTO): Promise<string> {
-    const quizRef = await this.firebase.firestore
-      .collection('quizzes')
-      .add(data);
+    try {
+      const quizRef = await this.firebase.firestore
+        .collection('quizzes')
+        .add(data);
 
-    return quizRef.id.toString();
+      return quizRef.id.toString();
+    } catch (error) {
+      console.error(error);
+    }
+
   }
 
   async update(
