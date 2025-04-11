@@ -195,8 +195,8 @@ export class QuizController {
     const userId = this.getUserIdFromToken(request);
 
     // Validate question data
-    this.validateQuestionData(questionDto);
-
+    // this.validateQuestionData(questionDto); // les questions sont d'abord créées vide via le frontend (et modifier ensuite) donc pas de validation ici 
+    
     try {
       // Convertir directement le DTO en objet persistable
       const persistableQuestion = QuestionMapper.fromCreateDto(questionDto);
