@@ -1,5 +1,4 @@
 import { Question } from '../entities/quiz.entity';
-import { Entity } from '../../shared/entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class DecodedToken {
@@ -136,17 +135,6 @@ export class StartQuizDTO {
 
   @ApiProperty()
   baseUrl: string;
-}
-
-export class CreateExecutionDto {
-  @ApiProperty()
-  quizId: string;
-
-  @ApiProperty()
-  executionId: string;
-
-  @ApiProperty()
-  status: string;
 }
 
 export class NextQuestionEventDto {
