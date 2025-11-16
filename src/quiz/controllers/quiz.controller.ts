@@ -57,11 +57,7 @@ export class QuizController {
   @Get()
   @Auth()
   async getUserQuizzes(@Req() request: RequestWithUser) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
+    if (!request.user) {
       throw new HttpException(
         'Utilisateur non authentifié',
         HttpStatus.UNAUTHORIZED
@@ -72,7 +68,7 @@ export class QuizController {
       const baseUrl = request.protocol + '://' + request.get('host');
       const createUrl = `${baseUrl}/api/quiz`;
       const data = {
-        userId: decodedToken.user_id,
+        userId: request.user.uid,
         createUrl: createUrl,
         baseUrl: baseUrl,
       };
@@ -267,16 +263,7 @@ export class QuizController {
     @Body() updateQuestionDTO: UpdateQuestionDTO,
     @Req() request: RequestWithUser
   ) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
-      throw new HttpException(
-        'Utilisateur non authentifié',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const decodedToken: DecodedToken = await this.generateDecodedToken(request);
 
     try {
 
@@ -325,16 +312,7 @@ export class QuizController {
     @Res({ passthrough: true }) response: Response ) {
     try {
 
-      const token = request.headers.authorization.split('Bearer ')[1];
-      const jwt = require('jsonwebtoken');
-      const decodedToken = jwt.decode(token);
-
-      if (!decodedToken.user_id) {
-        throw new HttpException(
-          'Utilisateur non authentifié',
-          HttpStatus.UNAUTHORIZED
-        );
-      }
+      const decodedToken: DecodedToken = await this.generateDecodedToken(request);
 
       const baseUrl = request.protocol + '://' + request.get('host');
 
@@ -375,19 +353,19 @@ export class QuizController {
     return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 
-  private async generateDecodedToken(request: RequestWithUser) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken.user_id) {
+  private async generateDecodedToken(request: RequestWithUser): Promise<DecodedToken> {
+    // Use request.user set by auth middleware instead of manually decoding token
+    if (!request.user || !request.user.uid) {
       throw new HttpException(
         'Utilisateur non authentifié',
         HttpStatus.UNAUTHORIZED
       );
     }
 
-    return decodedToken;
+    // Map uid to user_id for backward compatibility
+    return {
+      user_id: request.user.uid,
+    };
   }
 
   /**

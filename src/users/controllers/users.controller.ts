@@ -6,6 +6,8 @@ import {
   HttpStatus,
   Post,
   Req,
+  Optional,
+  Inject,
 } from '@nestjs/common';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 import { Auth } from '../../auth/auth.decorator';
@@ -20,7 +22,7 @@ import { DecodedToken } from '../../quiz/dto/quiz.dto';
 @Controller('users')
 export class UsersController {
   constructor(
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
+    @Optional() @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin | null,
     private readonly addUsername: AddUsername,
     private readonly getUserByIdQuery: GetUserByIdQuery
   ) {}
@@ -62,12 +64,27 @@ export class UsersController {
     }
   }
 
-  private async generateDecodedToken(request:  RequestWithUser) {
-    const token = request.headers.authorization.split('Bearer ')[1];
-    const jwt = require('jsonwebtoken');
-    const decodedToken = jwt.decode(token);
+  private async generateDecodedToken(request: RequestWithUser): Promise<DecodedToken> {
+    // Use the user from request (set by auth middleware)
+    if (request.user) {
+      return {
+        user_id: request.user.uid,
+      };
+    }
 
-    if (!decodedToken.user_id) {
+    // Fallback: decode token directly (for backward compatibility)
+    const token = request.headers.authorization?.split('Bearer ')[1];
+    if (!token) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token) as DecodedToken;
+
+    if (!decodedToken || !decodedToken.user_id) {
       throw new HttpException(
         'Utilisateur non authentifié',
         HttpStatus.UNAUTHORIZED
