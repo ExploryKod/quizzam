@@ -75,6 +75,8 @@ web_modules/
 
 # dotenv environment variable files
 .env
+.env.*
+!.env.example
 .env.development.local
 .env.test.local
 .env.production.local
@@ -135,7 +137,22 @@ quizzam
 # Nx
 .nx
 
-src/assets/quizzam-firebase-key.json
+# Firebase credentials
+**/firebase*key*.json
+**/*firebase*key*.json
+**/quizzam-firebase-key.json
+**/*-firebase-key.json
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Secrets and credentials
+**/secrets/
+**/*secret*
+**/*credential*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
 
 
 .nx/cache
