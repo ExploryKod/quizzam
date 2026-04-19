@@ -18,12 +18,19 @@ async function bootstrap() {
   app.setViewEngine('ejs');
   app.setGlobalPrefix(variables.globalPrefix);
 
+  const corsRaw = (process.env.CORS_ORIGIN ?? '*').trim();
+  const openCors = corsRaw === '' || corsRaw === '*';
+  const corsOrigin = openCors
+    ? '*'
+    : corsRaw.split(',').map((s) => s.trim()).filter(Boolean);
+
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,
     exposedHeaders: ['Location'],
+    credentials: !openCors,
   });
 
   const config = new DocumentBuilder()
