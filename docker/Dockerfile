@@ -30,4 +30,5 @@ WORKDIR /usr/src/app
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/views ./views
+COPY --from=build /usr/src/app/static ./static
 CMD ["node", "dist/main.js"]
