@@ -26,34 +26,43 @@ import { QuizGateway } from './gateways/quiz.gateway';
 import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
 import { GetQuizByExecutionIdQuery } from './queries/get-quiz-by-executionId';
 
-function database(database: string) {
-  switch (database) {
-    case "MONGODB" :
-      return MongoQuizRepository
-    case "FIREBASE":
-      return FirebaseQuizRepository
-    case "IN-MEMORY":
-      return InMemoryQuizRepository
+function resolveQuizRepositoryClass() {
+  switch (variables.database) {
+    case 'MONGODB':
+      return MongoQuizRepository;
+    case 'FIREBASE':
+      return FirebaseQuizRepository;
+    case 'IN-MEMORY':
+      return InMemoryQuizRepository;
+    default:
+      return InMemoryQuizRepository;
   }
 }
+
+const mongoQuizFeatureImports =
+  variables.database === 'MONGODB'
+    ? [
+        MongooseModule.forFeature([
+          {
+            name: MongoQuiz.CollectionName,
+            schema: MongoQuiz.Schema,
+          },
+        ]),
+      ]
+    : [];
 
 @Module({
   imports: [
     CqrsModule,
     CommonModule,
     UserModule,
-    MongooseModule.forFeature([
-      {
-        name: MongoQuiz.CollectionName,
-        schema: MongoQuiz.Schema,
-      }
-    ]),
+    ...mongoQuizFeatureImports,
   ],
   controllers: [QuizController],
   providers: [
     {
       provide: I_QUIZ_REPOSITORY,
-      useClass: database(variables.database)
+      useClass: resolveQuizRepositoryClass(),
     },
     {
       provide: I_QUIZ_GATEWAY,

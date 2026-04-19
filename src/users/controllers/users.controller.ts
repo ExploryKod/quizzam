@@ -9,8 +9,6 @@ import {
 } from '@nestjs/common';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 import { Auth } from '../../auth/auth.decorator';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { JwtPayload } from 'jsonwebtoken';
 
 import { AddUsername } from '../commands/add-username';
 import { CreateUserDto, FindUserDTO } from '../dto/user.dto';
@@ -20,7 +18,6 @@ import { DecodedToken } from '../../quiz/dto/quiz.dto';
 @Controller('users')
 export class UsersController {
   constructor(
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     private readonly addUsername: AddUsername,
     private readonly getUserByIdQuery: GetUserByIdQuery
   ) {}

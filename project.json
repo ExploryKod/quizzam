@@ -33,13 +33,7 @@
           "production": {
             "buildTarget": "quizzam:build:production"
           }
-        },
-        "dependsOn": [
-          {
-            "projects": [],
-            "target": "build"
-          }
-        ]
+        }
       }
     }
 }

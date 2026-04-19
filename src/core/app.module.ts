@@ -5,7 +5,6 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 
-import { FirebaseModule } from 'nestjs-firebase';
 import { AppService } from './app.service';
 
 import { PingModule } from '../ping/ping.module';
@@ -21,32 +20,35 @@ import { CommonModule } from './common.module';
 import { QuizModule } from '../quiz/quiz.module';
 import { AppController } from './app.controller';
 import { ChatModule } from '../chat/chat.module';
-import { HostModule } from '../host/host.module';
+import { variables } from '../shared/variables.config';
+
+const baseImports = [
+  PingModule,
+  AuthModule,
+  UserModule,
+  CommonModule,
+  QuizModule,
+  ChatModule,
+];
+
+const mongooseRoot =
+  variables.database === 'MONGODB'
+    ? [
+        MongooseModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: async (config: ConfigService) => ({
+            uri: config.get<string>('DATABASE_URL'),
+          }),
+        }),
+      ]
+    : [];
 
 @Module({
-  imports: [
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
-        uri: config.get<string>('DATABASE_URL'),
-      }),
-    }),
-    PingModule,
-    FirebaseModule.forRoot({
-      googleApplicationCredential: 'src/assets/quizzam-firebase-key.json',
-    }),
-    AuthModule,
-    UserModule,
-    CommonModule,
-    QuizModule,
-    ChatModule
-  ],
+  imports: [...mongooseRoot, ...baseImports],
   controllers: [AppController],
   providers: [AppService],
-  exports: [FirebaseModule]
 })
-
 export class AppModule implements NestModule {
   public configure(consumer: MiddlewareConsumer) {
     consumer
