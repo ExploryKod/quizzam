@@ -1,0 +1,58 @@
+# Dev local dans Docker : API + services optionnels selon DATABASE_NAME (voir README).
+# MongoDB + mongo-express : profil « mongodb » (démarrés seulement si DATABASE_NAME=MONGODB).
+# Prérequis : quizzam/.env. Port API hôte : QUIZZAM_HOST_PORT (défaut 3002).
+#
+# Avec le script : ./start.sh (détecte DATABASE_NAME dans .env)
+# À la main (Mongo) : docker compose -f compose.dev.yaml --profile mongodb up --build -d
+# DATABASE_URL dans .env : voir .env.example (localhost vs hôte « mongodb » du réseau compose).
+name: quizzam-dev
+
+services:
+  mongodb:
+    profiles:
+      - mongodb
+    image: mongodb/mongodb-community-server:latest
+    container_name: quizzam-mongodb-dev
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: quizapp
+    volumes:
+      - mongo_data:/data/db
+
+  mongo-express:
+    profiles:
+      - mongodb
+    image: mongo-express:latest
+    container_name: quizzam-mongo-express-dev
+    restart: unless-stopped
+    ports:
+      - "8086:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: "27017"
+      # Sans ça, l’UI mongo-express demande souvent un login ; défaut historique admin/pass, ou désactiver en dev :
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      - mongodb
+
+  api:
+    container_name: quizzam-api
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    ports:
+      - "${QUIZZAM_HOST_PORT:-3002}:3000"
+    env_file:
+      - ../.env
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+      # Même valeur que le port hôte dans la section « ports » ci-dessus (pour les logs de l’app).
+      QUIZZAM_HOST_PORT: ${QUIZZAM_HOST_PORT:-3002}
+    # Pas de depends_on mongodb : le profil mongodb peut être désactivé (FIREBASE / IN-MEMORY).
+
+volumes:
+  mongo_data:

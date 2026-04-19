@@ -1,0 +1,9 @@
+# Note: Patterns are always relative to the BUILD CONTEXT directory, not the docker folder.
+
+node_modules
+npm-debug.log
+dist
+.git
+.env
+*.md
+.gitignore

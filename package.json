@@ -5,7 +5,10 @@
   "scripts": {
     "start": "nx serve",
     "build": "nx build",
-    "test": "nx test"
+    "test": "nx test",
+    "docker:up": "bash docker/start.sh up",
+    "docker:down": "bash docker/start.sh down",
+    "docker:down:volumes": "bash docker/start.sh down -v"
   },
   "private": true,
   "dependencies": {
