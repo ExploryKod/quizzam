@@ -15,6 +15,20 @@ import {
   Req,
   Res
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { QuizAPI } from '../contract';
 import { Auth } from '../../auth/auth.decorator';
@@ -41,6 +55,8 @@ import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
 import { Question } from '../entities/quiz.entity';
 import { StartQuizQuery } from '../queries/start-quiz-query';
 
+@ApiTags('quiz')
+@ApiBearerAuth()
 @Controller('quiz')
 export class QuizController {
   constructor(
@@ -56,6 +72,31 @@ export class QuizController {
 
   @Get()
   @Auth()
+  @ApiOperation({
+    summary: 'List current user quizzes',
+    description: 'Returns quizzes owned by the authenticated user and available hypermedia links.',
+  })
+  @ApiOkResponse({
+    description: 'Quizzes successfully returned.',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 'quiz-123',
+            title: 'HTML basics',
+            description: 'Quick fundamentals quiz',
+            questions: [],
+            userId: 'user-42',
+          },
+        ],
+        _links: {
+          create: 'http://localhost:3002/api/quiz',
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading quizzes.' })
   async getUserQuizzes(@Req() request: RequestWithUser) {
     const token = request.headers.authorization.split('Bearer ')[1];
     const jwt = require('jsonwebtoken');
@@ -90,6 +131,18 @@ export class QuizController {
   @Post()
   @Auth()
   @HttpCode(201)
+  @ApiOperation({
+    summary: 'Create a quiz',
+    description: 'Creates a new quiz for the authenticated user and returns a Location header.',
+  })
+  @ApiBody({ type: CreateQuizDTO })
+  @ApiCreatedResponse({
+    description: 'Quiz created. The resource URI is returned in the Location header.',
+    schema: { example: null },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid quiz payload.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while creating quiz.' })
   async createQuiz(
     @Req() request: RequestWithUser,
     @Body() createQuizDto: CreateQuizDTO,
@@ -126,6 +179,33 @@ export class QuizController {
 
   @Get(':id')
   @Auth()
+  @ApiOperation({
+    summary: 'Get a quiz by id',
+    description: 'Returns quiz metadata and questions when it belongs to the authenticated user.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiOkResponse({
+    description: 'Quiz found.',
+    schema: {
+      example: {
+        title: 'HTML basics',
+        description: 'Quick fundamentals quiz',
+        questions: [
+          {
+            id: 'q1',
+            title: 'What does HTML stand for?',
+            answers: [
+              { title: 'Hyper Text Markup Language', isCorrect: true },
+              { title: 'Home Tool Markup Language', isCorrect: false },
+            ],
+          },
+        ],
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading quiz.' })
   async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser) {
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);
 
@@ -157,6 +237,22 @@ export class QuizController {
 
   @Delete(':id')
   @Auth()
+  @ApiOperation({
+    summary: 'Delete a quiz',
+    description: 'Deletes a quiz owned by the authenticated user.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiOkResponse({
+    description: 'Quiz deleted.',
+    schema: {
+      example: {
+        id: 'quiz-123',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while deleting quiz.' })
   async deleteQuizById(
     @Param('id') id: string,
     @Req() request: RequestWithUser
@@ -190,6 +286,17 @@ export class QuizController {
   @Patch(':id')
   @Auth()
   @HttpCode(204)
+  @ApiOperation({
+    summary: 'Patch a quiz',
+    description: 'Applies JSON patch-like operations on a quiz owned by the authenticated user.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiBody({ type: PatchOperation, isArray: true })
+  @ApiNoContentResponse({ description: 'Quiz updated successfully.' })
+  @ApiBadRequestResponse({ description: 'Invalid patch payload.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while updating quiz.' })
   async updateQuiz(
     @Param('id') id: string,
     @Body() operations: PatchOperation[],
@@ -222,6 +329,20 @@ export class QuizController {
   @Post(':id/questions')
   @Auth()
   @HttpCode(201)
+  @ApiOperation({
+    summary: 'Add a question to a quiz',
+    description: 'Creates a new question in a quiz owned by the authenticated user and returns its Location header.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiBody({ type: CreateQuestionDTO })
+  @ApiCreatedResponse({
+    description: 'Question created. The resource URI is returned in the Location header.',
+    schema: { example: null },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid question payload.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while adding question.' })
   async addQuestion(
     @Param('id') quizId: string,
     @Body() questionDto: CreateQuestionDTO,
@@ -261,6 +382,18 @@ export class QuizController {
   @Put(':quizId/questions/:questionId')
   @Auth()
   @HttpCode(204)
+  @ApiOperation({
+    summary: 'Replace a quiz question',
+    description: 'Replaces one question in a quiz owned by the authenticated user.',
+  })
+  @ApiParam({ name: 'quizId', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiParam({ name: 'questionId', description: 'Question identifier', example: 'question-1' })
+  @ApiBody({ type: UpdateQuestionDTO })
+  @ApiNoContentResponse({ description: 'Question updated successfully.' })
+  @ApiBadRequestResponse({ description: 'Invalid question payload.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiNotFoundResponse({ description: 'Quiz/question not found or not owned by current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while replacing question.' })
   async replaceQuestion(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -319,6 +452,19 @@ export class QuizController {
    */
   @Post(':quizId/start')
   @Auth()
+  @ApiOperation({
+    summary: 'Start a quiz session',
+    description: 'Starts a quiz execution for host flow and returns the execution resource in Location header.',
+  })
+  @ApiParam({ name: 'quizId', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiCreatedResponse({
+    description: 'Quiz started. Execution URI is returned in the Location header.',
+    schema: { example: null },
+  })
+  @ApiBadRequestResponse({ description: 'Quiz is not startable.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while starting quiz.' })
   async startQuiz(
     @Param('quizId') quizId: string,
     @Req() request: RequestWithUser,
