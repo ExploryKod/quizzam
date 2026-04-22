@@ -1,18 +1,18 @@
 import { Question, Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
+import { QuestionDto, QuizProps } from '../../dto/quiz.dto';
 import {
-  CreateQuestionDTO,
-  CreateQuizDTO,
+  CreateQuestionPayload,
+  CreateQuizPayload,
   DecodedToken,
-  DeletedQuizResponseDTO,
-  GetUserQuizDto,
-  PatchOperation,
-  QuestionDTO,
-  QuizDTO,
-  QuizProps,
-  UpdateQuestionDTO,
-} from '../../dto/quiz.dto';
+} from '../../payloads';
+import {
+  DeleteQuizResult,
+  JsonPatchReplaceOperation,
+  QuizSnapshot,
+  UserQuizzesList,
+} from '../../models';
 import {
   BadRequestException,
   HttpException,
@@ -37,7 +37,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     userId: string,
     createUrl: string,
     baseUrl: string
-  ): Promise<GetUserQuizDto> {
+  ): Promise<UserQuizzesList> {
     const quizzesData = await this.firebase.firestore
       .collection('quizzes')
       .where('userId', '==', userId)
@@ -103,7 +103,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
       title: quizData.title,
       description: quizData.description,
       questions:
-        quizData.questions?.map((question: QuestionDTO) => ({
+        quizData.questions?.map((question: QuestionDto) => ({
           id: question.id,
           title: question.title,
           answers: question.answers || [],
@@ -115,7 +115,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
   async deleteById(
     id: string,
     decodedToken: DecodedToken
-  ): Promise<DeletedQuizResponseDTO> {
+  ): Promise<DeleteQuizResult | null> {
     const quizRef = this.firebase.firestore.collection('quizzes').doc(id);
     const quizDoc = await quizRef.get();
 
@@ -139,7 +139,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     };
   }
 
-  async create(data: CreateQuizDTO): Promise<string> {
+  async create(data: CreateQuizPayload): Promise<string> {
     try {
       const quizRef = await this.firebase.firestore
         .collection('quizzes')
@@ -153,7 +153,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
   }
 
   async update(
-    operations: PatchOperation[],
+    operations: JsonPatchReplaceOperation[],
     id: string,
     decodedToken: DecodedToken
   ): Promise<void> {
@@ -195,7 +195,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
   async addQuestion(
     quizId: string,
     questionId: string,
-    question: CreateQuestionDTO,
+    question: CreateQuestionPayload,
     decodedToken: DecodedToken
   ) {
     const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
@@ -227,7 +227,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
   async updateQuestion(
     quizId: string,
     questionId: string,
-    updateQuestionDto: UpdateQuestionDTO,
+    updateQuestion: CreateQuestionPayload,
     decodedToken: DecodedToken
   ): Promise<void> {
     const quizRef = this.firebase.firestore.collection('quizzes').doc(quizId);
@@ -257,8 +257,8 @@ export class FirebaseQuizRepository implements IQuizRepository {
 
     quizData.questions[questionIndex] = {
       id: questionId,
-      title: updateQuestionDto.title,
-      answers: updateQuestionDto.answers || [],
+      title: updateQuestion.title,
+      answers: updateQuestion.answers || [],
     };
 
     await quizRef.update({
@@ -299,7 +299,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     return `${baseUrl}/api/execution/${executionId}`;
   }
 
-  async getQuizByExecutionId(executionId: string): Promise<QuizDTO> {
+  async getQuizByExecutionId(executionId: string): Promise<QuizSnapshot> {
     const quizRef = this.firebase.firestore.collection('quizzes');
 
     const querySnapshot = await quizRef

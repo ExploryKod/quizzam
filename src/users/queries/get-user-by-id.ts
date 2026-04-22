@@ -1,10 +1,10 @@
 import { Inject, NotFoundException } from '@nestjs/common';
 import { I_USER_REPOSITORY, IUserRepository } from '../ports/user-repository.interface';
-import { FindUserDTO } from '../dto/user.dto';
+import { UserRecord } from '../models';
 import { Executable } from '../../shared/executable';
 
-type Request = string
-type Response = FindUserDTO
+type Request = string;
+type Response = UserRecord;
 
 export class GetUserByIdQuery implements Executable<Request, Response> {
 
@@ -13,7 +13,7 @@ export class GetUserByIdQuery implements Executable<Request, Response> {
     private readonly repository: IUserRepository,
   ) {}
 
-  async execute(id : Request): Promise<Response | null> {
+  async execute(id: Request): Promise<Response> {
     const user = await this.repository.findById(id);
     if (!user) {
       throw new NotFoundException();

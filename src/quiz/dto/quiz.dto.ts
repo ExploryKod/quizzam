@@ -1,34 +1,11 @@
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Question } from '../entities/quiz.entity';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { AnswerDto, QuestionDto } from './answer-question.schemas';
+import type { CreateQuestionPayload } from '../payloads/create-question.payload';
 
-export class DecodedToken {
-  @ApiProperty({ example: 'bf2b6811-78fd-4ab6-b8fa-962988eb43bc' })
-  user_id: string;
-}
-
-export class AnswerDTO {
-  @ApiProperty({ example: 'Hyper Text Markup Language' })
-  title: string;
-  @ApiProperty({ example: true })
-  isCorrect: boolean;
-}
-
-export class QuestionDTO {
-  @ApiProperty({ example: 'q1' })
-  id: string;
-  @ApiProperty({ example: 'What does HTML stand for?' })
-  title: string;
-  @ApiProperty({ type: () => [AnswerDTO] })
-  answers: Array<AnswerDTO>;
-}
-
-
-export class CreateQuestionDTO {
-  @ApiProperty({ example: 'What does HTML stand for?' })
-  title: string;
-  @ApiProperty({ type: () => [AnswerDTO] })
-  answers: AnswerDTO[];
-}
+export { AnswerDto, QuestionDto } from './answer-question.schemas';
 
 /**
  * Request body for `POST /quiz/:id/questions`. Supports **draft** questions while editing:
@@ -37,6 +14,8 @@ export class CreateQuestionDTO {
  * when **starting** the quiz (`POST /quiz/:id/start`), not here — keeps parity with the legacy frontend flow.
  */
 export class CreateQuestionDraftDto {
+  @IsOptional()
+  @IsString()
   @ApiProperty({
     example: 'Nouvelle question',
     required: false,
@@ -44,42 +23,50 @@ export class CreateQuestionDraftDto {
   })
   title?: string;
 
+  /** Draft: answers are only checked as an array; per-answer structure is enforced on quiz `start` / on full replace via `UpdateQuestionDto`. */
+  @IsOptional()
+  @IsArray()
   @ApiProperty({
-    type: () => [AnswerDTO],
+    type: () => [AnswerDto],
     required: false,
     description: 'Optional; may be empty or incomplete until the user finishes editing.',
   })
-  answers?: AnswerDTO[];
+  answers?: AnswerDto[];
 }
 
-/** Normalizes draft ingress to the shape stored by repositories. */
+/** Normalizes draft ingress to the shape used by `CreateQuestionCommand` and repositories. */
 export function normalizeNewQuestionFromDraft(
   body: CreateQuestionDraftDto
-): CreateQuestionDTO {
+): CreateQuestionPayload {
   return {
     title: body.title?.trim() ?? '',
     answers: Array.isArray(body.answers) ? body.answers : [],
   };
 }
 
-export class UpdateQuestionDTO {
+export class UpdateQuestionDto {
+  @IsString()
   @ApiProperty({ example: 'Updated question title' })
   title: string;
-  @ApiProperty({ type: () => [AnswerDTO] })
-  answers: AnswerDTO[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AnswerDto)
+  @ApiProperty({ type: () => [AnswerDto] })
+  answers: AnswerDto[];
 }
 
 
-export class QuizDTO {
+export class QuizDto {
   @ApiProperty({ example: 'quiz-123' })
   id: string;
   @ApiProperty({ example: 'Quick fundamentals quiz' })
   description: string;
-  @ApiProperty({ type: () => [QuestionDTO] })
-  questions: Array<QuestionDTO>;
+  @ApiProperty({ type: () => [QuestionDto] })
+  questions: Array<QuestionDto>;
   @ApiProperty({ example: 'HTML basics' })
   title: string;
-};
+}
 
 export class QuizProps {
   @ApiProperty()
@@ -92,7 +79,7 @@ export class QuizProps {
   questions: Array<Question>;
   @ApiProperty()
   userId: string;
-};
+}
 
 export class BasicQuizDto {
   @ApiProperty({ example: 'quiz-123' })
@@ -101,7 +88,7 @@ export class BasicQuizDto {
   title: string;
   @ApiProperty({ example: 'Quick fundamentals quiz' })
   description: string;
-  @ApiProperty({ type: () => [QuestionDTO] })
+  @ApiProperty({ type: () => [QuestionDto] })
   questions: Array<Question>;
   @ApiProperty({ example: 'user-42' })
   userId: string;
@@ -121,8 +108,8 @@ export class Link {
 }
 
 export class GetUserQuizDto {
-  @ApiProperty({ type: () => [QuizDTO] })
-  data: Array<QuizDTO>;
+  @ApiProperty({ type: () => [QuizDto] })
+  data: Array<QuizDto>;
   @ApiProperty({ type: () => Link })
   _links: Link;
 }
@@ -132,46 +119,55 @@ export class GetUserQuizDto {
   description:
     'Quiz detail for the authenticated owner. The `id` field repeats the resource identifier (same as the `:id` path parameter) so the JSON is self-contained for clients (typed models, local storage, derived keys) without copying the id from the URL.',
 })
-export class GetQuizByIdResponseDTO {
+export class GetQuizByIdResponseDto {
+  @Expose()
   @ApiProperty({
     example: '507f1f77bcf86cd799439011',
     description: 'Quiz document id (same value as `GET /api/quiz/{id}`).',
   })
   id: string;
 
+  @Expose()
   @ApiProperty({ example: 'HTML basics', description: 'Quiz title' })
   title: string;
 
+  @Expose()
   @ApiProperty({ example: 'Quick fundamentals quiz', description: 'Quiz description' })
   description: string;
 
-  @ApiProperty({ type: () => [QuestionDTO], description: 'Ordered list of questions' })
-  questions: Array<QuestionDTO>;
+  @Expose()
+  @ApiProperty({ type: () => [QuestionDto], description: 'Ordered list of questions' })
+  questions: Array<QuestionDto>;
 }
 
-export class CreateQuizDTO {
+/**
+ * HTTP body for `POST /api/quiz` — only fields sent by the client. `userId` is taken from the JWT, not from the body.
+ */
+export class CreateQuizRequestBodyDto {
+  @IsString()
   @ApiProperty({ example: 'HTML basics' })
   title: string;
 
+  @IsString()
   @ApiProperty({ example: 'Quick fundamentals quiz' })
   description: string;
-
-  @ApiProperty({ example: 'user-42' })
-  userId: string;
 }
 
 export class PatchOperation {
+  @IsIn(['replace'])
   @ApiProperty({ example: 'replace' })
-  op: string;
+  op: 'replace';
 
+  @IsString()
   @ApiProperty({ example: '/title' })
   path: string;
 
+  @IsString()
   @ApiProperty({ example: 'My updated quiz title' })
   value: string;
 }
 
-export class DeletedQuizResponseDTO {
+export class DeletedQuizResponseDto {
   @ApiProperty({ example: 'quiz-123' })
   id: string;
 
@@ -181,18 +177,6 @@ export class DeletedQuizResponseDTO {
     description: 'Owner user id used internally by delete authorization flow.',
   })
   userId?: string;
-}
-
-
-export class StartQuizDTO {
-  @ApiProperty({ example: 'quiz-123' })
-  quizId: string;
-
-  @ApiProperty({ type: DecodedToken })
-  decodedToken: DecodedToken;
-
-  @ApiProperty({ example: 'http://localhost:3002' })
-  baseUrl: string;
 }
 
 export class NextQuestionEventDto {

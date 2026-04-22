@@ -1,13 +1,11 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
-  ApiBody,
-  ApiConflictResponse,
-  ApiInternalServerErrorResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+  ApiHttpConflict,
+  ApiHttpInternalServerError,
+  ApiHttpUnauthorized,
+} from '../../core/dto/api-http-responses';
+import { ApiValidationBadRequest } from '../../core/dto/http-validation-error.dto';
 import { JwtCredentialsService } from '../application/jwt-credentials.service';
 import {
   JwtAuthResponseDto,
@@ -27,9 +25,10 @@ export class JwtAuthController {
   })
   @ApiBody({ type: JwtRegisterRequestDto })
   @ApiOkResponse({ description: 'Registration succeeded.', type: JwtAuthResponseDto })
-  @ApiConflictResponse({ description: 'Email already registered.' })
-  @ApiUnauthorizedResponse({ description: 'Missing or invalid credentials payload.' })
-  @ApiInternalServerErrorResponse({ description: 'JWT auth is unavailable for current backend mode.' })
+  @ApiValidationBadRequest('Request body does not pass validation (email, non-empty fields).')
+  @ApiHttpUnauthorized('Missing or invalid credentials payload.')
+  @ApiHttpConflict('Email already registered.')
+  @ApiHttpInternalServerError('JWT auth is unavailable for current backend mode.')
   register(
     @Body()
     body: JwtRegisterRequestDto
@@ -44,8 +43,9 @@ export class JwtAuthController {
   })
   @ApiBody({ type: JwtLoginRequestDto })
   @ApiOkResponse({ description: 'Authentication succeeded.', type: JwtAuthResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials.' })
-  @ApiInternalServerErrorResponse({ description: 'JWT auth is unavailable for current backend mode.' })
+  @ApiValidationBadRequest('Request body does not pass validation (email, password).')
+  @ApiHttpUnauthorized('Invalid credentials.')
+  @ApiHttpInternalServerError('JWT auth is unavailable for current backend mode.')
   login(
     @Body()
     body: JwtLoginRequestDto

@@ -32,7 +32,8 @@ export namespace MongoQuiz {
     @Prop({ type: String, required: true })
     _id: string;
 
-    @Prop({ index: true, unique: true })
+    /** Set only when the host starts a quiz; unique 6-char code. Sparse index so many drafts omit it. */
+    @Prop({ type: String, required: false, unique: true, sparse: true })
     executionId?: string;
 
     @Prop({ required: true })

@@ -1,10 +1,10 @@
 import { Inject, NotFoundException } from '@nestjs/common';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 import { Executable } from '../../shared/executable';
-import { QuizDTO } from '../dto/quiz.dto';
+import { QuizSnapshot } from '../models';
 
-type Request = string
-type Response = QuizDTO | null
+type Request = string;
+type Response = QuizSnapshot;
 
 export class GetQuizByExecutionIdQuery implements Executable<Request, Response> {
 

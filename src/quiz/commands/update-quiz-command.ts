@@ -1,13 +1,14 @@
 import { Executable } from '../../shared/executable';
-import { DecodedToken, PatchOperation } from '../dto/quiz.dto';
+import { JsonPatchReplaceOperation } from '../models';
+import { DecodedToken } from '../payloads';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 import { Inject } from '@nestjs/common';
 
 type Request = {
-  operations: PatchOperation[]
-  id: string
-  decodedToken: DecodedToken
-}
+  operations: JsonPatchReplaceOperation[];
+  id: string;
+  decodedToken: DecodedToken;
+};
 
 type Response = void;
 

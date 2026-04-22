@@ -2,8 +2,8 @@
 # Stack dev Docker (compose.dev.yaml). MongoDB + mongo-express si DATABASE_NAME=MONGODB dans quizzam/.env.
 # Depuis quizzam :
 #   ./docker/start.sh          # ou ./docker/start.sh up
-#   ./docker/start.sh down     # ou ./docker/start down
-#   ./docker/start.sh down -v  # supprime aussi les volumes (données Mongo)
+#   ./docker/start.sh down     # arrête tout (y compris api-watch) + --remove-orphans
+#   ./docker/start.sh down -v  # idem + supprime les volumes (Mongo, node_modules vol., …)
 #   ./docker/start.sh api-restart   # redémarre API (+ Mongo si profil mongodb), sans rebuild
 #   ./docker/start.sh api-stop      # stoppe API (+ Mongo si profil mongodb)
 #   ./docker/start.sh logs          # suit les logs API uniquement
@@ -59,6 +59,12 @@ fi
 WATCH_PROFILE_ARGS=(--profile watch)
 if [[ "$USE_MONGO" == true ]]; then
   WATCH_PROFILE_ARGS=(--profile watch --profile mongodb)
+fi
+
+# Pour « down » : toujours activer le profil watch, sinon api-watch reste en vie et le réseau compose ne se supprime pas.
+DOWN_PROFILE_ARGS=(--profile watch)
+if [[ "$USE_MONGO" == true ]]; then
+  DOWN_PROFILE_ARGS=(--profile watch --profile mongodb)
 fi
 
 cd "$PROJECT_DIR" || {
@@ -179,25 +185,25 @@ case "$ACTION" in
     ;;
   down)
     shift
-    info "Stopping quizzam dev stack…"
+    info "Stopping quizzam dev stack (profils watch + mongodb si activé)…"
     if [[ "$USE_MONGO" == true ]]; then
-      info "DATABASE_NAME=MONGODB → arrêt avec profil « mongodb »."
+      info "Profils : watch + mongodb (API classique, api-watch, Mongo, mongo-express)."
     else
-      info "DATABASE_NAME=$DATABASE_NAME_VALUE → arrêt sans profil Mongo."
+      info "Profil : watch (api-watch + API sans Mongo Docker)."
     fi
-    if ! "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" down "$@"; then
+    if ! "${compose[@]}" -f "$COMPOSE_BASE" "${DOWN_PROFILE_ARGS[@]}" down --remove-orphans "$@"; then
       error "docker compose down failed"
       exit 1
     fi
-    ok "Stack arrêtée (projet quizzam-dev)."
+    ok "Stack arrêtée (projet quizzam-dev) — conteneurs orphelins supprimés."
     exit 0
     ;;
   -h|--help|help)
     echo "Usage: $0 [up|down|api-restart|api-stop|logs|watch-up|watch-stop] [options]"
     echo ""
     echo "  up (default)   Démarre la stack (build si besoin)."
-    echo "  down             Arrête et supprime les conteneurs."
-    echo "  down -v          Idem + supprime les volumes compose (ex. données Mongo)."
+    echo "  down             Arrête tout (y compris api-watch), supprime le réseau, --remove-orphans."
+    echo "  down -v          Idem + supprime les volumes compose (Mongo, quizzam_node_modules, …)."
     echo "  api-restart      Redémarre API sans rebuild (et MongoDB si DATABASE_NAME=MONGODB)."
     echo "  api-stop         Stoppe API sans toucher aux images (et MongoDB si DATABASE_NAME=MONGODB)."
     echo "  logs             Suit les logs API uniquement."

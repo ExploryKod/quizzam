@@ -48,7 +48,7 @@ Always builds and runs the **API** from `docker/Dockerfile` via `docker/compose.
 
    Same entry point: `./docker/start` (wrapper).
 
-   **Stop:** `./docker/start.sh down` or `./docker/start down` — removes project containers. To remove volumes too (e.g. Mongo data): `./docker/start.sh down -v`.
+   **Stop:** `./docker/start.sh down` — stops **everything** (classic API, **api-watch**, Mongo, mongo-express), removes the network and orphans (`--remove-orphans`). Previously, `down` without the `watch` profile could leave `quizzam-api-watch` running and the network “still in use”. Volumes (Mongo, `quizzam_node_modules`, …): `./docker/start.sh down -v`.
 
    **Fast API cycle (no image rebuild):**
    - `./docker/start.sh api-restart` (or `./docker/start.sh restart-api`): restarts API without rebuilding the image.
@@ -61,8 +61,11 @@ Always builds and runs the **API** from `docker/Dockerfile` via `docker/compose.
 
    **Watch mode (dev inside container, no rebuild on each change):**
    - `./docker/start.sh watch-up` (alias `dev-up`): starts `api-watch` with source bind mount (`quizzam` -> `/usr/src/app`) and Nest/Nx watcher inside the container.
+   - Container `node_modules` use a **Docker volume** (separate from the host): on **startup**, `pnpm install` runs so the tree matches the mounted `package.json` / `pnpm-lock.yaml`. The repo ships **`.npmrc`** (`confirm-modules-purge=false`) so pnpm does not prompt in a non-TTY session (otherwise the install can stop before packages are written). After you add or change a dependency on the host, **commit the lockfile**, then **restart** watch — you do not need to remove the volume every time.
+   - If the deps volume looks broken: `watch-stop` then `docker volume rm quizzam-dev_quizzam_node_modules` (or the name from `docker volume ls | grep quizzam`), then `watch-up`.
    - Code edits on the host are automatically reflected in the container (hot reload).
    - `./docker/start.sh watch-stop` (alias `dev-stop`): stops watch mode.
+   - `api-watch` runs **root** only for `pnpm install` (the `node_modules` named volume is root-owned by default) then **Nx** as user **`node`**. TTY: `docker exec -it quizzam-api-watch sh` (root) or `docker exec -it -u node quizzam-api-watch sh` for a `node` shell.
    - In watch mode, `api-watch` logs are tailed live at the end of the command.
 
    The script reads `.env` and adds `--profile mongodb` only when `DATABASE_NAME=MONGODB` (including for `down`, so the right services are targeted).
@@ -145,6 +148,13 @@ npx nx show project quizzam
 ```
 
 [Running tasks in Nx](https://nx.dev/features/run-tasks)
+
+### E2E tests (HTTP)
+
+Specs under `e2e/` call the base URL from **`HOST`** and **`PORT`** (see `e2e/src/constants.ts` and `e2e/src/support/test-setup.ts`), default **`http://localhost:3000`**.
+
+- **API already running** (often Docker with host port **`3002`**, from `QUIZZAM_HOST_PORT` in `docker/`) : do **not** start a second `npx nx serve` on the **same** port. Point tests at the container, e.g. `PORT=3002` (and `AUTH_TYPE=JWT` if needed) then `pnpm exec nx run e2e:e2e` — no extra process bound to that port.
+- For a **local** `nx serve` **while** Docker watch uses 3002, use a **different** free port (e.g. `3000` or `3010` in your Quizzam `.env`) and the **same** `PORT` when running e2e.
 
 ---
 

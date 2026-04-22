@@ -1,6 +1,7 @@
 import { IUserRepository } from '../../ports/user-repository.interface';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { CreateUserDto, FindUserDTO } from '../../dto/user.dto';
+import { UserRecord } from '../../models';
+import { CreateUserProfilePayload } from '../../payloads';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class FirebaseUserRepository implements IUserRepository {
@@ -9,7 +10,7 @@ export class FirebaseUserRepository implements IUserRepository {
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin
   ) {}
 
-  async addUsername(user: CreateUserDto): Promise<void> {
+  async addUsername(user: CreateUserProfilePayload): Promise<void> {
 
     const { username, uid } = user;
     const userRef = this.firebase.firestore.collection('users').doc(uid);
@@ -20,7 +21,7 @@ export class FirebaseUserRepository implements IUserRepository {
   }
 
 
-  async findById(userId: string): Promise<FindUserDTO | null> {
+  async findById(userId: string): Promise<UserRecord | null> {
 
     const userRef = this.firebase.firestore
       .collection('users')
@@ -33,7 +34,7 @@ export class FirebaseUserRepository implements IUserRepository {
 
     const userData = userDoc.data();
 
-    return new FindUserDTO(userData.uid, userData.username);
+    return { uid: userData.uid, username: userData.username };
   }
 
 }

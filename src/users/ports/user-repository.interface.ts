@@ -1,8 +1,9 @@
-import { CreateUserDto, FindUserDTO } from '../dto/user.dto';
+import { CreateUserProfilePayload } from '../payloads';
+import { UserRecord } from '../models';
 
 export const I_USER_REPOSITORY = 'I_USER_REPOSITORY';
 
 export interface IUserRepository {
-  addUsername(data: CreateUserDto): Promise<void>;
-  findById(id: string): Promise<FindUserDTO  | null>;
+  addUsername(data: CreateUserProfilePayload): Promise<void>;
+  findById(id: string): Promise<UserRecord | null>;
 }

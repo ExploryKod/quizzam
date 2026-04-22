@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FindUserDTO } from '../../users/dto/user.dto';
+import { UserRecord } from '../../users/models';
 
 @Injectable()
 export class JwtInMemoryRegistry {
@@ -32,11 +32,11 @@ export class JwtInMemoryRegistry {
     return null;
   }
 
-  findByUid(uid: string): FindUserDTO | null {
+  findByUid(uid: string): UserRecord | null {
     const u = this.users.get(uid);
     if (!u) {
       return null;
     }
-    return new FindUserDTO(uid, u.username);
+    return { uid, username: u.username };
   }
 }

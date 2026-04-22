@@ -1,11 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
 import { GetUserByIdQuery } from './get-user-by-id';
 import { IUserRepository } from '../ports/user-repository.interface';
-import { FindUserDTO } from '../dto/user.dto';
 
 describe('GetUserByIdQuery', () => {
   it('should return user when found', async () => {
-    const user = new FindUserDTO('uid-1', 'test-user');
+    const user = { uid: 'uid-1', username: 'test-user' };
     const repository: jest.Mocked<IUserRepository> = {
       addUsername: jest.fn(),
       findById: jest.fn().mockResolvedValue(user),

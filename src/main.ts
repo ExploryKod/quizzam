@@ -1,16 +1,27 @@
 import "reflect-metadata";
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './core/main.module';
 import { variables } from './shared/variables.config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { HttpExceptionBodyDto } from './core/dto/http-exception-body.dto';
+import { HttpValidationErrorDto } from './core/dto/http-validation-error.dto';
 
 
 async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(MainModule);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      whitelist: true,
+      forbidNonWhitelisted: false,
+    })
+  );
 
   // Set up EJS as the templating engine
   app.useStaticAssets(join(__dirname, '..', 'static'));
@@ -48,7 +59,12 @@ async function bootstrap() {
       'bearer',
     )
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  // Always expose the default 400 (validation / BadRequest) body in #/components/schemas for clients & codegen.
+  const swaggerOptions = {
+    extraModels: [HttpValidationErrorDto, HttpExceptionBodyDto],
+  };
+  const documentFactory = () =>
+    SwaggerModule.createDocument(app, config, swaggerOptions);
   SwaggerModule.setup('api/docs', app, documentFactory);
 
 
