@@ -131,10 +131,10 @@ export class MongoQuizRepository implements IQuizRepository {
   }
 
   async create(quiz: CreateQuizPayload): Promise<string> {
-    const id = uuid()
+    const id = uuid();
+    // Do not set executionId here — it is only assigned in startQuiz (6-char code), not at creation.
     const data = {
       _id: id,
-      executionId: uuid(),
       ...quiz,
     };
 

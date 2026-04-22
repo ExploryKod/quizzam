@@ -35,3 +35,8 @@
 **Note** : la liste des quiz (`GET /api/quiz`) expose déjà un `id` par élément ; le détail aligne le même principe pour un objet cohérent avec le modèle client (ex. interface `Quiz` côté Angular).
 
 Les **exemples** (« avec questions » / « sans questions ») sont visibles dans Swagger sur l’opération d’obtention d’un quiz par id.
+
+### MongoDB — champ `executionId` (session de quiz)
+
+- **`executionId`** n’est **pas** défini à la création du document : il est écrit **uniquement** lors de `POST /api/quiz/:id/start` (code alphanumérique **6 caractères**), et sert à `/api/execution/:executionId` et au WebSocket.
+- Si d’anciens documents ont reçu par erreur un **UUID** à la création, supprimez ce champ en base pour les brouillons (ou corrigez l’index) : en **mongosh**, par ex. `db.quizzes.updateMany({ executionId: { $regex: /^[0-9a-f-]{36}$/ } }, { $unset: { executionId: "" } })` (adapter le filtre à votre cas). Après changement d’index Mongoose (`sparse` sur `executionId`), un redémarrage peut recréer l’index ; en cas de conflit, supprimez l’ancien index `executionId` sur la collection puis relancez l’API.
