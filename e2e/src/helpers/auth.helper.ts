@@ -11,7 +11,7 @@ export interface TestUser {
 }
 
 export class AuthHelper {
-
+  private static readonly AUTH_TYPE = (process.env.AUTH_TYPE || 'JWT').trim().toUpperCase();
   private static readonly FIREBASE_SIGNUP_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
   
   private static readonly FIREBASE_SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
@@ -28,22 +28,43 @@ export class AuthHelper {
       username: userData.username,
     };
 
-    const authResponse = await request(this.FIREBASE_SIGNUP_URL)
-      .post('')
-      .send({
-        email: testUser.email,
-        password: testUser.password,
-        returnSecureToken: true,
-      });
+    if (this.AUTH_TYPE === 'FIREBASE') {
+      const authResponse = await request(this.FIREBASE_SIGNUP_URL)
+        .post('')
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+          returnSecureToken: true,
+        });
 
-    if (authResponse.status !== 200) {
-      console.error('Firebase signup error:', authResponse.body);
-      throw new Error('Failed to create Firebase user');
+      if (authResponse.status !== 200) {
+        console.error('Firebase signup error:', authResponse.body);
+        throw new Error('Failed to create Firebase user');
+      }
+
+      testUser.token = authResponse.body.idToken;
+      const decodedToken = jwt.decode(testUser.token) as JwtPayload;
+      testUser.uid = decodedToken.user_id;
+    } else {
+      const authResponse = await request(defaultUrl)
+        .post('/api/auth/register')
+        .send({
+          username: testUser.username,
+          email: testUser.email,
+          password: testUser.password,
+        });
+
+      if (authResponse.status !== 200) {
+        console.error('JWT register error:', authResponse.body);
+        throw new Error(`Failed to register JWT user: ${authResponse.status}`);
+      }
+
+      testUser.token = authResponse.body?.token;
+      testUser.uid = authResponse.body?.user?.uid;
+      if (!testUser.token || !testUser.uid) {
+        throw new Error('JWT register response is missing token or uid');
+      }
     }
-
-    testUser.token = authResponse.body.idToken;
-    const decodedToken = jwt.decode(testUser.token) as JwtPayload;
-    testUser.uid = decodedToken.user_id;
 
     // Create user in your application
     const userResponse = await request(defaultUrl)
@@ -51,27 +72,40 @@ export class AuthHelper {
       .set('Authorization', `Bearer ${testUser.token}`)
       .send({ username: testUser.username });
 
-    if (userResponse.status !== 201) {
-      throw new Error('Failed to create application user');
+    // Depending on auth backend and existing state, profile creation may already exist.
+    if (![200, 201, 409].includes(userResponse.status)) {
+      throw new Error(`Failed to create application user: ${userResponse.status}`);
     }
 
     return testUser;
   }
 
   static async loginExistingUser(email: string, password: string): Promise<string> {
-    const authResponse = await request(this.FIREBASE_SIGNIN_URL)
-      .post('')
-      .send({
-        email,
-        password,
-        returnSecureToken: true,
-      });
+    if (this.AUTH_TYPE === 'FIREBASE') {
+      const authResponse = await request(this.FIREBASE_SIGNIN_URL)
+        .post('')
+        .send({
+          email,
+          password,
+          returnSecureToken: true,
+        });
 
-    if (authResponse.status !== 200) {
-      throw new Error('Failed to login');
+      if (authResponse.status !== 200) {
+        throw new Error('Failed to login with Firebase');
+      }
+
+      return authResponse.body.idToken;
     }
 
-    return authResponse.body.idToken;
+    const authResponse = await request(defaultUrl)
+      .post('/api/auth/login')
+      .send({ email, password });
+
+    if (authResponse.status !== 200 || !authResponse.body?.token) {
+      throw new Error('Failed to login with JWT');
+    }
+
+    return authResponse.body.token;
   }
 
   static async deleteUser(uid: string): Promise<void> {

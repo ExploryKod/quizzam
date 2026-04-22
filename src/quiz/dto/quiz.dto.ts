@@ -131,6 +131,13 @@ export class PatchOperation {
 export class DeletedQuizResponseDTO {
   @ApiProperty({ example: 'quiz-123' })
   id: string;
+
+  @ApiProperty({
+    example: 'user-42',
+    required: false,
+    description: 'Owner user id used internally by delete authorization flow.',
+  })
+  userId?: string;
 }
 
 

@@ -235,7 +235,7 @@ export class QuizController {
       };
       const quizId = await this.deleteQuizByIdQuery.execute(data);
 
-      console.log(`quiz ${quizId.id} deleted by user ${quizId.userId}`);
+      console.log(`quiz ${quizId.id} deleted`);
 
       return {
         id: quizId.id,
