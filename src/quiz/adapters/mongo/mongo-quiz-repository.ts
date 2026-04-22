@@ -6,7 +6,7 @@ import {
   CreateQuestionDTO,
   CreateQuizDTO,
   DecodedToken,
-  DeletedQuizResponseDTO, getUserQuizDTO,
+  DeletedQuizResponseDTO, GetUserQuizDto,
   PatchOperation, QuizDTO
 } from '../../dto/quiz.dto';
 import { v4 as uuid } from 'uuid';
@@ -28,7 +28,7 @@ export class MongoQuizRepository implements IQuizRepository {
   )  {
   }
 
-  async findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<getUserQuizDTO> {
+  async findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<GetUserQuizDto> {
     const quizzes = await this.model.find({ userId }).exec();
 
     if (!quizzes || quizzes.length === 0) {

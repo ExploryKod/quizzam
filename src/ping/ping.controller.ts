@@ -1,11 +1,25 @@
 import { Controller, Get, Logger } from '@nestjs/common';
+import {
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { GetVersionCommand } from './version-repository.command';
+import { PingResponseDto } from './dto/ping-response.dto';
 
+@ApiTags('ping')
 @Controller('ping')
 export class PingController {
   constructor(private readonly versionRepository: GetVersionCommand) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Ping API and database',
+    description: 'Returns global API health and database connectivity status.',
+  })
+  @ApiOkResponse({ description: 'Ping status returned.', type: PingResponseDto })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error during health check.' })
   async ping() {
     const result = await this.versionRepository.execute();
     Logger.log(

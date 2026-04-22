@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { basicQuizDTO, getUserQuizDTO } from '../dto/quiz.dto';
+import { GetUserQuizDto } from '../dto/quiz.dto';
 import { Executable } from '../../shared/executable';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 import { Quiz } from '../entities/quiz.entity';
@@ -10,7 +10,7 @@ type Request = {
   baseUrl: string;
 };
 
-type Response = getUserQuizDTO
+type Response = GetUserQuizDto
 
 export class GetUserQuizzes implements Executable<Request, Response> {
 

@@ -2,50 +2,50 @@ import { Question } from '../entities/quiz.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class DecodedToken {
-  @ApiProperty()
+  @ApiProperty({ example: 'bf2b6811-78fd-4ab6-b8fa-962988eb43bc' })
   user_id: string;
 }
 
 export class AnswerDTO {
-  @ApiProperty()
+  @ApiProperty({ example: 'Hyper Text Markup Language' })
   title: string;
-  @ApiProperty()
+  @ApiProperty({ example: true })
   isCorrect: boolean;
 }
 
 export class QuestionDTO {
-  @ApiProperty()
+  @ApiProperty({ example: 'q1' })
   id: string;
-  @ApiProperty()
+  @ApiProperty({ example: 'What does HTML stand for?' })
   title: string;
-  @ApiProperty()
+  @ApiProperty({ type: () => [AnswerDTO] })
   answers: Array<AnswerDTO>;
 }
 
 
 export class CreateQuestionDTO {
-  @ApiProperty()
+  @ApiProperty({ example: 'What does HTML stand for?' })
   title: string;
-  @ApiProperty()
+  @ApiProperty({ type: () => [AnswerDTO] })
   answers: AnswerDTO[];
 }
 
 export class UpdateQuestionDTO {
-  @ApiProperty()
+  @ApiProperty({ example: 'Updated question title' })
   title: string;
-  @ApiProperty()
+  @ApiProperty({ type: () => [AnswerDTO] })
   answers: AnswerDTO[];
 }
 
 
 export class QuizDTO {
-  @ApiProperty()
+  @ApiProperty({ example: 'quiz-123' })
   id: string;
-  @ApiProperty()
+  @ApiProperty({ example: 'Quick fundamentals quiz' })
   description: string;
-  @ApiProperty()
+  @ApiProperty({ type: () => [QuestionDTO] })
   questions: Array<QuestionDTO>;
-  @ApiProperty()
+  @ApiProperty({ example: 'HTML basics' })
   title: string;
 };
 
@@ -62,16 +62,16 @@ export class QuizProps {
   userId: string;
 };
 
-export class basicQuizDTO {
-  @ApiProperty()
+export class BasicQuizDto {
+  @ApiProperty({ example: 'quiz-123' })
   id: string;
-  @ApiProperty()
+  @ApiProperty({ example: 'HTML basics' })
   title: string;
-  @ApiProperty()
+  @ApiProperty({ example: 'Quick fundamentals quiz' })
   description: string;
-  @ApiProperty()
+  @ApiProperty({ type: () => [QuestionDTO] })
   questions: Array<Question>;
-  @ApiProperty()
+  @ApiProperty({ example: 'user-42' })
   userId: string;
 
   constructor(id: string, title: string, description: string, questions: Array<Question>, userId: string) {
@@ -84,69 +84,77 @@ export class basicQuizDTO {
 }
 
 export class Link {
-  @ApiProperty()
+  @ApiProperty({ example: 'http://localhost:3002/api/quiz' })
   create: string;
 }
 
-export class getUserQuizDTO {
-  @ApiProperty()
-  data: Array<any>;
-  @ApiProperty()
+export class GetUserQuizDto {
+  @ApiProperty({ type: () => [QuizDTO] })
+  data: Array<QuizDTO>;
+  @ApiProperty({ type: () => Link })
   _links: Link;
 }
 
-export class CreateQuizDTO {
-  @ApiProperty()
+export class GetQuizByIdResponseDTO {
+  @ApiProperty({ example: 'HTML basics' })
   title: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Quick fundamentals quiz' })
   description: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: () => [QuestionDTO] })
+  questions: Array<QuestionDTO>;
+}
+
+export class CreateQuizDTO {
+  @ApiProperty({ example: 'HTML basics' })
+  title: string;
+
+  @ApiProperty({ example: 'Quick fundamentals quiz' })
+  description: string;
+
+  @ApiProperty({ example: 'user-42' })
   userId: string;
 }
 
 export class PatchOperation {
-  @ApiProperty()
+  @ApiProperty({ example: 'replace' })
   op: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '/title' })
   path: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'My updated quiz title' })
   value: string;
 }
 
 export class DeletedQuizResponseDTO {
-  @ApiProperty()
+  @ApiProperty({ example: 'quiz-123' })
   id: string;
-
-  @ApiProperty()
-  userId: string;
 }
 
 
 export class StartQuizDTO {
-  @ApiProperty()
+  @ApiProperty({ example: 'quiz-123' })
   quizId: string;
 
   @ApiProperty({ type: DecodedToken })
   decodedToken: DecodedToken;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'http://localhost:3002' })
   baseUrl: string;
 }
 
 export class NextQuestionEventDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'What does HTML stand for?' })
   question: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
   questionNumber: number;
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({ type: [String], example: ['Hyper Text Markup Language', 'Home Tool Markup Language'] })
   answers: string[];
 
-  @ApiProperty()
+  @ApiProperty({ example: 10 })
   totalQuestions: number;
 }

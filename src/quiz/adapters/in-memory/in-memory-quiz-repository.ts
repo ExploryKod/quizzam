@@ -3,7 +3,7 @@ import {
   CreateQuizDTO,
   CreateQuestionDTO,
   DecodedToken,
-  DeletedQuizResponseDTO, getUserQuizDTO,
+  DeletedQuizResponseDTO, GetUserQuizDto,
   PatchOperation,
   QuizDTO
 } from '../../dto/quiz.dto';
@@ -27,7 +27,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
     userId: string,
     createUrl: string,
     baseUrl: string
-  ): Promise<getUserQuizDTO> {
+  ): Promise<GetUserQuizDto> {
     const userQuizzes = Array.from(this.quizzes.values()).filter(
       (quiz) => quiz.userId === userId
     );
