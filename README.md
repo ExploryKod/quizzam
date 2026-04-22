@@ -84,7 +84,8 @@ Nous utilisons les profiles dans compose pour réaliser cette séparation.
 
    | Service            | URL |
    | ------------------ | --- |
-   | API (Swagger)      | `http://localhost:3002/api` (port hôte par défaut ; surcharge avec `QUIZZAM_HOST_PORT`) |
+   | API (préfixe REST) | `http://localhost:3002/api` (port hôte par défaut ; surcharge avec `QUIZZAM_HOST_PORT`) |
+   | OpenAPI (Swagger UI) | `http://localhost:3002/api/docs` (même port hôte) |
    | mongo-express      | uniquement si `DATABASE_NAME=MONGODB` — `http://localhost:8086` |
    | MongoDB (depuis l’hôte) | uniquement si `DATABASE_NAME=MONGODB` — `mongodb://localhost:27017` / base `quizapp` |
 
@@ -145,6 +146,14 @@ npx nx show project quizzam
 ```
 
 [Exécuter des tâches avec Nx](https://nx.dev/features/run-tasks)
+
+---
+
+## Documentation API
+
+- **Swagger (OpenAPI)** : interface interactive sur `/api/docs` (voir le tableau *URLs* ci-dessus selon ton port).
+- **Contexte refactor (alignement des contrats avec le front)** : [../quizzy-front-renew-app/docs/refactor.md](../quizzy-front-renew-app/docs/refactor.md) (y compris `GET /api/quiz/:id` et le champ `id` dans le corps).
+- **Notes HTTP côté Quizzam** : [docs/api.md](./docs/api.md).
 
 ---
 

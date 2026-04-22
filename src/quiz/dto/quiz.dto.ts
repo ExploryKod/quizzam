@@ -1,5 +1,5 @@
 import { Question } from '../entities/quiz.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 
 export class DecodedToken {
   @ApiProperty({ example: 'bf2b6811-78fd-4ab6-b8fa-962988eb43bc' })
@@ -127,17 +127,25 @@ export class GetUserQuizDto {
   _links: Link;
 }
 
+@ApiSchema({
+  name: 'GetQuizByIdResponse',
+  description:
+    'Quiz detail for the authenticated owner. The `id` field repeats the resource identifier (same as the `:id` path parameter) so the JSON is self-contained for clients (typed models, local storage, derived keys) without copying the id from the URL.',
+})
 export class GetQuizByIdResponseDTO {
-  @ApiProperty({ example: '507f1f77bcf86cd799439011', description: 'Quiz document id (same as the path parameter).' })
+  @ApiProperty({
+    example: '507f1f77bcf86cd799439011',
+    description: 'Quiz document id (same value as `GET /api/quiz/{id}`).',
+  })
   id: string;
 
-  @ApiProperty({ example: 'HTML basics' })
+  @ApiProperty({ example: 'HTML basics', description: 'Quiz title' })
   title: string;
 
-  @ApiProperty({ example: 'Quick fundamentals quiz' })
+  @ApiProperty({ example: 'Quick fundamentals quiz', description: 'Quiz description' })
   description: string;
 
-  @ApiProperty({ type: () => [QuestionDTO] })
+  @ApiProperty({ type: () => [QuestionDTO], description: 'Ordered list of questions' })
   questions: Array<QuestionDTO>;
 }
 

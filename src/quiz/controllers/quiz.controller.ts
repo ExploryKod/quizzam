@@ -176,12 +176,46 @@ export class QuizController {
   })
   @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
   @ApiOkResponse({
-    description: 'Quiz found.',
+    description:
+      'Quiz found. The body includes `id` (equal to `:id`) as a complete resource — see OpenAPI schema `GetQuizByIdResponse`.',
     type: GetQuizByIdResponseDTO,
+    content: {
+      'application/json': {
+        examples: {
+          withQuestions: {
+            summary: 'Quiz with questions',
+            value: {
+              id: '507f1f77bcf86cd799439011',
+              title: 'HTML basics',
+              description: 'Quick fundamentals quiz',
+              questions: [
+                {
+                  id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                  title: 'What does HTML stand for?',
+                  answers: [
+                    { title: 'Hyper Text Markup Language', isCorrect: true },
+                    { title: 'Home Tool Markup Language', isCorrect: false },
+                  ],
+                },
+              ],
+            },
+          },
+          emptyQuestions: {
+            summary: 'Quiz with no questions yet',
+            value: {
+              id: '507f1f77bcf86cd799439011',
+              title: 'New quiz',
+              description: '',
+              questions: [],
+            },
+          },
+        },
+      },
+    },
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
-  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
-  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading quiz.' })
+  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by the current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading the quiz.' })
   async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser) {
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);
 
