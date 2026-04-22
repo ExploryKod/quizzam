@@ -7,6 +7,15 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 import { Auth } from '../../auth/auth.decorator';
 
@@ -15,6 +24,8 @@ import { CreateUserDto, FindUserDTO } from '../dto/user.dto';
 import { GetUserByIdQuery } from '../queries/get-user-by-id';
 import { DecodedToken } from '../../quiz/dto/quiz.dto';
 
+@ApiTags('users')
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
   constructor(
@@ -24,6 +35,14 @@ export class UsersController {
 
   @Post()
   @Auth()
+  @ApiOperation({
+    summary: 'Create or complete current user profile',
+    description: 'Sets profile data for the authenticated user.',
+  })
+  @ApiBody({ type: CreateUserDto })
+  @ApiOkResponse({ description: 'User profile created/updated.', schema: { example: null } })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while creating profile.' })
   async create(
     @Req() request: RequestWithUser,
     @Body() createUserDto: CreateUserDto
@@ -47,6 +66,13 @@ export class UsersController {
 
   @Get('me')
   @Auth()
+  @ApiOperation({
+    summary: 'Get current user profile',
+    description: 'Returns current authenticated user details.',
+  })
+  @ApiOkResponse({ description: 'User profile returned.', type: FindUserDTO })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading profile.' })
   async getCurrentUser(@Req() request: RequestWithUser): Promise<FindUserDTO> {
 
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);
