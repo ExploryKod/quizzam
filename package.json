@@ -5,7 +5,7 @@
   "scripts": {
     "start": "nx serve",
     "build": "nx build",
-    "test": "nx run quizzam:test",
+    "test": "nx run quizzam:test --verbose",
     "test:e2e": "nx run e2e:e2e",
     "test:all": "nx run-many -t test --projects quizzam,e2e",
     "docker:up": "bash docker/start.sh up",
