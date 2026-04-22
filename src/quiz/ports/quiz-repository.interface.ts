@@ -2,9 +2,10 @@ import { Quiz } from '../entities/quiz.entity';
 import {
   CreateQuizDTO,
   DecodedToken,
+  GetUserQuizDto,
   PatchOperation,
   CreateQuestionDTO,
-  DeletedQuizResponseDTO, getUserQuizDTO, QuizDTO
+  DeletedQuizResponseDTO, QuizDTO
 } from '../dto/quiz.dto';
 import { QuestionEvent } from '../gateways/quiz.gateway';
 
@@ -12,7 +13,7 @@ export const I_QUIZ_REPOSITORY = 'I_QUIZ_REPOSITORY';
 
 export interface IQuizRepository {
 
-  findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<getUserQuizDTO>;
+  findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<GetUserQuizDto>;
   findById(id: string): Promise<Quiz | null>;
   deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO>;
   create(quiz: CreateQuizDTO | Quiz): Promise<string>;

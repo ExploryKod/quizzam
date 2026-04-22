@@ -11,6 +11,7 @@ export class CreateUserDto {
   @ApiProperty({
     example: 'amaury',
     description: 'Public username displayed in quiz application.',
+    minLength: 1,
   })
   username: string;
 }

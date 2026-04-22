@@ -6,7 +6,7 @@ import {
   CreateQuizDTO,
   DecodedToken,
   DeletedQuizResponseDTO,
-  getUserQuizDTO,
+  GetUserQuizDto,
   PatchOperation,
   QuestionDTO,
   QuizDTO,
@@ -37,7 +37,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     userId: string,
     createUrl: string,
     baseUrl: string
-  ): Promise<getUserQuizDTO> {
+  ): Promise<GetUserQuizDto> {
     const quizzesData = await this.firebase.firestore
       .collection('quizzes')
       .where('userId', '==', userId)

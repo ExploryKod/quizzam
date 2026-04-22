@@ -20,13 +20,22 @@ export class JwtLoginRequestDto {
 }
 
 export class JwtAuthUserDto {
-  @ApiProperty({ example: 'amaury@example.com' })
+  @ApiProperty({
+    example: 'amaury@example.com',
+    description: 'Authenticated user email.',
+  })
   email: string;
 
-  @ApiProperty({ example: 'bf2b6811-78fd-4ab6-b8fa-962988eb43bc' })
+  @ApiProperty({
+    example: 'bf2b6811-78fd-4ab6-b8fa-962988eb43bc',
+    description: 'Authenticated user unique identifier.',
+  })
   uid: string;
 
-  @ApiProperty({ example: 'amaury' })
+  @ApiProperty({
+    example: 'amaury',
+    description: 'Authenticated user username.',
+  })
   username: string;
 }
 
@@ -37,6 +46,9 @@ export class JwtAuthResponseDto {
   })
   token: string;
 
-  @ApiProperty({ type: JwtAuthUserDto })
+  @ApiProperty({
+    type: JwtAuthUserDto,
+    description: 'Authenticated user profile payload.',
+  })
   user: JwtAuthUserDto;
 }

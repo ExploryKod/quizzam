@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { QuizDTO, basicQuizDTO } from './dto/quiz.dto';
+import { BasicQuizDto, QuizDTO } from './dto/quiz.dto';
 
 export namespace QuizAPI {
   export namespace CreateQuiz {
@@ -19,7 +19,7 @@ export namespace QuizAPI {
     });
 
     export type Request = z.infer<typeof schema>;
-    export type Response = { data: basicQuizDTO[] | [], _links: { create: string } };
+    export type Response = { data: BasicQuizDto[] | [], _links: { create: string } };
   }
 
   export namespace GetQuiz {

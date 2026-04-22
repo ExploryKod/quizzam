@@ -38,6 +38,9 @@ import {
   CreateQuestionDTO,
   CreateQuizDTO,
   DecodedToken,
+  DeletedQuizResponseDTO,
+  GetUserQuizDto,
+  GetQuizByIdResponseDTO,
   PatchOperation,
   UpdateQuestionDTO,
 } from '../dto/quiz.dto';
@@ -78,22 +81,7 @@ export class QuizController {
   })
   @ApiOkResponse({
     description: 'Quizzes successfully returned.',
-    schema: {
-      example: {
-        data: [
-          {
-            id: 'quiz-123',
-            title: 'HTML basics',
-            description: 'Quick fundamentals quiz',
-            questions: [],
-            userId: 'user-42',
-          },
-        ],
-        _links: {
-          create: 'http://localhost:3002/api/quiz',
-        },
-      },
-    },
+    type: GetUserQuizDto,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading quizzes.' })
@@ -186,22 +174,7 @@ export class QuizController {
   @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
   @ApiOkResponse({
     description: 'Quiz found.',
-    schema: {
-      example: {
-        title: 'HTML basics',
-        description: 'Quick fundamentals quiz',
-        questions: [
-          {
-            id: 'q1',
-            title: 'What does HTML stand for?',
-            answers: [
-              { title: 'Hyper Text Markup Language', isCorrect: true },
-              { title: 'Home Tool Markup Language', isCorrect: false },
-            ],
-          },
-        ],
-      },
-    },
+    type: GetQuizByIdResponseDTO,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
@@ -244,11 +217,7 @@ export class QuizController {
   @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
   @ApiOkResponse({
     description: 'Quiz deleted.',
-    schema: {
-      example: {
-        id: 'quiz-123',
-      },
-    },
+    type: DeletedQuizResponseDTO,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
