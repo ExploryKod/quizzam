@@ -244,6 +244,28 @@ describe('QuizController', () => {
     );
   });
 
+  it('addQuestion should accept draft with empty answers and normalize payload', async () => {
+    const jwt = require('jsonwebtoken');
+    jwt.decode.mockReturnValue({ user_id: 'uid-1' });
+    addQuestionCommand.execute.mockResolvedValue(undefined);
+    const response = buildResponse();
+
+    await controller.addQuestion(
+      'quiz-123',
+      { title: 'Nouvelle question', answers: [] },
+      buildRequest(),
+      response
+    );
+
+    expect(addQuestionCommand.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        quizId: 'quiz-123',
+        question: { title: 'Nouvelle question', answers: [] },
+        decodedToken: { user_id: 'uid-1' },
+      })
+    );
+  });
+
   it('addQuestion should throw not found when command rejects with not found', async () => {
     const jwt = require('jsonwebtoken');
     jwt.decode.mockReturnValue({ user_id: 'uid-1' });
@@ -252,7 +274,13 @@ describe('QuizController', () => {
     await expect(
       controller.addQuestion(
         'quiz-123',
-        { title: 'Q1', answers: [] as any },
+        {
+          title: 'Q1',
+          answers: [
+            { title: 'A', isCorrect: true },
+            { title: 'B', isCorrect: false },
+          ],
+        },
         buildRequest(),
         buildResponse()
       )

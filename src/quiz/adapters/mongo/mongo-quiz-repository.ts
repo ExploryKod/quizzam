@@ -180,7 +180,7 @@ export class MongoQuizRepository implements IQuizRepository {
 
     const newQuestion = {
       id: questionId,
-      title: question.title,
+      title: question?.title != null ? String(question.title) : '',
       answers: question.answers || [],
     };
 
@@ -214,7 +214,7 @@ export class MongoQuizRepository implements IQuizRepository {
 
     quiz.questions[questionIndex] = {
       id: questionId,
-      title: question.title,
+      title: question?.title != null ? String(question.title) : '',
       answers: question.answers || [],
     };
 

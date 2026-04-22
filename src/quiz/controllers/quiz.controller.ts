@@ -35,6 +35,7 @@ import { Auth } from '../../auth/auth.decorator';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 
 import {
+  CreateQuestionDraftDto,
   CreateQuestionDTO,
   CreateQuizDTO,
   DecodedToken,
@@ -43,6 +44,7 @@ import {
   GetQuizByIdResponseDTO,
   PatchOperation,
   UpdateQuestionDTO,
+  normalizeNewQuestionFromDraft,
 } from '../dto/quiz.dto';
 
 import { GetUserQuizzes } from '../queries/get-user-quizzes';
@@ -299,11 +301,12 @@ export class QuizController {
   @Auth()
   @HttpCode(201)
   @ApiOperation({
-    summary: 'Add a question to a quiz',
-    description: 'Creates a new question in a quiz owned by the authenticated user and returns its Location header.',
+    summary: 'Add a question to a quiz (draft allowed)',
+    description:
+      'Creates a new question. Title and answers may be partial or empty while editing. Full validation (complete question with ≥2 answers and exactly one correct) is enforced when starting the quiz, not on this endpoint.',
   })
   @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
-  @ApiBody({ type: CreateQuestionDTO })
+  @ApiBody({ type: CreateQuestionDraftDto })
   @ApiCreatedResponse({
     description: 'Question created. The resource URI is returned in the Location header.',
     schema: { example: null },
@@ -314,20 +317,13 @@ export class QuizController {
   @ApiInternalServerErrorResponse({ description: 'Unexpected server error while adding question.' })
   async addQuestion(
     @Param('id') quizId: string,
-    @Body() questionDto: CreateQuestionDTO,
+    @Body() questionBody: CreateQuestionDraftDto,
     @Req() request: RequestWithUser,
     @Res({ passthrough: true }) response: Response
   ) {
-    if (!questionDto?.title?.trim()) {
-      throw new BadRequestException('Question title is required');
-    }
-    if (!Array.isArray(questionDto.answers) || questionDto.answers.length < 2) {
-      throw new BadRequestException('Question must contain at least two answers');
-    }
-    const correctAnswersCount = questionDto.answers.filter((answer) => answer?.isCorrect).length;
-    if (correctAnswersCount !== 1) {
-      throw new BadRequestException('Question must contain exactly one correct answer');
-    }
+    const questionDto: CreateQuestionDTO = normalizeNewQuestionFromDraft(
+      questionBody ?? {}
+    );
 
     const questionId = uuidv4();
 

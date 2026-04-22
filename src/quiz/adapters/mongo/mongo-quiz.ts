@@ -17,9 +17,10 @@ type Question = {
 }
 
 // Define a separate schema for Questions
+// Title may be empty while the question is a draft; strict rules apply at quiz start, not on save.
 const QuestionSchema = new MongooseBaseSchema({
   id: { type: String, required: true },
-  title: { type: String, required: true },
+  title: { type: String, default: '' },
   answers: { type: Array<Answer>, default: [] },
 });
 

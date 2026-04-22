@@ -30,6 +30,38 @@ export class CreateQuestionDTO {
   answers: AnswerDTO[];
 }
 
+/**
+ * Request body for `POST /quiz/:id/questions`. Supports **draft** questions while editing:
+ * empty title, empty `answers`, or several `isCorrect: true` are allowed at creation time.
+ * Stricter rules (≥2 answers, exactly one correct, non-empty title per question) are enforced
+ * when **starting** the quiz (`POST /quiz/:id/start`), not here — keeps parity with the legacy frontend flow.
+ */
+export class CreateQuestionDraftDto {
+  @ApiProperty({
+    example: 'Nouvelle question',
+    required: false,
+    description: 'Optional while drafting; may be pre-filled by the client.',
+  })
+  title?: string;
+
+  @ApiProperty({
+    type: () => [AnswerDTO],
+    required: false,
+    description: 'Optional; may be empty or incomplete until the user finishes editing.',
+  })
+  answers?: AnswerDTO[];
+}
+
+/** Normalizes draft ingress to the shape stored by repositories. */
+export function normalizeNewQuestionFromDraft(
+  body: CreateQuestionDraftDto
+): CreateQuestionDTO {
+  return {
+    title: body.title?.trim() ?? '',
+    answers: Array.isArray(body.answers) ? body.answers : [],
+  };
+}
+
 export class UpdateQuestionDTO {
   @ApiProperty({ example: 'Updated question title' })
   title: string;
