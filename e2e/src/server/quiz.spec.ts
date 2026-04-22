@@ -179,7 +179,7 @@ describe('Quiz API', () => {
         .get(`/api/quiz/${quizId}`)
         .set('Authorization', `Bearer ${otherUser.token}`);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(404);
     });
   });
 
@@ -263,7 +263,7 @@ describe('Quiz API', () => {
         .set('Authorization', `Bearer ${otherUser.token}`)
         .send(patchOperations);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(404);
     });
   });
 

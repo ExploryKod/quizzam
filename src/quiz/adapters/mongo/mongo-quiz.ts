@@ -18,7 +18,7 @@ type Question = {
 
 // Define a separate schema for Questions
 const QuestionSchema = new MongooseBaseSchema({
-  id: { type: String, required: true, unique: true }, // Unique question ID
+  id: { type: String, required: true },
   title: { type: String, required: true },
   answers: { type: Array<Answer>, default: [] },
 });
@@ -40,7 +40,7 @@ export namespace MongoQuiz {
     @Prop({ default: '' })
     description: string;
 
-    @Prop({ type: [QuestionSchema], default: [], unique: true })
+    @Prop({ type: [QuestionSchema], default: [] })
     questions: Array<Question>;
 
     @Prop({ required: true })

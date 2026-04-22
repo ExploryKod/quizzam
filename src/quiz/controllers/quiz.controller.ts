@@ -318,6 +318,17 @@ export class QuizController {
     @Req() request: RequestWithUser,
     @Res({ passthrough: true }) response: Response
   ) {
+    if (!questionDto?.title?.trim()) {
+      throw new BadRequestException('Question title is required');
+    }
+    if (!Array.isArray(questionDto.answers) || questionDto.answers.length < 2) {
+      throw new BadRequestException('Question must contain at least two answers');
+    }
+    const correctAnswersCount = questionDto.answers.filter((answer) => answer?.isCorrect).length;
+    if (correctAnswersCount !== 1) {
+      throw new BadRequestException('Question must contain exactly one correct answer');
+    }
+
     const questionId = uuidv4();
 
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);

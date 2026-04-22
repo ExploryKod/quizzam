@@ -54,6 +54,8 @@ export class MongoQuizRepository implements IQuizRepository {
       const quizObject = {
         id: quizId,
         title: quizTitle,
+        description: quizData.description || '',
+        questions: questions,
       };
 
       // Add HATEOAS links if startable
@@ -119,7 +121,11 @@ export class MongoQuizRepository implements IQuizRepository {
 
   async create(quiz: CreateQuizDTO): Promise<string> {
     const id = uuid()
-    const data = {_id: id, ...quiz};
+    const data = {
+      _id: id,
+      executionId: uuid(),
+      ...quiz,
+    };
 
     const record = new this.model(data);
     const result = await record.save();

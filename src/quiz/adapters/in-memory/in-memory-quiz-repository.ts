@@ -36,6 +36,8 @@ export class InMemoryQuizRepository implements IQuizRepository {
       data: userQuizzes.map((quiz) => ({
         id: quiz.id || '',
         title: quiz.title,
+        description: quiz.description || '',
+        questions: quiz.questions || [],
         ...(this.executionIds.has(quiz.id || '') && {
           _links: {
             start: `${baseUrl}/api/quiz/${quiz.id}/start`,
