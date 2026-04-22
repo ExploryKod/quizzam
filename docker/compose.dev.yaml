@@ -2,6 +2,11 @@
 # MongoDB + mongo-express : profil « mongodb » (démarrés seulement si DATABASE_NAME=MONGODB).
 # Prérequis : quizzam/.env. Port API hôte : QUIZZAM_HOST_PORT (défaut 3002).
 #
+# api-watch : le volume « quizzam_node_modules » isole node_modules (évite mélange hôte ↔ Linux conteneur).
+# À chaque démarrage, « pnpm install » est exécuté pour resynchroniser avec le package.json / pnpm-lock.yaml
+# montés depuis l’hôte. Le fichier quizzam/.npmrc définit confirm-modules-purge=false (sinon pnpm demande une
+# confirmation sans TTY et l’installation peut échouer ou laisser node_modules incomplet).
+#
 # Avec le script : ./start.sh (détecte DATABASE_NAME dans .env)
 # À la main (Mongo) : docker compose -f compose.dev.yaml --profile mongodb up --build -d
 # DATABASE_URL dans .env : voir .env.example (localhost vs hôte « mongodb » du réseau compose).
@@ -62,6 +67,12 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       target: development
+    # Root uniquement ici : le volume « node_modules » est créé côté Docker en root ; pnpm en user « node »
+    # échoue sur EACCES. Après pnpm, chown du volume puis lancement de Nx en node (id 1000).
+    user: "0:0"
+    # Équivalent docker run -it : TTY pour sorties / shell (exec : voir README pour -u node si besoin).
+    stdin_open: true
+    tty: true
     ports:
       - "${QUIZZAM_HOST_PORT:-3002}:3000"
     env_file:
@@ -71,17 +82,18 @@ services:
       NODE_ENV: development
       QUIZZAM_HOST_PORT: ${QUIZZAM_HOST_PORT:-3002}
       CHOKIDAR_USEPOLLING: "true"
+      # pnpm: non-interactive install (with confirm-modules-purge in ../.npmrc) + avoid implicit --frozen-lockfile
+      # from CI, so host package.json/lock can sync in the volume without failing when only one file changed.
+      CI: "true"
     volumes:
       - ..:/usr/src/app
       - quizzam_node_modules:/usr/src/app/node_modules
     command: >
-      sh -c "if [ ! -f node_modules/.modules.yaml ]; then
-      echo '[api-watch] Installing dependencies in container volume...';
-      pnpm install --frozen-lockfile=false;
-      else
-      echo '[api-watch] Reusing existing node_modules volume.';
-      fi &&
-      node ./node_modules/nx/bin/nx.js serve quizzam"
+      sh -c "set -e;
+      echo '[api-watch] pnpm install (sync with host package.json + lockfile in volume)...';
+      pnpm install --no-frozen-lockfile;
+      chown -R node:node /usr/src/app/node_modules;
+      exec runuser -u node -g node -w /usr/src/app -- node ./node_modules/nx/bin/nx.js serve quizzam"
     # Service de dev : code monté depuis l'hôte + watcher Nest/Nx dans le conteneur.
 
 volumes:

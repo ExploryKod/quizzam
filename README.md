@@ -49,7 +49,7 @@ Nous utilisons les profiles dans compose pour réaliser cette séparation.
 
    Raccourci équivalent : `./docker/start` (même script).
 
-   **Arrêt :** `./docker/start.sh down` ou `./docker/start down` — supprime les conteneurs du projet. Pour enlever aussi les volumes (ex. données Mongo) : `./docker/start.sh down -v`.
+   **Arrêt :** `./docker/start.sh down` — arrête **tout** (API classique, **api-watch**, Mongo, mongo-express), supprime le réseau et les orphelins (`--remove-orphans`). Avant, un `down` sans le profil `watch` laissait `quizzam-api-watch` actif et le réseau « in use ». Volumes (Mongo, `quizzam_node_modules`, …) : `./docker/start.sh down -v`.
 
    **Cycle rapide API (sans rebuild image) :**
    - `./docker/start.sh api-restart` (ou `./docker/start.sh restart-api`) : redémarre l’API sans reconstruire l’image.
@@ -62,8 +62,11 @@ Nous utilisons les profiles dans compose pour réaliser cette séparation.
 
    **Mode watch (dev inside container, sans rebuild à chaque changement) :**
    - `./docker/start.sh watch-up` (alias `dev-up`) : démarre `api-watch` avec bind mount du code (`quizzam` -> `/usr/src/app`) et watcher Nest/Nx dans le conteneur.
+   - Les `node_modules` du conteneur sont dans un **volume Docker** (séparés de l’hôte) : au **démarrage**, un `pnpm install` est lancé pour se caler sur le `package.json` / `pnpm-lock.yaml` montés depuis l’hôte. Le dépôt inclut **`.npmrc`** (`confirm-modules-purge=false`) pour éviter le prompt interactif de pnpm sans TTY (sinon l’install peut s’arrêter avant d’avoir écrit les paquets). Après un changement de dépendance sur l’hôte, **commite le lockfile**, puis **redémarre** le watch — inutile de supprimer le volume à chaque fois.
+   - Si le volume de deps semble corrompu : `watch-stop` puis `docker volume rm quizzam-dev_quizzam_node_modules` (ou le nom listé par `docker volume ls | grep quizzam`), puis `watch-up`.
    - Les modifications de code sur l’hôte sont prises en compte automatiquement dans le conteneur (hot reload).
    - `./docker/start.sh watch-stop` (alias `dev-stop`) : stoppe le mode watch.
+   - Le service `api-watch` tourne d’abord en **root** le temps du `pnpm install` (le volume `node_modules` appartient à root par défaut) puis **Nx** en utilisateur **`node`**. TTY : `docker exec -it quizzam-api-watch sh` (root) ou `docker exec -it -u node quizzam-api-watch sh` pour un shell en `node`.
    - En mode watch, les logs `api-watch` sont suivis en live à la fin de la commande.
 
    Le script lit `.env` et n’ajoute `--profile mongodb` que lorsque `DATABASE_NAME=MONGODB` (y compris pour `down`, pour cibler les bons services).
@@ -146,6 +149,13 @@ npx nx show project quizzam
 ```
 
 [Exécuter des tâches avec Nx](https://nx.dev/features/run-tasks)
+
+### Tests e2e (HTTP)
+
+Les specs sous `e2e/` envoient les requêtes vers l’URL dérivée de **`HOST`** et **`PORT`** (voir `e2e/src/constants.ts` et `e2e/src/support/test-setup.ts`), par défaut **`http://localhost:3000`**.
+
+- L’**API en cours d’exécution** (souvent Docker : mappage hôte **`3002`**, via `QUIZZAM_HOST_PORT` dans le script `docker/`) : ne lance **pas** un second `npx nx serve` sur le **même** port. Pour cibler le conteneur, exporte le port hôte : par exemple `PORT=3002` (et `AUTH_TYPE=JWT` si besoin) puis `pnpm exec nx run e2e:e2e` — sans autre processus sur ce port.
+- Pour un **`nx serve` local** en parallèle de Docker sur 3002, utilise un **autre** port libre (p.ex. `3000` ou `3010` dans ton `.env` côté Quizzam) et la **même** valeur de `PORT` quand tu lances l’e2e.
 
 ---
 

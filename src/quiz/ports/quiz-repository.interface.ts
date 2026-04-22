@@ -1,25 +1,48 @@
 import { Quiz } from '../entities/quiz.entity';
 import {
-  CreateQuizDTO,
+  DeleteQuizResult,
+  JsonPatchReplaceOperation,
+  QuizSnapshot,
+  UserQuizzesList,
+} from '../models';
+import {
+  CreateQuestionPayload,
+  CreateQuizPayload,
   DecodedToken,
-  GetUserQuizDto,
-  PatchOperation,
-  CreateQuestionDTO,
-  DeletedQuizResponseDTO, QuizDTO
-} from '../dto/quiz.dto';
-import { QuestionEvent } from '../gateways/quiz.gateway';
+} from '../payloads';
 
 export const I_QUIZ_REPOSITORY = 'I_QUIZ_REPOSITORY';
 
 export interface IQuizRepository {
 
-  findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<GetUserQuizDto>;
+  findAllFromUser(
+    userId: string,
+    createUrl: string,
+    baseUrl: string
+  ): Promise<UserQuizzesList>;
   findById(id: string): Promise<Quiz | null>;
-  deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO>;
-  create(quiz: CreateQuizDTO | Quiz): Promise<string>;
-  update(operations: PatchOperation[], id: string, decodedToken: DecodedToken): Promise<void>;
-  addQuestion(id:string, questionId: string, question: CreateQuestionDTO, decodedToken: DecodedToken): Promise<void>;
-  updateQuestion(quizId:string, questionId: string, question: CreateQuestionDTO, decodedToken: DecodedToken): Promise<void>;
+  deleteById(
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<DeleteQuizResult | null>;
+  create(quiz: CreateQuizPayload | Quiz): Promise<string>;
+  update(
+    operations: JsonPatchReplaceOperation[],
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<void>;
+  addQuestion(
+    id: string,
+    questionId: string,
+    question: CreateQuestionPayload,
+    decodedToken: DecodedToken
+  ): Promise<void>;
+  updateQuestion(
+    quizId: string,
+    questionId: string,
+    question: CreateQuestionPayload,
+    decodedToken: DecodedToken
+  ): Promise<void>;
   startQuiz(quizId:string, decodedToken: DecodedToken, baseUrl: string): Promise<string>;
-  getQuizByExecutionId(executionId: string): Promise<QuizDTO | null>;
+  getQuizByExecutionId(executionId: string): Promise<QuizSnapshot | null>;
 }

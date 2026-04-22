@@ -1,7 +1,8 @@
 import { Model } from 'mongoose';
 import { IUserRepository } from '../../ports/user-repository.interface';
 import { MongoUser } from './mongo-user';
-import { CreateUserDto, FindUserDTO } from '../../dto/user.dto';
+import { UserRecord } from '../../models';
+import { CreateUserProfilePayload } from '../../payloads';
 import { HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 
@@ -10,7 +11,7 @@ export class MongoUserRepository implements IUserRepository {
     @Inject(getModelToken(MongoUser.CollectionName)) private readonly model: Model<MongoUser.SchemaClass>,
   ) {}
 
-  async addUsername(user: CreateUserDto): Promise<void> {
+  async addUsername(user: CreateUserProfilePayload): Promise<void> {
     const data = {
       _id: user.uid,
       username: user.username,
@@ -19,7 +20,7 @@ export class MongoUserRepository implements IUserRepository {
     await record.save();
   }
 
-  async findById(id: string): Promise<FindUserDTO | null> {
+  async findById(id: string): Promise<UserRecord | null> {
     console.log(id)
     const record = await this.model.findById(id);
     console.log(record)
@@ -27,6 +28,6 @@ export class MongoUserRepository implements IUserRepository {
       throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
     }
 
-    return new FindUserDTO(record._id, record.username);
+    return { uid: String(record._id), username: record.username };
   }
 }

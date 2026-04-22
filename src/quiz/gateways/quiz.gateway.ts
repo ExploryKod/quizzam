@@ -9,7 +9,7 @@ import { Logger, NotFoundException } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { Question } from '../entities/quiz.entity';
 import { GetQuizByExecutionIdQuery } from '../queries/get-quiz-by-executionId';
-import { AnswerDTO, NextQuestionEventDto } from '../dto/quiz.dto';
+import { AnswerDto, NextQuestionEventDto } from '../dto/quiz.dto';
 
 type QuizStatus = "waiting" | "started" | "completed";
 
@@ -216,7 +216,7 @@ export class QuizGateway {
       throw new Error('Invalid question format');
     }
 
-    const answers: string[] = currentQuestion.answers.map((answer: AnswerDTO) =>
+    const answers: string[] = currentQuestion.answers.map((answer: AnswerDto) =>
       typeof answer === 'string'
         ? answer
         : answer.title || 'No answer available'

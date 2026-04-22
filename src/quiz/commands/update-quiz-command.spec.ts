@@ -16,7 +16,7 @@ describe('UpdateQuizCommand', () => {
     };
     const command = new UpdateQuizCommand(repository);
     const payload = {
-      operations: [{ op: 'replace', path: '/title', value: 'Updated quiz' }],
+      operations: [{ op: 'replace' as const, path: '/title', value: 'Updated quiz' }],
       id: 'quiz-123',
       decodedToken: { user_id: 'uid-1' },
     };

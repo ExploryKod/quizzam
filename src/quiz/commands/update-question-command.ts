@@ -1,12 +1,12 @@
 import { Executable } from '../../shared/executable';
-import { CreateQuestionDTO, DecodedToken } from '../dto/quiz.dto';
+import { CreateQuestionPayload, DecodedToken } from '../payloads';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 import { Inject } from '@nestjs/common';
 
 type Request = {
   quizId: string
   questionId: string
-  question: CreateQuestionDTO
+  question: CreateQuestionPayload
   decodedToken: DecodedToken
 }
 

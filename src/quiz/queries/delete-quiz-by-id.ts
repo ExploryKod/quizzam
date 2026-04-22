@@ -1,13 +1,14 @@
 import { HttpException, HttpStatus, Inject, NotFoundException } from '@nestjs/common';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 import { Executable } from '../../shared/executable';
-import { DecodedToken, DeletedQuizResponseDTO } from '../dto/quiz.dto';
+import { DeleteQuizResult } from '../models';
+import { DecodedToken } from '../payloads';
 
 type Request = {
   id: string;
   decodedToken: DecodedToken;
 }
-type Response = DeletedQuizResponseDTO;
+type Response = DeleteQuizResult;
 
 export class DeleteQuizByIdQuery implements Executable<Request, Response> {
 

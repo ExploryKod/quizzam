@@ -1,8 +1,7 @@
 import { Inject } from '@nestjs/common';
-import { GetUserQuizDto } from '../dto/quiz.dto';
+import { UserQuizzesList } from '../models';
 import { Executable } from '../../shared/executable';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
-import { Quiz } from '../entities/quiz.entity';
 
 type Request = {
   userId: string;
@@ -10,7 +9,7 @@ type Request = {
   baseUrl: string;
 };
 
-type Response = GetUserQuizDto
+type Response = UserQuizzesList;
 
 export class GetUserQuizzes implements Executable<Request, Response> {
 

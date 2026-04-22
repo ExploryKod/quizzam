@@ -1,6 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { IUserRepository } from '../../ports/user-repository.interface';
-import { CreateUserDto, FindUserDTO } from '../../dto/user.dto';
+import { UserRecord } from '../../models';
+import { CreateUserProfilePayload } from '../../payloads';
 import { User } from '../../entities/user.entity';
 import { JwtInMemoryRegistry } from '../../../auth/infra/jwt-in-memory-registry';
 
@@ -19,11 +20,11 @@ export class InMemoryUserRepository implements IUserRepository {
     }
   }
 
-  async addUsername(user: CreateUserDto): Promise<void> {
+  async addUsername(user: CreateUserProfilePayload): Promise<void> {
     return;
   }
 
-  async findById(id: string): Promise<FindUserDTO | null> {
+  async findById(id: string): Promise<UserRecord | null> {
     const fromJwt = this.jwtRegistry?.findByUid(id);
     if (fromJwt) {
       return fromJwt;

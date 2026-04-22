@@ -1,10 +1,10 @@
 import { Inject } from '@nestjs/common';
-import { StartQuizDTO } from '../dto/quiz.dto';
+import { StartQuizPayload } from '../payloads';
 import { Executable } from '../../shared/executable';
 import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
 // import { I_QUIZ_GATEWAY, IQuizGateway } from '../ports/quiz-gateway.interface';
 
-type Request = StartQuizDTO;
+type Request = StartQuizPayload;
 type Response = string;
 
 export class StartQuizQuery implements Executable<Request, Response> {

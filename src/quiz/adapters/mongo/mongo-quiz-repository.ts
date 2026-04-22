@@ -3,12 +3,16 @@ import { Question, Quiz } from '../../entities/quiz.entity';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
 import { MongoQuiz } from './mongo-quiz';
 import {
-  CreateQuestionDTO,
-  CreateQuizDTO,
+  DeleteQuizResult,
+  JsonPatchReplaceOperation,
+  QuizSnapshot,
+  UserQuizzesList,
+} from '../../models';
+import {
+  CreateQuestionPayload,
+  CreateQuizPayload,
   DecodedToken,
-  DeletedQuizResponseDTO, GetUserQuizDto,
-  PatchOperation, QuizDTO
-} from '../../dto/quiz.dto';
+} from '../../payloads';
 import { v4 as uuid } from 'uuid';
 import { getModelToken } from '@nestjs/mongoose';
 import {
@@ -28,7 +32,11 @@ export class MongoQuizRepository implements IQuizRepository {
   )  {
   }
 
-  async findAllFromUser(userId: string, createUrl: string, baseUrl: string): Promise<GetUserQuizDto> {
+  async findAllFromUser(
+    userId: string,
+    createUrl: string,
+    baseUrl: string
+  ): Promise<UserQuizzesList> {
     const quizzes = await this.model.find({ userId }).exec();
 
     if (!quizzes || quizzes.length === 0) {
@@ -94,7 +102,10 @@ export class MongoQuizRepository implements IQuizRepository {
     });
   }
 
-  async deleteById(id: string, decodedToken: DecodedToken): Promise<DeletedQuizResponseDTO> {
+  async deleteById(
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<DeleteQuizResult | null> {
 
     const record = await this.model.findById(id);
 
@@ -119,7 +130,7 @@ export class MongoQuizRepository implements IQuizRepository {
     };
   }
 
-  async create(quiz: CreateQuizDTO): Promise<string> {
+  async create(quiz: CreateQuizPayload): Promise<string> {
     const id = uuid()
     const data = {
       _id: id,
@@ -132,7 +143,11 @@ export class MongoQuizRepository implements IQuizRepository {
     return result.id
   }
 
-  async update(operations: PatchOperation[], id: string, decodedToken: DecodedToken): Promise<void> {
+  async update(
+    operations: JsonPatchReplaceOperation[],
+    id: string,
+    decodedToken: DecodedToken
+  ): Promise<void> {
     const quizDoc = await this.model.findById(id);
 
     if (!quizDoc) {
@@ -167,7 +182,7 @@ export class MongoQuizRepository implements IQuizRepository {
     await quizDoc.save();
   }
 
-  async addQuestion(quizId:string, questionId:string, question:  CreateQuestionDTO, decodedToken: DecodedToken){
+  async addQuestion(quizId:string, questionId:string, question:  CreateQuestionPayload, decodedToken: DecodedToken){
     const quizDoc = await this.model.findById(quizId);
 
     if (!quizDoc) {
@@ -192,7 +207,7 @@ export class MongoQuizRepository implements IQuizRepository {
   async updateQuestion(
     quizId: string,
     questionId: string,
-    question: CreateQuestionDTO,
+    question: CreateQuestionPayload,
     decodedToken: DecodedToken,
   ): Promise<void> {
 
@@ -262,7 +277,7 @@ export class MongoQuizRepository implements IQuizRepository {
     return `${baseUrl}/api/execution/${executionId}`;
   }
 
-  async getQuizByExecutionId(executionId: string): Promise<QuizDTO> {
+  async getQuizByExecutionId(executionId: string): Promise<QuizSnapshot> {
     try {
 
       const quiz = await this.model.findOne({ executionId }).exec();

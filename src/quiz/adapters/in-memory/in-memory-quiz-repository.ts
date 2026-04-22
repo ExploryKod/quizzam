@@ -1,12 +1,15 @@
 import { QuestionEvent } from '../../gateways/quiz.gateway';
 import {
-  CreateQuizDTO,
-  CreateQuestionDTO,
+  DeleteQuizResult,
+  JsonPatchReplaceOperation,
+  QuizSnapshot,
+  UserQuizzesList,
+} from '../../models';
+import {
+  CreateQuestionPayload,
+  CreateQuizPayload,
   DecodedToken,
-  DeletedQuizResponseDTO, GetUserQuizDto,
-  PatchOperation,
-  QuizDTO
-} from '../../dto/quiz.dto';
+} from '../../payloads';
 import { Question, Quiz, QuizEntity } from '../../entities/quiz.entity';
 import { BadRequestException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { IQuizRepository } from '../../ports/quiz-repository.interface';
@@ -27,7 +30,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
     userId: string,
     createUrl: string,
     baseUrl: string
-  ): Promise<GetUserQuizDto> {
+  ): Promise<UserQuizzesList> {
     const userQuizzes = Array.from(this.quizzes.values()).filter(
       (quiz) => quiz.userId === userId
     );
@@ -57,7 +60,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
   async deleteById(
     id: string,
     decodedToken: DecodedToken
-  ): Promise<DeletedQuizResponseDTO | null> {
+  ): Promise<DeleteQuizResult | null> {
     const quiz = this.quizzes.get(id);
     if (!quiz) return null;
 
@@ -77,7 +80,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
     };
   }
 
-  async create(data: CreateQuizDTO): Promise<string> {
+  async create(data: CreateQuizPayload): Promise<string> {
     // Validation des données d'entrée
 
     console.log(data.title);
@@ -106,7 +109,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
   }
 
   async update(
-    operations: PatchOperation[],
+    operations: JsonPatchReplaceOperation[],
     id: string,
     decodedToken: DecodedToken
   ): Promise<void> {
@@ -145,7 +148,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
   async addQuestion(
     id: string,
     questionId: string,
-    question: CreateQuestionDTO,
+    question: CreateQuestionPayload,
     decodedToken: DecodedToken
   ): Promise<void> {
     const quiz = this.quizzes.get(id);
@@ -169,7 +172,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
   async updateQuestion(
     quizId: string,
     questionId: string,
-    question: CreateQuestionDTO,
+    question: CreateQuestionPayload,
     decodedToken: DecodedToken
   ): Promise<void> {
     const quiz = this.quizzes.get(quizId);
@@ -228,7 +231,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
     return questions.length > 0 && title.trim().length > 0;
   }
 
-  async getQuizByExecutionId(executionId: string): Promise<QuizDTO | null> {
+  async getQuizByExecutionId(executionId: string): Promise<QuizSnapshot | null> {
     for (const [quizId, quiz] of this.quizzes.entries()) {
       if (this.executionIds.get(quizId) === executionId) {
         return {

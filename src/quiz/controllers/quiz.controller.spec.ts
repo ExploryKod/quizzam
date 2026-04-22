@@ -9,6 +9,7 @@ import { AddQuestionCommand } from '../commands/add-question-command';
 import { UpdateQuestionCommand } from '../commands/update-question-command';
 import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
 import { StartQuizQuery } from '../queries/start-quiz-query';
+import { GetQuizByIdResponseDto } from '../dto/quiz.dto';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 import { Response } from 'express';
 
@@ -106,7 +107,7 @@ describe('QuizController', () => {
 
     const result = await controller.createQuiz(
       buildRequest(),
-      { title: 'Quiz', description: 'Desc', userId: 'ignored' },
+      { title: 'Quiz', description: 'Desc' },
       response
     );
 
@@ -130,7 +131,7 @@ describe('QuizController', () => {
     await expect(
       controller.createQuiz(
         buildRequest(),
-        { title: 'Quiz', description: 'Desc', userId: 'ignored' },
+        { title: 'Quiz', description: 'Desc' },
         buildResponse()
       )
     ).rejects.toBeInstanceOf(HttpException);
@@ -148,12 +149,15 @@ describe('QuizController', () => {
 
     const result = await controller.getQuizById('quiz-123', buildRequest());
 
-    expect(result).toEqual({
-      id: 'quiz-123',
-      title: 'Quiz',
-      description: 'Desc',
-      questions: [],
-    });
+    expect(result).toBeInstanceOf(GetQuizByIdResponseDto);
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'quiz-123',
+        title: 'Quiz',
+        description: 'Desc',
+        questions: [],
+      })
+    );
   });
 
   it('getQuizById should throw not found when ownership differs', async () => {
