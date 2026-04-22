@@ -54,5 +54,36 @@ services:
       QUIZZAM_HOST_PORT: ${QUIZZAM_HOST_PORT:-3002}
     # Pas de depends_on mongodb : le profil mongodb peut être désactivé (FIREBASE / IN-MEMORY).
 
+  api-watch:
+    profiles:
+      - watch
+    container_name: quizzam-api-watch
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: development
+    ports:
+      - "${QUIZZAM_HOST_PORT:-3002}:3000"
+    env_file:
+      - ../.env
+    environment:
+      PORT: "3000"
+      NODE_ENV: development
+      QUIZZAM_HOST_PORT: ${QUIZZAM_HOST_PORT:-3002}
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ..:/usr/src/app
+      - quizzam_node_modules:/usr/src/app/node_modules
+    command: >
+      sh -c "if [ ! -f node_modules/.modules.yaml ]; then
+      echo '[api-watch] Installing dependencies in container volume...';
+      pnpm install --frozen-lockfile=false;
+      else
+      echo '[api-watch] Reusing existing node_modules volume.';
+      fi &&
+      node ./node_modules/nx/bin/nx.js serve quizzam"
+    # Service de dev : code monté depuis l'hôte + watcher Nest/Nx dans le conteneur.
+
 volumes:
   mongo_data:
+  quizzam_node_modules:

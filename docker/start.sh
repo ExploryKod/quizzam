@@ -6,6 +6,9 @@
 #   ./docker/start.sh down -v  # supprime aussi les volumes (données Mongo)
 #   ./docker/start.sh api-restart   # redémarre API (+ Mongo si profil mongodb), sans rebuild
 #   ./docker/start.sh api-stop      # stoppe API (+ Mongo si profil mongodb)
+#   ./docker/start.sh logs          # suit les logs API uniquement
+#   ./docker/start.sh watch-up      # démarre API en mode watch (bind mount + hot reload)
+#   ./docker/start.sh watch-stop    # stoppe API watch (et Mongo si profil mongodb)
 
 set -Eeuo pipefail
 
@@ -53,6 +56,10 @@ PROFILE_ARGS=()
 if [[ "$USE_MONGO" == true ]]; then
   PROFILE_ARGS=(--profile mongodb)
 fi
+WATCH_PROFILE_ARGS=(--profile watch)
+if [[ "$USE_MONGO" == true ]]; then
+  WATCH_PROFILE_ARGS=(--profile watch --profile mongodb)
+fi
 
 cd "$PROJECT_DIR" || {
   error "Project directory not found: $PROJECT_DIR"
@@ -76,6 +83,59 @@ fi
 
 ACTION="${1:-up}"
 case "$ACTION" in
+  watch-up|dev-up)
+    shift || true
+    info "Starting API in watch mode (live reload, no rebuild loop)…"
+    info "Stopping classic api container first to free host port ${API_PORT} (if running)…"
+    if [[ "$USE_MONGO" == true ]]; then
+      "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" stop api >/dev/null 2>&1 || true
+    else
+      "${compose[@]}" -f "$COMPOSE_BASE" stop api >/dev/null 2>&1 || true
+    fi
+    if [[ "$USE_MONGO" == true ]]; then
+      info "DATABASE_NAME=MONGODB → start MongoDB + api-watch."
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" up -d --build mongodb api-watch "$@"; then
+        error "docker compose up watch mode failed"
+        exit 1
+      fi
+    else
+      info "DATABASE_NAME=$DATABASE_NAME_VALUE → start api-watch only."
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" up -d --build api-watch "$@"; then
+        error "docker compose up api-watch failed"
+        exit 1
+      fi
+    fi
+    ok "Watch mode started. Following live api-watch logs…"
+    "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" logs -f api-watch
+    exit 0
+    ;;
+  watch-stop|dev-stop)
+    shift || true
+    info "Stopping API watch mode…"
+    if [[ "$USE_MONGO" == true ]]; then
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" stop api-watch mongodb "$@"; then
+        error "docker compose stop api-watch mongodb failed"
+        exit 1
+      fi
+    else
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" stop api-watch "$@"; then
+        error "docker compose stop api-watch failed"
+        exit 1
+      fi
+    fi
+    ok "Watch mode stopped."
+    exit 0
+    ;;
+  logs)
+    shift || true
+    info "Following API logs only (Ctrl+C to stop tail)…"
+    if [[ "$USE_MONGO" == true ]]; then
+      "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" logs -f api "$@"
+    else
+      "${compose[@]}" -f "$COMPOSE_BASE" logs -f api "$@"
+    fi
+    exit 0
+    ;;
   api-stop|stop-api)
     shift || true
     info "Stopping API only (and DB dependency when enabled)…"
@@ -133,13 +193,16 @@ case "$ACTION" in
     exit 0
     ;;
   -h|--help|help)
-    echo "Usage: $0 [up|down|api-restart|api-stop] [options]"
+    echo "Usage: $0 [up|down|api-restart|api-stop|logs|watch-up|watch-stop] [options]"
     echo ""
     echo "  up (default)   Démarre la stack (build si besoin)."
     echo "  down             Arrête et supprime les conteneurs."
     echo "  down -v          Idem + supprime les volumes compose (ex. données Mongo)."
     echo "  api-restart      Redémarre API sans rebuild (et MongoDB si DATABASE_NAME=MONGODB)."
     echo "  api-stop         Stoppe API sans toucher aux images (et MongoDB si DATABASE_NAME=MONGODB)."
+    echo "  logs             Suit les logs API uniquement."
+    echo "  watch-up         Démarre API en mode watch (bind mount + hot reload dans le conteneur)."
+    echo "  watch-stop       Stoppe API watch (et MongoDB si DATABASE_NAME=MONGODB)."
     echo ""
     echo "Depuis le dossier quizzam : ./docker/start.sh   ou   ./docker/start"
     exit 0

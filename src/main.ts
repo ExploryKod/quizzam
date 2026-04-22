@@ -46,8 +46,17 @@ async function bootstrap() {
 
   await app.listen(variables.port);
   console.log("\x1b[36m *************************************** \n 🌞 Hello in Quizzam API - Version 1.0.0 \n 🏡 Architecture : hexagonale \n *************************************** ");
+  const databaseAlternativeByCurrent: Record<string, string> = {
+    MONGODB: 'FIREBASE',
+    FIREBASE: 'MONGODB',
+    'IN-MEMORY': 'MONGODB',
+  };
+  const databaseAlternativeValue = databaseAlternativeByCurrent[variables.database];
+  const databaseAlternative = databaseAlternativeValue
+    ? ` (alternative: \x1b[36m${databaseAlternativeValue}\x1b[32m)`
+    : '';
   Logger.log(
-    `🚀 Running on: http://localhost:${variables.port}/${variables.globalPrefix} with 💽 \x1b[35m${variables.database}\x1b[32m as database (alternative : \x1b[36mMONGODB)`,
+    `🚀 Running on: http://localhost:${variables.port}/${variables.globalPrefix} with 💽 \x1b[35m${variables.database}\x1b[32m as database${databaseAlternative}`,
   );
   Logger.log(
     `🔧 e2e tests are in \x1b[38;5;226m${join(__dirname, '..', 'e2e/src/server')}\x1b[0m`,

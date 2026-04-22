@@ -59,6 +59,12 @@ Always builds and runs the **API** from `docker/Dockerfile` via `docker/compose.
      - Exit live tail: `Ctrl+C` (containers keep running).
      - Disable this behavior: `QUIZZAM_FOLLOW_API_LOGS=0 ./docker/start.sh`.
 
+   **Watch mode (dev inside container, no rebuild on each change):**
+   - `./docker/start.sh watch-up` (alias `dev-up`): starts `api-watch` with source bind mount (`quizzam` -> `/usr/src/app`) and Nest/Nx watcher inside the container.
+   - Code edits on the host are automatically reflected in the container (hot reload).
+   - `./docker/start.sh watch-stop` (alias `dev-stop`): stops watch mode.
+   - In watch mode, `api-watch` logs are tailed live at the end of the command.
+
    The script reads `.env` and adds `--profile mongodb` only when `DATABASE_NAME=MONGODB` (including for `down`, so the right services are targeted).
 
    **Without** the script (Mongo mode):

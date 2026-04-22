@@ -60,6 +60,12 @@ Nous utilisons les profiles dans compose pour réaliser cette séparation.
      - Quitter l’affichage live : `Ctrl+C` (les conteneurs continuent de tourner).
      - Désactiver ce comportement : `QUIZZAM_FOLLOW_API_LOGS=0 ./docker/start.sh`.
 
+   **Mode watch (dev inside container, sans rebuild à chaque changement) :**
+   - `./docker/start.sh watch-up` (alias `dev-up`) : démarre `api-watch` avec bind mount du code (`quizzam` -> `/usr/src/app`) et watcher Nest/Nx dans le conteneur.
+   - Les modifications de code sur l’hôte sont prises en compte automatiquement dans le conteneur (hot reload).
+   - `./docker/start.sh watch-stop` (alias `dev-stop`) : stoppe le mode watch.
+   - En mode watch, les logs `api-watch` sont suivis en live à la fin de la commande.
+
    Le script lit `.env` et n’ajoute `--profile mongodb` que lorsque `DATABASE_NAME=MONGODB` (y compris pour `down`, pour cibler les bons services).
 
    **Sans** le script (mode Mongo) :
