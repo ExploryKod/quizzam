@@ -63,6 +63,8 @@ export class FirebaseQuizRepository implements IQuizRepository {
       const quizObject = {
         id: quizId,
         title: quizTitle,
+        description: quizData.description || '',
+        questions: questions,
       };
 
       if (isStartable) {

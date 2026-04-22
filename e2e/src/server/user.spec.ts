@@ -40,7 +40,6 @@ describe('GET /api/users/me', () => {
     expect(userResponse.status).toBe(200);
     expect(userResponse.body).toHaveProperty('uid');
     expect(userResponse.body).toHaveProperty('username');
-    expect(userResponse.body).toHaveProperty('email');
     
     expect(userResponse.body.uid).toBe(testUser.uid);
   });

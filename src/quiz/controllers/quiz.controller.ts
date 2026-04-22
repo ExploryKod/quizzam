@@ -35,6 +35,7 @@ import { Auth } from '../../auth/auth.decorator';
 import { RequestWithUser } from '../../auth/model/request-with-user';
 
 import {
+  CreateQuestionDraftDto,
   CreateQuestionDTO,
   CreateQuizDTO,
   DecodedToken,
@@ -43,6 +44,7 @@ import {
   GetQuizByIdResponseDTO,
   PatchOperation,
   UpdateQuestionDTO,
+  normalizeNewQuestionFromDraft,
 } from '../dto/quiz.dto';
 
 import { GetUserQuizzes } from '../queries/get-user-quizzes';
@@ -169,16 +171,51 @@ export class QuizController {
   @Auth()
   @ApiOperation({
     summary: 'Get a quiz by id',
-    description: 'Returns quiz metadata and questions when it belongs to the authenticated user.',
+    description:
+      'Returns the quiz `id` (document id, same as the path parameter), title, description, and questions for the owner.',
   })
   @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
   @ApiOkResponse({
-    description: 'Quiz found.',
+    description:
+      'Quiz found. The body includes `id` (equal to `:id`) as a complete resource — see OpenAPI schema `GetQuizByIdResponse`.',
     type: GetQuizByIdResponseDTO,
+    content: {
+      'application/json': {
+        examples: {
+          withQuestions: {
+            summary: 'Quiz with questions',
+            value: {
+              id: '507f1f77bcf86cd799439011',
+              title: 'HTML basics',
+              description: 'Quick fundamentals quiz',
+              questions: [
+                {
+                  id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                  title: 'What does HTML stand for?',
+                  answers: [
+                    { title: 'Hyper Text Markup Language', isCorrect: true },
+                    { title: 'Home Tool Markup Language', isCorrect: false },
+                  ],
+                },
+              ],
+            },
+          },
+          emptyQuestions: {
+            summary: 'Quiz with no questions yet',
+            value: {
+              id: '507f1f77bcf86cd799439011',
+              title: 'New quiz',
+              description: '',
+              questions: [],
+            },
+          },
+        },
+      },
+    },
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
-  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by current user.' })
-  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading quiz.' })
+  @ApiNotFoundResponse({ description: 'Quiz not found or not owned by the current user.' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected server error while loading the quiz.' })
   async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser) {
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);
 
@@ -192,6 +229,7 @@ export class QuizController {
       }
       console.log('GET ID', quizDoc);
       return {
+        id,
         title: quizDoc.title,
         description: quizDoc.description,
         questions: quizDoc.questions,
@@ -299,11 +337,12 @@ export class QuizController {
   @Auth()
   @HttpCode(201)
   @ApiOperation({
-    summary: 'Add a question to a quiz',
-    description: 'Creates a new question in a quiz owned by the authenticated user and returns its Location header.',
+    summary: 'Add a question to a quiz (draft allowed)',
+    description:
+      'Creates a new question. Title and answers may be partial or empty while editing. Full validation (complete question with ≥2 answers and exactly one correct) is enforced when starting the quiz, not on this endpoint.',
   })
   @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
-  @ApiBody({ type: CreateQuestionDTO })
+  @ApiBody({ type: CreateQuestionDraftDto })
   @ApiCreatedResponse({
     description: 'Question created. The resource URI is returned in the Location header.',
     schema: { example: null },
@@ -314,10 +353,14 @@ export class QuizController {
   @ApiInternalServerErrorResponse({ description: 'Unexpected server error while adding question.' })
   async addQuestion(
     @Param('id') quizId: string,
-    @Body() questionDto: CreateQuestionDTO,
+    @Body() questionBody: CreateQuestionDraftDto,
     @Req() request: RequestWithUser,
     @Res({ passthrough: true }) response: Response
   ) {
+    const questionDto: CreateQuestionDTO = normalizeNewQuestionFromDraft(
+      questionBody ?? {}
+    );
+
     const questionId = uuidv4();
 
     const decodedToken: DecodedToken = await this.generateDecodedToken(request);

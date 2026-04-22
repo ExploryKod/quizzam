@@ -20,12 +20,10 @@ export class StartQuizQuery implements Executable<Request, Response> {
     // Step 1: Start the quiz in the repository and get the execution URL
     const executionUrl = await this.repository.startQuiz(quizId, decodedToken, baseUrl);
     this.executionUrl = executionUrl;
-    console.log("execution id is >>> ", executionUrl.split('/').pop());
     return executionUrl;
   }
 
   async getQuizIdFromExecutionUrl(): Promise<string> {
-    console.log(this.executionUrl);
     return this.executionUrl.split('/')[1];
   }
 }

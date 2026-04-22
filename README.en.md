@@ -83,7 +83,8 @@ Always builds and runs the **API** from `docker/Dockerfile` via `docker/compose.
 
    | Service | URL |
    | ------- | --- |
-   | API (Swagger) | `http://localhost:3002/api` (default host port; override with `QUIZZAM_HOST_PORT`) |
+   | API (REST prefix) | `http://localhost:3002/api` (default host port; override with `QUIZZAM_HOST_PORT`) |
+   | OpenAPI (Swagger UI) | `http://localhost:3002/api/docs` (same host port) |
    | mongo-express | only if `DATABASE_NAME=MONGODB` — `http://localhost:8086` |
    | MongoDB (from host) | only if `DATABASE_NAME=MONGODB` — `mongodb://localhost:27017` / database `quizapp` |
 
@@ -144,6 +145,14 @@ npx nx show project quizzam
 ```
 
 [Running tasks in Nx](https://nx.dev/features/run-tasks)
+
+---
+
+## API documentation
+
+- **Swagger (OpenAPI)** : interactive UI at `/api/docs` (see the *URLs* table for your port).
+- **Refactor / contract context** (monorepo, e.g. `GET /api/quiz/:id` and `id` in the body): [quizzy-front-renew-app/docs/refactor.md](../quizzy-front-renew-app/docs/refactor.md).
+- **Quizzam HTTP notes** (French): [docs/api.md](./docs/api.md).
 
 ---
 
