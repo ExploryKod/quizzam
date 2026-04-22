@@ -9,6 +9,15 @@ API NestJS pour le contenu des quiz (workspace [Nx](https://nx.dev)).
 - **Node.js** 20+ et **pnpm**
 - **Docker** et Docker Compose (uniquement si tu suis la procédure Docker ci-dessous)
 
+### Authentification et base de données
+
+Les variables **`AUTH_TYPE`** et **`DATABASE_NAME`** se combinent. Point important :
+
+- Si tu utilises **`DATABASE_NAME=MONGODB`**, fixe en général **`AUTH_TYPE=JWT`**, sauf si tu as déjà un **projet Firebase** opérationnel (Firebase Admin sur l’API, identifiants, **comptes dans Firebase Authentication** gérés côté Firebase / console). Sans ce socle, **`AUTH_TYPE=FIREBASE`** ne te permet pas un parcours inscription / connexion email–mot de passe classique vers Mongo : les routes **`POST /api/auth/register`** et **`POST /api/auth/login`** ne sont pas exposées, et les utilisateurs ne sont pas créés dans Mongo comme pour le flux JWT.
+- **`AUTH_TYPE=JWT`** avec Mongo : les utilisateurs (email, hash de mot de passe, profil) sont stockés dans la base Mongo définie par **`DATABASE_URL`**.
+
+Voir aussi les commentaires dans **`.env.example`**.
+
 ---
 
 ## Démarrage
@@ -41,6 +50,15 @@ Nous utilisons les profiles dans compose pour réaliser cette séparation.
    Raccourci équivalent : `./docker/start` (même script).
 
    **Arrêt :** `./docker/start.sh down` ou `./docker/start down` — supprime les conteneurs du projet. Pour enlever aussi les volumes (ex. données Mongo) : `./docker/start.sh down -v`.
+
+   **Cycle rapide API (sans rebuild image) :**
+   - `./docker/start.sh api-restart` (ou `./docker/start.sh restart-api`) : redémarre l’API sans reconstruire l’image.
+   - `./docker/start.sh api-stop` (ou `./docker/start.sh stop-api`) : arrête l’API (et sa dépendance Mongo si activée).
+   - Si `DATABASE_NAME=MONGODB`, le script applique automatiquement le profil Mongo et gère `mongodb` + `api`.
+   - Sinon, seules les opérations sur `api` sont exécutées.
+   - Après `./docker/start.sh` (`up`), le script suit directement les logs API en live dans le terminal (`logs -f api`).
+     - Quitter l’affichage live : `Ctrl+C` (les conteneurs continuent de tourner).
+     - Désactiver ce comportement : `QUIZZAM_FOLLOW_API_LOGS=0 ./docker/start.sh`.
 
    Le script lit `.env` et n’ajoute `--profile mongodb` que lorsque `DATABASE_NAME=MONGODB` (y compris pour `down`, pour cibler les bons services).
 

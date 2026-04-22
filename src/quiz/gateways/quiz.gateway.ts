@@ -23,6 +23,8 @@ export interface StatusEvent {
 }
 
 export interface HostDetailsEvent {
+  /** Number of questions in this quiz (for host UI; avoids relying on socket payload quirks). */
+  questionCount: number;
   quiz: {
     id?: string;
     title: string;
@@ -84,13 +86,21 @@ export class QuizGateway {
     const quiz = await this.getQuizByExecutionIdQuery.execute(executionId);
     console.log("quiz in websocket host is: ", quiz)
 
+    const questions = quiz.questions ?? [];
     const quizDetails: HostDetailsEvent = {
+      questionCount: questions.length,
       quiz: {
         title: quiz.title,
-      }
+      },
     };
 
     client.emit('hostDetails', quizDetails);
+
+    // No participants yet: treat as a fresh host session so question index cannot skip ahead.
+    const participantCount = this.executionRooms.get(executionId)?.size ?? 0;
+    if (participantCount === 0) {
+      this.executionQuestionIndexes.delete(executionId);
+    }
 
     const statusEvent: StatusEvent = {
       status: 'waiting',
@@ -190,7 +200,7 @@ export class QuizGateway {
     const nextIndex = currentIndex + 1;
     if (nextIndex >= questions.length) {
       return {
-        question: "Merci pour votre participation, le quiz est terminé",
+        question: "Merci pour votre participation",
         questionNumber: questions.length,
         answers: [],
         totalQuestions: questions.length,

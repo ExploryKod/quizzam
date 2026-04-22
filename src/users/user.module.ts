@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MongoUser } from './adapters/mongo/mongo-user';
 import { MongoUserRepository } from './adapters/mongo/mongo-user-repository';
@@ -41,8 +42,16 @@ const mongoFeatureImports =
       ]
     : [];
 
+const inMemoryAuthImports =
+  variables.database === 'IN-MEMORY' ? [forwardRef(() => AuthModule)] : [];
+
 @Module({
-  imports: [CqrsModule, CommonModule, ...mongoFeatureImports],
+  imports: [
+    CqrsModule,
+    CommonModule,
+    ...mongoFeatureImports,
+    ...inMemoryAuthImports,
+  ],
   controllers: [UsersController],
   providers: [
     {

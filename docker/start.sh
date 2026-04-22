@@ -4,6 +4,8 @@
 #   ./docker/start.sh          # ou ./docker/start.sh up
 #   ./docker/start.sh down     # ou ./docker/start down
 #   ./docker/start.sh down -v  # supprime aussi les volumes (données Mongo)
+#   ./docker/start.sh api-restart   # redémarre API (+ Mongo si profil mongodb), sans rebuild
+#   ./docker/start.sh api-stop      # stoppe API (+ Mongo si profil mongodb)
 
 set -Eeuo pipefail
 
@@ -15,6 +17,8 @@ MONGO_EXPRESS_PORT="8086"
 MONGO_URI_HOST="mongodb://localhost:27017"
 MONGO_URI_DOCKER="mongodb://mongodb:27017"
 API_PORT="${QUIZZAM_HOST_PORT:-3002}"
+API_LOGS_UP_COMMAND="docker compose -f compose.dev.yaml logs -f"
+FOLLOW_API_LOGS="${QUIZZAM_FOLLOW_API_LOGS:-1}"
 
 info()  { echo -e "ℹ️  $1"; }
 ok()    { echo -e "✅ $1"; }
@@ -72,6 +76,47 @@ fi
 
 ACTION="${1:-up}"
 case "$ACTION" in
+  api-stop|stop-api)
+    shift || true
+    info "Stopping API only (and DB dependency when enabled)…"
+    if [[ "$USE_MONGO" == true ]]; then
+      info "DATABASE_NAME=MONGODB → arrêt API + MongoDB (profil « mongodb »)."
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" stop api mongodb "$@"; then
+        error "docker compose stop api mongodb failed"
+        exit 1
+      fi
+    else
+      info "DATABASE_NAME=$DATABASE_NAME_VALUE → arrêt API seule (sans profil Mongo)."
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" stop api "$@"; then
+        error "docker compose stop api failed"
+        exit 1
+      fi
+    fi
+    ok "API stopped without rebuilding images."
+    exit 0
+    ;;
+  api-restart|restart-api)
+    shift || true
+    info "Restarting API only (no image rebuild)…"
+    if [[ "$USE_MONGO" == true ]]; then
+      info "DATABASE_NAME=MONGODB → (re)start MongoDB + API avec profil « mongodb »."
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" up -d --no-build mongodb api "$@"; then
+        error "docker compose up --no-build mongodb api failed"
+        exit 1
+      fi
+    else
+      info "DATABASE_NAME=$DATABASE_NAME_VALUE → (re)start API seule, sans profil Mongo."
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" up -d --no-build api "$@"; then
+        error "docker compose up --no-build api failed"
+        exit 1
+      fi
+    fi
+
+    ok "API restarted without rebuilding images."
+    info "Container status:"
+    "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" ps
+    exit 0
+    ;;
   down)
     shift
     info "Stopping quizzam dev stack…"
@@ -88,11 +133,13 @@ case "$ACTION" in
     exit 0
     ;;
   -h|--help|help)
-    echo "Usage: $0 [up|down] [options]"
+    echo "Usage: $0 [up|down|api-restart|api-stop] [options]"
     echo ""
     echo "  up (default)   Démarre la stack (build si besoin)."
     echo "  down             Arrête et supprime les conteneurs."
     echo "  down -v          Idem + supprime les volumes compose (ex. données Mongo)."
+    echo "  api-restart      Redémarre API sans rebuild (et MongoDB si DATABASE_NAME=MONGODB)."
+    echo "  api-stop         Stoppe API sans toucher aux images (et MongoDB si DATABASE_NAME=MONGODB)."
     echo ""
     echo "Depuis le dossier quizzam : ./docker/start.sh   ou   ./docker/start"
     exit 0
@@ -202,3 +249,15 @@ else
   echo "   cd \"$PROJECT_DIR\" && ${compose[*]} -f compose.dev.yaml logs -f"
 fi
 echo "----------------------------------"
+
+if [[ "${FOLLOW_API_LOGS,,}" == "1" || "${FOLLOW_API_LOGS,,}" == "true" || "${FOLLOW_API_LOGS,,}" == "yes" ]]; then
+  echo ""
+  info "Following live API logs (Ctrl+C to stop tail, containers keep running)…"
+  if [[ "$USE_MONGO" == true ]]; then
+    "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" logs -f api
+  else
+    "${compose[@]}" -f "$COMPOSE_BASE" logs -f api
+  fi
+else
+  info "Live API log follow disabled (set QUIZZAM_FOLLOW_API_LOGS=1 to enable)."
+fi

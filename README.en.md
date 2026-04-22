@@ -9,6 +9,15 @@ NestJS API for quiz content ([Nx](https://nx.dev) workspace).
 - **Node.js** 20+ and **pnpm**
 - **Docker** and Docker Compose (only if you follow the Docker workflow below)
 
+### Authentication and database
+
+**`AUTH_TYPE`** and **`DATABASE_NAME`** work together. Important rule:
+
+- If you use **`DATABASE_NAME=MONGODB`**, you should normally set **`AUTH_TYPE=JWT`** unless you already have a **working Firebase setup** (Firebase Admin on the API, credentials, **user accounts in Firebase Authentication** managed in Firebase / the console). Without that, **`AUTH_TYPE=FIREBASE`** does **not** give you a standard email/password sign-up and sign-in flow backed by Mongo: **`POST /api/auth/register`** and **`POST /api/auth/login`** are not enabled, and users are not created in Mongo for that flow.
+- **`AUTH_TYPE=JWT`** with Mongo: users (email, password hash, profile) are stored in the Mongo database from **`DATABASE_URL`**.
+
+See the comments in **`.env.example`** as well.
+
 ---
 
 ## Getting started
@@ -40,6 +49,15 @@ Always builds and runs the **API** from `docker/Dockerfile` via `docker/compose.
    Same entry point: `./docker/start` (wrapper).
 
    **Stop:** `./docker/start.sh down` or `./docker/start down` — removes project containers. To remove volumes too (e.g. Mongo data): `./docker/start.sh down -v`.
+
+   **Fast API cycle (no image rebuild):**
+   - `./docker/start.sh api-restart` (or `./docker/start.sh restart-api`): restarts API without rebuilding the image.
+   - `./docker/start.sh api-stop` (or `./docker/start.sh stop-api`): stops API (and its Mongo dependency when enabled).
+   - If `DATABASE_NAME=MONGODB`, the script automatically applies the Mongo profile and manages `mongodb` + `api`.
+   - Otherwise, only `api` operations are executed.
+   - After `./docker/start.sh` (`up`), the script directly follows live API logs in the terminal (`logs -f api`).
+     - Exit live tail: `Ctrl+C` (containers keep running).
+     - Disable this behavior: `QUIZZAM_FOLLOW_API_LOGS=0 ./docker/start.sh`.
 
    The script reads `.env` and adds `--profile mongodb` only when `DATABASE_NAME=MONGODB` (including for `down`, so the right services are targeted).
 

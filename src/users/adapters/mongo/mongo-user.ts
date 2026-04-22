@@ -15,6 +15,13 @@ export namespace MongoUser {
 
     @Prop()
     username: string;
+
+    /** Local JWT auth (optional; legacy Firebase users may omit). */
+    @Prop({ type: String, lowercase: true, sparse: true, unique: true })
+    email?: string;
+
+    @Prop({ type: String })
+    passwordHash?: string;
   }
 
   export const Schema = SchemaFactory.createForClass(SchemaClass);
