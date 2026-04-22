@@ -148,7 +148,12 @@ describe('QuizController', () => {
 
     const result = await controller.getQuizById('quiz-123', buildRequest());
 
-    expect(result).toEqual({ title: 'Quiz', description: 'Desc', questions: [] });
+    expect(result).toEqual({
+      id: 'quiz-123',
+      title: 'Quiz',
+      description: 'Desc',
+      questions: [],
+    });
   });
 
   it('getQuizById should throw not found when ownership differs', async () => {

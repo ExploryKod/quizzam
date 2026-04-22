@@ -171,7 +171,8 @@ export class QuizController {
   @Auth()
   @ApiOperation({
     summary: 'Get a quiz by id',
-    description: 'Returns quiz metadata and questions when it belongs to the authenticated user.',
+    description:
+      'Returns the quiz `id` (document id, same as the path parameter), title, description, and questions for the owner.',
   })
   @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
   @ApiOkResponse({
@@ -194,6 +195,7 @@ export class QuizController {
       }
       console.log('GET ID', quizDoc);
       return {
+        id,
         title: quizDoc.title,
         description: quizDoc.description,
         questions: quizDoc.questions,

@@ -128,6 +128,9 @@ export class GetUserQuizDto {
 }
 
 export class GetQuizByIdResponseDTO {
+  @ApiProperty({ example: '507f1f77bcf86cd799439011', description: 'Quiz document id (same as the path parameter).' })
+  id: string;
+
   @ApiProperty({ example: 'HTML basics' })
   title: string;
 
