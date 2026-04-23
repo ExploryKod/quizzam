@@ -1,0 +1,29 @@
+# Image buildée / poussée par .github/workflows/quizzam-image.yml
+# Remplace `ton-github-owner` par ton user ou org GitHub (même owner que le package ghcr.io).
+services:
+  app:
+    image: ghcr.io/ton-github-owner/quizzam:latest
+    container_name: quizzam-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${QUIZZAM_HOST_PORT:-3002}:3000"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    container_name: quizzam-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: changeme
+      MONGO_INITDB_DATABASE: appdb
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo_data:
