@@ -540,4 +540,72 @@ describe('Quiz API', () => {
       expect(response.response.status).toBe(400);
     });
   });
+
+  describe('Public quizzes routes', () => {
+    let testUser: TestUser;
+    let token: string;
+    let quizId: string;
+
+    beforeAll(async () => {
+      testUser = await AuthHelper.createAndLoginUser({
+        email: 'public-routes@email.com',
+        password: 'password',
+        username: 'PublicRoutesUser',
+      });
+      token = testUser.token;
+
+      const createResponse = await QuizHelper.createQuiz(token, {
+        title: 'Public quiz candidate',
+        description: 'Visible only when published',
+      });
+      expect(createResponse.response.status).toBe(201);
+      quizId = createResponse.quiz.id;
+
+      const questionResponse = await QuizHelper.addQuestion(token, quizId, {
+        title: 'Question publique',
+        answers: [
+          { title: 'Bonne réponse', isCorrect: true },
+          { title: 'Mauvaise réponse', isCorrect: false },
+        ],
+      });
+      expect(questionResponse.response.status).toBe(201);
+    });
+
+    afterAll(async () => {
+      await QuizHelper.deleteQuiz(quizId);
+      await AuthHelper.deleteUser(testUser.uid);
+    });
+
+    it('GET /api/public/quizzes/:id should return 404 while quiz is private', async () => {
+      const response = await request(defaultUrl).get(`/api/public/quizzes/${quizId}`);
+      expect(response.status).toBe(404);
+    });
+
+    it('PATCH /api/quiz/:id should publish quiz with /isPublic', async () => {
+      const response = await request(defaultUrl)
+        .patch(`/api/quiz/${quizId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send([{ op: 'replace', path: '/isPublic', value: true }]);
+
+      expect(response.status).toBe(204);
+    });
+
+    it('GET /api/public/quizzes/:id should return quiz when published', async () => {
+      const response = await request(defaultUrl).get(`/api/public/quizzes/${quizId}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('id', quizId);
+      expect(response.body).toHaveProperty('isPublic', true);
+      expect(Array.isArray(response.body.questions)).toBe(true);
+      expect(response.body.questions.length).toBeGreaterThan(0);
+    });
+
+    it('GET /api/public/quizzes should include published quiz id', async () => {
+      const response = await request(defaultUrl).get('/api/public/quizzes');
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.some((quiz) => quiz.id === quizId)).toBe(true);
+    });
+  });
 });
