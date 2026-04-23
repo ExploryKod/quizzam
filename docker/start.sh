@@ -237,6 +237,17 @@ case "$ACTION" in
     "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" ps
     exit 0
     ;;
+  stop)
+    shift || true
+    info "Stopping all quizzam containers (api, api-watch, mongodb, mongo-express if present)…"
+    # Activate both profiles so stop works whether stack was started via up or watch-up.
+    if ! "${compose[@]}" -f "$COMPOSE_BASE" --profile watch --profile mongodb stop "$@"; then
+      error "docker compose stop failed"
+      exit 1
+    fi
+    ok "All quizzam containers are stopped."
+    exit 0
+    ;;
   down)
     shift
     info "Stopping quizzam dev stack (profils watch + mongodb si activé)…"
@@ -253,9 +264,10 @@ case "$ACTION" in
     exit 0
     ;;
   -h|--help|help)
-    echo "Usage: $0 [up|down|api-restart|api-stop|logs|watch-up|watch-stop|dump-quizzes|dump-users] [options]"
+    echo "Usage: $0 [up|stop|down|api-restart|api-stop|logs|watch-up|watch-stop|dump-quizzes|dump-users] [options]"
     echo ""
     echo "  up (default)   Démarre la stack (build si besoin)."
+    echo "  stop             Stoppe tous les conteneurs quizzam (up + watch-up), sans supprimer réseau/volumes."
     echo "  down             Arrête tout (y compris api-watch), supprime le réseau, --remove-orphans."
     echo "  down -v          Idem + supprime les volumes compose (Mongo, quizzam_node_modules, …)."
     echo "  api-restart      Redémarre API sans rebuild (et MongoDB si DATABASE_NAME=MONGODB)."
@@ -273,7 +285,7 @@ case "$ACTION" in
     [[ -n "${1:-}" ]] && shift
     ;;
   *)
-    error "Commande inconnue : $ACTION — utilisation : $0 [up|down|dump-quizzes|dump-users] (ou $0 --help)"
+    error "Commande inconnue : $ACTION — utilisation : $0 [up|stop|down|dump-quizzes|dump-users] (ou $0 --help)"
     exit 1
     ;;
 esac
