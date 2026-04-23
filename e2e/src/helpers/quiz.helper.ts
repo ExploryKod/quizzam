@@ -137,8 +137,6 @@ export class QuizHelper {
           answers: question.answers
         });
 
-      console.log('response', response.body);
-      
       if (response.status === 404) {
         return {response : response,
           question : null};
@@ -204,14 +202,19 @@ export class QuizHelper {
    * @param quizId Quiz ID to delete
    */
   static async deleteQuiz(quizId: string): Promise<void> {
+    if (!quizId) {
+      return;
+    }
+
     try {
       // Since there's no delete endpoint in the API, we can use a test endpoint
       const response = await request(defaultUrl)
         .delete(`/api/test/quiz/${quizId}`)
         .send();
       
-      if (response.status !== 200) {
-        console.warn(`Failed to delete quiz ${quizId}: ${response.status}`);
+      // Cleanup endpoint can legitimately return 404 when the resource was already deleted.
+      if (![200, 404].includes(response.status)) {
+        throw new Error(`Failed to delete quiz ${quizId}: ${response.status}`);
       }
     } catch (error) {
       console.error('Error deleting test quiz:', error);

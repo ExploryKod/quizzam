@@ -1,0 +1,625 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseArrayPipe,
+  Patch,
+  Post,
+  Put,
+  Req,
+  Res,
+} from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
+
+import {
+  ApiHttpInternalServerError,
+  ApiHttpNotFound,
+  ApiHttpUnauthorized,
+} from '../../core/dto/api-http-responses';
+import { ApiValidationBadRequest } from '../../core/dto/http-validation-error.dto';
+import { QuizAPI } from '../contract';
+import { Auth } from '../../auth/auth.decorator';
+import { RequestWithUser } from '../../auth/model/request-with-user';
+
+import {
+  CreateQuestionDraftDto,
+  CreateQuizRequestBodyDto,
+  DeletedQuizResponseDto,
+  GetUserQuizDto,
+  GetQuizByIdResponseDto,
+  PatchOperation,
+  UpdateQuestionDto,
+  normalizeNewQuestionFromDraft,
+} from '../dto/quiz.dto';
+import {
+  CreateQuestionPayload,
+  CreateQuizPayload,
+  DecodedToken,
+} from '../payloads';
+import type { JsonPatchReplaceOperation } from '../models';
+
+import { GetUserQuizzes } from '../queries/get-user-quizzes';
+import { CreateQuizCommand } from '../commands/create-quiz-command';
+import { Response } from 'express';
+import { GetQuizByIdQuery } from '../queries/get-quiz-by-id';
+import { UpdateQuizCommand } from '../commands/update-quiz-command';
+
+import { v4 as uuidv4 } from 'uuid';
+import { AddQuestionCommand } from '../commands/add-question-command';
+import { UpdateQuestionCommand } from '../commands/update-question-command';
+import { DeleteQuizByIdQuery } from '../queries/delete-quiz-by-id';
+import { Question } from '../entities/quiz.entity';
+import { StartQuizQuery } from '../queries/start-quiz-query';
+
+@ApiTags('quiz')
+@ApiBearerAuth()
+@Controller('quiz')
+export class QuizController {
+  constructor(
+    private readonly getUserQuizzesQuery: GetUserQuizzes,
+    private readonly createQuizCommand: CreateQuizCommand,
+    private readonly getQuizByIdQuery: GetQuizByIdQuery,
+    private readonly updateQuizCommand: UpdateQuizCommand,
+    private readonly addQuestionCommand: AddQuestionCommand,
+    private readonly updateQuestionCommand: UpdateQuestionCommand,
+    private readonly deleteQuizByIdQuery: DeleteQuizByIdQuery,
+    private readonly startQuizQuery: StartQuizQuery
+  ) {}
+
+  @Get()
+  @Auth()
+  @ApiOperation({
+    summary: 'List current user quizzes',
+    description: 'Returns quizzes owned by the authenticated user and available hypermedia links.',
+  })
+  @ApiOkResponse({
+    description: 'Quizzes successfully returned.',
+    type: GetUserQuizDto,
+  })
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpInternalServerError('Unexpected server error while loading quizzes.')
+  async getUserQuizzes(@Req() request: RequestWithUser) {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    try {
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const createUrl = `${baseUrl}/api/quiz`;
+      const data = {
+        userId: decodedToken.user_id,
+        createUrl: createUrl,
+        baseUrl: baseUrl,
+      };
+      // Toute la logique se trouve dans le repository
+      return await this.getUserQuizzesQuery.execute(data);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des quiz:', error);
+      throw new HttpException(
+        'Erreur lors de la récupération des quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post()
+  @Auth()
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Create a quiz',
+    description: 'Creates a new quiz for the authenticated user and returns a Location header.',
+  })
+  @ApiBody({ type: CreateQuizRequestBodyDto })
+  @ApiCreatedResponse({
+    description: 'Quiz created. The resource URI is returned in the Location header.',
+    schema: { example: null },
+  })
+  @ApiValidationBadRequest('Invalid create-quiz body (title, description).')
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpInternalServerError('Unexpected server error while creating quiz.')
+  async createQuiz(
+    @Req() request: RequestWithUser,
+    @Body() body: CreateQuizRequestBodyDto,
+    @Res({ passthrough: true }) response: Response
+
+  ): Promise<QuizAPI.CreateQuiz.Response> {
+    try {
+      const decodedToken: DecodedToken = await this.generateDecodedToken(
+        request
+      );
+
+      const quizData: CreateQuizPayload = {
+        title: body.title,
+        description: body.description,
+        userId: decodedToken.user_id,
+      };
+
+      const quizId: string = await this.createQuizCommand.execute(quizData);
+
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const locationUrl = `${baseUrl}/api/quiz/${quizId}`;
+      console.log('location create ', locationUrl);
+      response.header('Location', locationUrl);
+
+      return null;
+    } catch (error) {
+      console.error('Erreur lors de la création du quiz:', error);
+      throw new HttpException(
+        'Erreur lors de la création du quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(':id')
+  @Auth()
+  @ApiOperation({
+    summary: 'Get a quiz by id',
+    description:
+      'Returns the quiz `id` (document id, same as the path parameter), title, description, and questions for the owner.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiOkResponse({
+    description:
+      'Quiz found. The body includes `id` (equal to `:id`) as a complete resource — see OpenAPI schema `GetQuizByIdResponse`.',
+    type: GetQuizByIdResponseDto,
+    content: {
+      'application/json': {
+        examples: {
+          withQuestions: {
+            summary: 'Quiz with questions',
+            value: {
+              id: '507f1f77bcf86cd799439011',
+              title: 'HTML basics',
+              description: 'Quick fundamentals quiz',
+              questions: [
+                {
+                  id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                  title: 'What does HTML stand for?',
+                  answers: [
+                    { title: 'Hyper Text Markup Language', isCorrect: true },
+                    { title: 'Home Tool Markup Language', isCorrect: false },
+                  ],
+                },
+              ],
+            },
+          },
+          emptyQuestions: {
+            summary: 'Quiz with no questions yet',
+            value: {
+              id: '507f1f77bcf86cd799439011',
+              title: 'New quiz',
+              description: '',
+              questions: [],
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpNotFound('Quiz not found or not owned by the current user.')
+  @ApiHttpInternalServerError('Unexpected server error while loading the quiz.')
+  async getQuizById(@Param('id') id: string, @Req() request: RequestWithUser) {
+    const decodedToken: DecodedToken = await this.generateDecodedToken(request);
+
+    try {
+      const quizDoc = await this.getQuizByIdQuery.execute(id);
+
+      if (quizDoc.userId !== decodedToken.user_id) {
+        throw new NotFoundException(
+          "Quiz non trouvé : n'appartient pas à son propriétaire"
+        );
+      }
+      console.log('GET ID', quizDoc);
+      return plainToInstance(
+        GetQuizByIdResponseDto,
+        {
+          id,
+          title: quizDoc.title,
+          description: quizDoc.description,
+          isPublic: quizDoc.isPublic ?? false,
+          // Build an explicit plain payload to avoid class-transformer oddities with nested mongoose subdocs.
+          questions: (quizDoc.questions ?? []).map((question) => ({
+            id: question?.id,
+            title: question?.title ?? '',
+            answers: (question?.answers ?? []).map((answer) => ({
+              title: answer?.title ?? '',
+              isCorrect: !!answer?.isCorrect,
+            })),
+          })),
+        },
+        { excludeExtraneousValues: true }
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Erreur lors de la récupération du quiz:', error);
+      throw new HttpException(
+        'Erreur lors de la récupération du quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Delete(':id')
+  @Auth()
+  @ApiOperation({
+    summary: 'Delete a quiz',
+    description: 'Deletes a quiz owned by the authenticated user.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiOkResponse({
+    description: 'Quiz deleted.',
+    type: DeletedQuizResponseDto,
+  })
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpNotFound('Quiz not found or not owned by current user.')
+  @ApiHttpInternalServerError('Unexpected server error while deleting quiz.')
+  async deleteQuizById(
+    @Param('id') id: string,
+    @Req() request: RequestWithUser
+  ) {
+    const decodedToken: DecodedToken = await this.generateDecodedToken(request);
+    console.log("We entered controller to delete quiz by id")
+    try {
+      const data = {
+        id: id,
+        decodedToken: decodedToken,
+      };
+      const quizId = await this.deleteQuizByIdQuery.execute(data);
+
+      console.log(`quiz ${quizId.id} deleted`);
+
+      return {
+        id: quizId.id,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Erreur lors de la suppression du quiz:', error);
+      throw new HttpException(
+        'Erreur lors de la suppression du quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Patch(':id')
+  @Auth()
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Patch a quiz',
+    description: 'Applies JSON patch-like operations on a quiz owned by the authenticated user.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiBody({ type: PatchOperation, isArray: true })
+  @ApiNoContentResponse({ description: 'Quiz updated successfully.' })
+  @ApiValidationBadRequest('Invalid JSON patch array (op/path/value) or not an array of operations.')
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpNotFound('Quiz not found or not owned by current user.')
+  @ApiHttpInternalServerError('Unexpected server error while updating quiz.')
+  async updateQuiz(
+    @Param('id') id: string,
+    @Body(new ParseArrayPipe({ items: PatchOperation }))
+    operations: PatchOperation[],
+    @Req() request: RequestWithUser
+  ) {
+    try {
+      const decodedToken: DecodedToken = await this.generateDecodedToken(
+        request
+      );
+
+      const datas = {
+        operations: operations.map(
+          (o): JsonPatchReplaceOperation => ({
+            op: o.op,
+            path: o.path,
+            value: o.value,
+          })
+        ),
+        id: id,
+        decodedToken: decodedToken,
+      };
+      console.log('UPDATE QUIZ', datas);
+      await this.updateQuizCommand.execute(datas);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Erreur lors de la mise à jour du quiz:', error);
+      throw new HttpException(
+        'Erreur lors de la mise à jour du quiz',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(':id/questions')
+  @Auth()
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Add a question to a quiz (draft allowed)',
+    description:
+      'Creates a new question. Title and answers may be partial or empty while editing. Full validation (complete question with ≥2 answers and exactly one correct) is enforced when starting the quiz, not on this endpoint.',
+  })
+  @ApiParam({ name: 'id', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiBody({ type: CreateQuestionDraftDto })
+  @ApiCreatedResponse({
+    description: 'Question created. The resource URI is returned in the Location header.',
+    schema: { example: null },
+  })
+  @ApiValidationBadRequest('Invalid draft-question body (e.g. wrong types in optional fields/answers).')
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpNotFound('Quiz not found or not owned by current user.')
+  @ApiHttpInternalServerError('Unexpected server error while adding question.')
+  async addQuestion(
+    @Param('id') quizId: string,
+    @Body() questionBody: CreateQuestionDraftDto,
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const questionDto: CreateQuestionPayload = normalizeNewQuestionFromDraft(
+      questionBody ?? {}
+    );
+
+    const questionId = uuidv4();
+
+    const decodedToken: DecodedToken = await this.generateDecodedToken(request);
+
+    const datas = {
+      quizId: quizId,
+      questionId: questionId,
+      question: questionDto,
+      decodedToken: decodedToken,
+    };
+
+    try {
+      // Evite de ne pas trouver ensuite la question
+      await this.addQuestionCommand.execute(datas);
+      const baseUrl = request.protocol + '://' + request.get('host');
+      const locationUrl = `${baseUrl}/api/quiz/${quizId}/questions/${questionId}`;
+      console.log(locationUrl);
+      response.header('Location', locationUrl);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error("Erreur lors de l'ajout de la question:", error);
+      throw new HttpException(
+        "Erreur lors de l'ajout de la question",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Put(':quizId/questions/:questionId')
+  @Auth()
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Replace a quiz question',
+    description: 'Replaces one question in a quiz owned by the authenticated user.',
+  })
+  @ApiParam({ name: 'quizId', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiParam({ name: 'questionId', description: 'Question identifier', example: 'question-1' })
+  @ApiBody({ type: UpdateQuestionDto })
+  @ApiNoContentResponse({ description: 'Question updated successfully.' })
+  @ApiValidationBadRequest('Invalid replace-question body (title, answers, nested answer shape).')
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpNotFound('Quiz/question not found or not owned by current user.')
+  @ApiHttpInternalServerError('Unexpected server error while replacing question.')
+  async replaceQuestion(
+    @Param('quizId') quizId: string,
+    @Param('questionId') questionId: string,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+    @Req() request: RequestWithUser
+  ) {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    try {
+
+      const datas = {
+        quizId: quizId,
+        questionId: questionId,
+        question: updateQuestionDto,
+        decodedToken: decodedToken
+      }
+
+      await this.updateQuestionCommand.execute(datas)
+
+      return null;
+    } catch (error) {
+      console.error(
+        'Erreur complète lors de la mise à jour de la question:',
+        error
+      );
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        'Erreur lors de la mise à jour de la question',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Endpoint pour démarrer un quiz
+   * @param quizId Identifiant du quiz
+   * @param request
+   * @param response
+   */
+  @Post(':quizId/start')
+  @Auth()
+  @ApiOperation({
+    summary: 'Start a quiz session',
+    description: 'Starts a quiz execution for host flow and returns the execution resource in Location header.',
+  })
+  @ApiParam({ name: 'quizId', description: 'Quiz identifier', example: 'quiz-123' })
+  @ApiCreatedResponse({
+    description: 'Quiz started. Execution URI is returned in the Location header.',
+    schema: { example: null },
+  })
+  @ApiValidationBadRequest('Quiz cannot be started (e.g. incomplete questions) or bad request.')
+  @ApiHttpUnauthorized('Missing or invalid bearer token.')
+  @ApiHttpNotFound('Quiz not found or not owned by current user.')
+  @ApiHttpInternalServerError('Unexpected server error while starting quiz.')
+  async startQuiz(
+    @Param('quizId') quizId: string,
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response ) {
+    try {
+
+      const token = request.headers.authorization.split('Bearer ')[1];
+      const jwt = require('jsonwebtoken');
+      const decodedToken = jwt.decode(token);
+
+      if (!decodedToken.user_id) {
+        throw new HttpException(
+          'Utilisateur non authentifié',
+          HttpStatus.UNAUTHORIZED
+        );
+      }
+
+      const baseUrl = request.protocol + '://' + request.get('host');
+
+      const data = {
+        quizId: quizId,
+        decodedToken: decodedToken,
+        baseUrl: baseUrl,
+      }
+
+      // startQuizQuery : It handles also the host websocket event
+      const executionUrl = await this.startQuizQuery.execute(data)
+      response.status(HttpStatus.CREATED).location(executionUrl).send();
+
+
+
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+    }
+
+  }
+
+  /**
+   * Génère un identifiant aléatoire de 6 caractères
+   */
+  private randomString(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  private async generateDecodedToken(
+    request: RequestWithUser
+  ): Promise<DecodedToken> {
+    const token = request.headers.authorization.split('Bearer ')[1];
+    const jwt = require('jsonwebtoken');
+    const decodedToken = jwt.decode(token) as DecodedToken | null;
+
+    if (!decodedToken?.user_id) {
+      throw new HttpException(
+        'Utilisateur non authentifié',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    return decodedToken;
+  }
+
+  /**
+   * Détermine si un quiz est démarrable selon les critères spécifiés
+   * @param title Titre du quiz
+   * @param questions Tableau des questions du quiz
+   * @returns Booléen indiquant si le quiz est démarrable
+   */
+  private isQuizStartable(title: string, questions: Question[]): boolean {
+    // Critère 1: Le titre ne doit pas être vide
+    if (!title || title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: Il doit y avoir au moins une question
+    if (!questions || questions.length === 0) {
+      return false;
+    }
+
+    // Critère 3: Toutes les questions doivent être valides
+    return questions.every((question) => this.isQuestionValid(question));
+  }
+
+  /**
+   * Vérifie si une question est valide selon les critères spécifiés
+   * @param question Objet question à vérifier
+   * @returns Booléen indiquant si la question est valide
+   */
+  private isQuestionValid(question: Question): boolean {
+    // Critère 1: La question doit avoir un titre non vide
+    if (!question.title || question.title.trim() === '') {
+      return false;
+    }
+
+    // Critère 2: La question doit avoir au moins deux réponses
+    if (!question.answers || question.answers.length < 2) {
+      return false;
+    }
+
+    // Critère 3: Il doit y avoir exactement une réponse correcte
+    const correctAnswersCount = question.answers.filter(
+      (answer) => answer.isCorrect
+    ).length;
+    return correctAnswersCount === 1;
+  }
+
+}

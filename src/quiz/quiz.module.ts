@@ -1,0 +1,161 @@
+import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
+import { MongooseModule } from '@nestjs/mongoose';
+import { CommonModule } from '../core/common.module';
+import { UserModule } from '../users/user.module';
+
+import { MongoQuiz } from './adapters/mongo/mongo-quiz';
+import { QuizController } from './controllers/quiz.controller';
+import { PublicQuizController } from './controllers/public-quiz.controller';
+import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
+
+
+import { FirebaseQuizRepository } from './adapters/firebase/firebase-quiz-repository';
+import { MongoQuizRepository } from './adapters/mongo/mongo-quiz-repository';
+import { InMemoryQuizRepository } from './adapters/in-memory/in-memory-quiz-repository';
+
+import { variables } from '../shared/variables.config';
+import { GetUserQuizzes } from './queries/get-user-quizzes';
+import { CreateQuizCommand } from './commands/create-quiz-command';
+import { UpdateQuizCommand } from './commands/update-quiz-command';
+import { GetQuizByIdQuery } from './queries/get-quiz-by-id';
+import { AddQuestionCommand } from './commands/add-question-command';
+import { UpdateQuestionCommand } from './commands/update-question-command';
+import { DeleteQuizByIdQuery } from './queries/delete-quiz-by-id';
+import { StartQuizQuery } from './queries/start-quiz-query';
+import { QuizGateway } from './gateways/quiz.gateway';
+import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
+import { GetQuizByExecutionIdQuery } from './queries/get-quiz-by-executionId';
+import { GetPublicQuizzes } from './queries/get-public-quizzes';
+import { GetPublicQuizById } from './queries/get-public-quiz-by-id';
+
+function resolveQuizRepositoryClass() {
+  switch (variables.database) {
+    case 'MONGODB':
+      return MongoQuizRepository;
+    case 'FIREBASE':
+      return FirebaseQuizRepository;
+    case 'IN-MEMORY':
+      return InMemoryQuizRepository;
+    default:
+      return InMemoryQuizRepository;
+  }
+}
+
+const mongoQuizFeatureImports =
+  variables.database === 'MONGODB'
+    ? [
+        MongooseModule.forFeature([
+          {
+            name: MongoQuiz.CollectionName,
+            schema: MongoQuiz.Schema,
+          },
+        ]),
+      ]
+    : [];
+
+@Module({
+  imports: [
+    CqrsModule,
+    CommonModule,
+    UserModule,
+    ...mongoQuizFeatureImports,
+  ],
+  controllers: [QuizController, PublicQuizController],
+  providers: [
+    {
+      provide: I_QUIZ_REPOSITORY,
+      useClass: resolveQuizRepositoryClass(),
+    },
+    {
+      provide: I_QUIZ_GATEWAY,
+      useClass: QuizGateway,
+    },
+    {
+      provide: GetQuizByIdQuery,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new GetQuizByIdQuery(repository);
+      },
+    },
+    {
+      provide: GetUserQuizzes,
+      inject: [
+        I_QUIZ_REPOSITORY,
+      ],
+      useFactory: (repository) => {
+        return new GetUserQuizzes(repository);
+      },
+    },
+    {
+      provide: CreateQuizCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new CreateQuizCommand(repository);
+      },
+    },
+    {
+      provide: UpdateQuizCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new UpdateQuizCommand(repository);
+      },
+    },
+    {
+      provide: AddQuestionCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new AddQuestionCommand(repository);
+      },
+    },
+    {
+      provide: UpdateQuestionCommand,
+      inject: [
+        I_QUIZ_REPOSITORY
+      ],
+      useFactory: (repository) => {
+        return new UpdateQuestionCommand(repository);
+      },
+    },
+    {
+      provide: GetQuizByIdQuery,
+      inject : [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => { return new GetQuizByIdQuery(repository)}
+    },
+    {
+      provide: GetQuizByExecutionIdQuery,
+      inject : [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => { return new GetQuizByExecutionIdQuery(repository)}
+    },
+    {
+      provide: GetPublicQuizzes,
+      inject: [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => new GetPublicQuizzes(repository),
+    },
+    {
+      provide: GetPublicQuizById,
+      inject: [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => new GetPublicQuizById(repository),
+    },
+    {
+      provide: DeleteQuizByIdQuery,
+      inject : [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => { return new DeleteQuizByIdQuery(repository)}
+    },
+    {
+      provide: StartQuizQuery,
+      inject: [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => new StartQuizQuery(repository),
+    },
+  ],
+  exports: [I_QUIZ_REPOSITORY],
+})
+export class QuizModule {}
