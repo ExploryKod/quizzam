@@ -21,6 +21,8 @@ export interface IQuizRepository {
     baseUrl: string
   ): Promise<UserQuizzesList>;
   findById(id: string): Promise<Quiz | null>;
+  findPublic(): Promise<Quiz[]>;
+  findPublicById(id: string): Promise<Quiz | null>;
   deleteById(
     id: string,
     decodedToken: DecodedToken

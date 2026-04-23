@@ -17,6 +17,8 @@ describe('GetUserQuizzes', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new GetUserQuizzes(repository);
 

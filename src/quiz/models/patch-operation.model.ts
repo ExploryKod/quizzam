@@ -5,5 +5,5 @@
 export type JsonPatchReplaceOperation = {
   op: 'replace';
   path: string;
-  value: string;
+  value: unknown;
 };

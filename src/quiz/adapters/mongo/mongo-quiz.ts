@@ -16,12 +16,20 @@ type Question = {
   answers: Answer[];
 }
 
+const AnswerSchema = new MongooseBaseSchema(
+  {
+    title: { type: String, default: '' },
+    isCorrect: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 // Define a separate schema for Questions
 // Title may be empty while the question is a draft; strict rules apply at quiz start, not on save.
 const QuestionSchema = new MongooseBaseSchema({
   id: { type: String, required: true },
   title: { type: String, default: '' },
-  answers: { type: Array<Answer>, default: [] },
+  answers: { type: [AnswerSchema], default: [] },
 });
 
 export namespace MongoQuiz {
@@ -41,6 +49,9 @@ export namespace MongoQuiz {
 
     @Prop({ default: '' })
     description: string;
+
+    @Prop({ type: Boolean, default: false })
+    isPublic: boolean;
 
     @Prop({ type: [QuestionSchema], default: [] })
     questions: Array<Question>;

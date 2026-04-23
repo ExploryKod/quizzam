@@ -13,6 +13,8 @@ describe('UpdateQuestionCommand', () => {
       updateQuestion: jest.fn().mockResolvedValue(undefined),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const command = new UpdateQuestionCommand(repository);
     const payload = {

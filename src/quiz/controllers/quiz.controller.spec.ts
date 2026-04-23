@@ -127,14 +127,22 @@ describe('QuizController', () => {
     const jwt = require('jsonwebtoken');
     jwt.decode.mockReturnValue({ user_id: 'uid-1' });
     createQuizCommand.execute.mockRejectedValue(new Error('boom'));
+    const consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
 
-    await expect(
-      controller.createQuiz(
-        buildRequest(),
-        { title: 'Quiz', description: 'Desc' },
-        buildResponse()
-      )
-    ).rejects.toBeInstanceOf(HttpException);
+    try {
+      await expect(
+        controller.createQuiz(
+          buildRequest(),
+          { title: 'Quiz', description: 'Desc' },
+          buildResponse()
+        )
+      ).rejects.toBeInstanceOf(HttpException);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it('getQuizById should return quiz payload when ownership matches', async () => {

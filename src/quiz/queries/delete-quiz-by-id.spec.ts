@@ -16,6 +16,8 @@ describe('DeleteQuizByIdQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new DeleteQuizByIdQuery(repository);
 
@@ -37,6 +39,8 @@ describe('DeleteQuizByIdQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new DeleteQuizByIdQuery(repository);
 
@@ -57,6 +61,8 @@ describe('DeleteQuizByIdQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new DeleteQuizByIdQuery(repository);
 

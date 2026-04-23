@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsDefined, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Question } from '../entities/quiz.entity';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { AnswerDto, QuestionDto } from './answer-question.schemas';
@@ -66,6 +66,8 @@ export class QuizDto {
   questions: Array<QuestionDto>;
   @ApiProperty({ example: 'HTML basics' })
   title: string;
+  @ApiProperty({ example: false, required: false })
+  isPublic?: boolean;
 }
 
 export class QuizProps {
@@ -79,6 +81,8 @@ export class QuizProps {
   questions: Array<Question>;
   @ApiProperty()
   userId: string;
+  @ApiProperty({ default: false, required: false })
+  isPublic?: boolean;
 }
 
 export class BasicQuizDto {
@@ -92,13 +96,16 @@ export class BasicQuizDto {
   questions: Array<Question>;
   @ApiProperty({ example: 'user-42' })
   userId: string;
+  @ApiProperty({ example: false, required: false })
+  isPublic?: boolean;
 
-  constructor(id: string, title: string, description: string, questions: Array<Question>, userId: string) {
+  constructor(id: string, title: string, description: string, questions: Array<Question>, userId: string, isPublic = false) {
     this.id = id;
     this.title = title;
     this.description = description;
     this.questions = questions;
     this.userId = userId;
+    this.isPublic = isPublic;
   }
 }
 
@@ -138,6 +145,9 @@ export class GetQuizByIdResponseDto {
   @Expose()
   @ApiProperty({ type: () => [QuestionDto], description: 'Ordered list of questions' })
   questions: Array<QuestionDto>;
+  @Expose()
+  @ApiProperty({ example: false, required: false, description: 'Publication flag for public endpoints.' })
+  isPublic?: boolean;
 }
 
 /**
@@ -162,9 +172,12 @@ export class PatchOperation {
   @ApiProperty({ example: '/title' })
   path: string;
 
-  @IsString()
-  @ApiProperty({ example: 'My updated quiz title' })
-  value: string;
+  @IsDefined()
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'boolean' }],
+    examples: ['My updated quiz title', true],
+  })
+  value: unknown;
 }
 
 export class DeletedQuizResponseDto {

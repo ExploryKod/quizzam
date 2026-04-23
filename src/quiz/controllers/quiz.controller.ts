@@ -242,6 +242,7 @@ export class QuizController {
           id,
           title: quizDoc.title,
           description: quizDoc.description,
+          isPublic: quizDoc.isPublic ?? false,
           // Build an explicit plain payload to avoid class-transformer oddities with nested mongoose subdocs.
           questions: (quizDoc.questions ?? []).map((question) => ({
             id: question?.id,
