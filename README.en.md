@@ -69,7 +69,16 @@ Always builds and runs the **API** from `docker/Dockerfile` via `docker/compose.
    - In watch mode, `api-watch` logs are tailed live at the end of the command.
 
    **Demo quiz import (Mongo):**
-   - `./docker/start.sh dump-quizzes`: imports `docker/dump/data.json` into `quizapp.quizzes` with `--jsonArray --drop` (collection is replaced before import).
+   - `./docker/start.sh dump-quizzes`: imports `docker/dump/quiz.json` into `quizapp.quizzes` with `--jsonArray --drop` (collection is replaced before import).
+   - `./docker/start.sh dump-users`: imports `docker/dump/user.json` into `quizapp.users` with `--jsonArray --drop` (collection is replaced before import).
+   - Demo login credentials:
+     - **email**: `demo-user@quizapp.local`
+     - **password**: `password123`
+   - To create another dump user, generate `passwordHash` with the same API algorithm (scrypt, `salt:hash` format):
+   ```sh
+   node -e 'const crypto=require("crypto"); const salt=crypto.randomBytes(16).toString("hex"); const hash=crypto.scryptSync("password123",salt,64).toString("hex"); console.log(salt+":"+hash);'
+   ```
+   - Copy the output into `passwordHash` in `docker/dump/user.json` (hash changes every run because salt is random).
 
    The script reads `.env` and adds `--profile mongodb` only when `DATABASE_NAME=MONGODB` (including for `down`, so the right services are targeted).
 

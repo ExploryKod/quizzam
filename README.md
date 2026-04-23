@@ -70,7 +70,16 @@ Nous utilisons les profiles dans compose pour réaliser cette séparation.
    - En mode watch, les logs `api-watch` sont suivis en live à la fin de la commande.
 
    **Import des quiz de démo (Mongo) :**
-   - `./docker/start.sh dump-quizzes` : importe `docker/dump/data.json` dans `quizapp.quizzes` avec `--jsonArray --drop` (écrase la collection avant import).
+   - `./docker/start.sh dump-quizzes` : importe `docker/dump/quiz.json` dans `quizapp.quizzes` avec `--jsonArray --drop` (écrase la collection avant import).
+   - `./docker/start.sh dump-users` : importe `docker/dump/user.json` dans `quizapp.users` avec `--jsonArray --drop` (écrase la collection avant import).
+   - Identifiants de démo à utiliser dans l'écran de connexion :
+     - **email** : `demo-user@quizapp.local`
+     - **mot de passe** : `password123`
+   - Pour créer un autre utilisateur de dump, génère `passwordHash` avec la même logique que l'API (scrypt, format `salt:hash`) :
+   ```sh
+   node -e 'const crypto=require("crypto"); const salt=crypto.randomBytes(16).toString("hex"); const hash=crypto.scryptSync("password123",salt,64).toString("hex"); console.log(salt+":"+hash);'
+   ```
+   - Copie la sortie dans le champ `passwordHash` de `docker/dump/user.json` (le hash change à chaque exécution car le sel est aléatoire).
 
    Le script lit `.env` et n’ajoute `--profile mongodb` que lorsque `DATABASE_NAME=MONGODB` (y compris pour `down`, pour cibler les bons services).
 

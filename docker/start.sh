@@ -19,7 +19,8 @@ API_NAME="quizzam-api"
 MONGO_EXPRESS_PORT="8086"
 MONGO_URI_HOST="mongodb://localhost:27017"
 MONGO_URI_DOCKER="mongodb://mongodb:27017"
-QUIZZES_DUMP_FILE="${PROJECT_DIR}/dump/data.json"
+QUIZZES_DUMP_FILE="${PROJECT_DIR}/dump/quiz.json"
+USERS_DUMP_FILE="${PROJECT_DIR}/dump/user.json"
 API_PORT="${QUIZZAM_HOST_PORT:-3002}"
 API_LOGS_UP_COMMAND="docker compose -f compose.dev.yaml logs -f"
 FOLLOW_API_LOGS="${QUIZZAM_FOLLOW_API_LOGS:-1}"
@@ -169,6 +170,32 @@ case "$ACTION" in
     ok "Quizzes dump imported successfully into quizapp.quizzes."
     exit 0
     ;;
+  dump-users)
+    shift || true
+    if [[ "$USE_MONGO" != true ]]; then
+      error "DATABASE_NAME must be MONGODB to import users dump."
+      exit 1
+    fi
+    if [[ ! -f "$USERS_DUMP_FILE" ]]; then
+      error "Dump file not found: $USERS_DUMP_FILE"
+      exit 1
+    fi
+
+    info "Ensuring MongoDB container is running…"
+    if ! "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" up -d mongodb; then
+      error "Unable to start mongodb service"
+      exit 1
+    fi
+
+    info "Importing users dump into quizapp.users (drop + jsonArray)…"
+    if ! docker exec -i "$SERVICE_NAME" mongoimport --db quizapp --collection users --jsonArray --drop < "$USERS_DUMP_FILE"; then
+      error "mongoimport failed"
+      exit 1
+    fi
+
+    ok "Users dump imported successfully into quizapp.users."
+    exit 0
+    ;;
   api-stop|stop-api)
     shift || true
     info "Stopping API only (and DB dependency when enabled)…"
@@ -226,7 +253,7 @@ case "$ACTION" in
     exit 0
     ;;
   -h|--help|help)
-    echo "Usage: $0 [up|down|api-restart|api-stop|logs|watch-up|watch-stop|dump-quizzes] [options]"
+    echo "Usage: $0 [up|down|api-restart|api-stop|logs|watch-up|watch-stop|dump-quizzes|dump-users] [options]"
     echo ""
     echo "  up (default)   Démarre la stack (build si besoin)."
     echo "  down             Arrête tout (y compris api-watch), supprime le réseau, --remove-orphans."
@@ -236,7 +263,8 @@ case "$ACTION" in
     echo "  logs             Suit les logs API uniquement."
     echo "  watch-up         Démarre API en mode watch (bind mount + hot reload dans le conteneur)."
     echo "  watch-stop       Stoppe API watch (et MongoDB si DATABASE_NAME=MONGODB)."
-    echo "  dump-quizzes     Importe docker/dump/data.json dans quizapp.quizzes (--drop --jsonArray)."
+    echo "  dump-quizzes     Importe docker/dump/quiz.json dans quizapp.quizzes (--drop --jsonArray)."
+    echo "  dump-users       Importe docker/dump/user.json dans quizapp.users (--drop --jsonArray)."
     echo ""
     echo "Depuis le dossier quizzam : ./docker/start.sh   ou   ./docker/start"
     exit 0
@@ -245,7 +273,7 @@ case "$ACTION" in
     [[ -n "${1:-}" ]] && shift
     ;;
   *)
-    error "Commande inconnue : $ACTION — utilisation : $0 [up|down|dump-quizzes] (ou $0 --help)"
+    error "Commande inconnue : $ACTION — utilisation : $0 [up|down|dump-quizzes|dump-users] (ou $0 --help)"
     exit 1
     ;;
 esac

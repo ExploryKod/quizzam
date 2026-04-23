@@ -242,7 +242,15 @@ export class QuizController {
           id,
           title: quizDoc.title,
           description: quizDoc.description,
-          questions: quizDoc.questions,
+          // Build an explicit plain payload to avoid class-transformer oddities with nested mongoose subdocs.
+          questions: (quizDoc.questions ?? []).map((question) => ({
+            id: question?.id,
+            title: question?.title ?? '',
+            answers: (question?.answers ?? []).map((answer) => ({
+              title: answer?.title ?? '',
+              isCorrect: !!answer?.isCorrect,
+            })),
+          })),
         },
         { excludeExtraneousValues: true }
       );
@@ -612,4 +620,5 @@ export class QuizController {
     ).length;
     return correctAnswersCount === 1;
   }
+
 }
