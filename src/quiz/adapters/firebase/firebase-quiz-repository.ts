@@ -65,6 +65,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
         title: quizTitle,
         description: quizData.description || '',
         questions: questions,
+        isPublic: !!quizData.isPublic,
       };
 
       if (isStartable) {
@@ -99,7 +100,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     const quizData = quizDoc.data();
 
     return new Quiz({
-      id: quizData._id,
+      id: quizDoc.id,
       title: quizData.title,
       description: quizData.description,
       questions:
@@ -109,6 +110,51 @@ export class FirebaseQuizRepository implements IQuizRepository {
           answers: question.answers || [],
         })) || [],
       userId: quizData.userId,
+      isPublic: !!quizData.isPublic,
+    });
+  }
+
+  async findPublic(): Promise<Quiz[]> {
+    const quizzesData = await this.firebase.firestore
+      .collection('quizzes')
+      .where('isPublic', '==', true)
+      .get();
+
+    return quizzesData.docs.map((doc) => {
+      const quizData = doc.data();
+      return new Quiz({
+        id: doc.id,
+        title: quizData.title,
+        description: quizData.description,
+        questions: quizData.questions || [],
+        userId: quizData.userId,
+        isPublic: !!quizData.isPublic,
+      });
+    });
+  }
+
+  async findPublicById(id: string): Promise<Quiz | null> {
+    const quizDoc = await this.firebase.firestore
+      .collection('quizzes')
+      .doc(id)
+      .get();
+
+    if (!quizDoc.exists) {
+      return null;
+    }
+
+    const quizData = quizDoc.data();
+    if (!quizData?.isPublic) {
+      return null;
+    }
+
+    return new Quiz({
+      id: quizDoc.id,
+      title: quizData.title,
+      description: quizData.description,
+      questions: quizData.questions || [],
+      userId: quizData.userId,
+      isPublic: !!quizData.isPublic,
     });
   }
 
@@ -143,7 +189,7 @@ export class FirebaseQuizRepository implements IQuizRepository {
     try {
       const quizRef = await this.firebase.firestore
         .collection('quizzes')
-        .add(data);
+        .add({ ...data, isPublic: false });
 
       return quizRef.id.toString();
     } catch (error) {
@@ -180,7 +226,21 @@ export class FirebaseQuizRepository implements IQuizRepository {
       }
 
       if (operation.path === '/title') {
+        if (typeof operation.value !== 'string') {
+          throw new HttpException(
+            'La valeur de /title doit être une string',
+            HttpStatus.BAD_REQUEST
+          );
+        }
         updateData['title'] = operation.value;
+      } else if (operation.path === '/isPublic') {
+        if (typeof operation.value !== 'boolean') {
+          throw new HttpException(
+            'La valeur de /isPublic doit être un booléen',
+            HttpStatus.BAD_REQUEST
+          );
+        }
+        updateData['isPublic'] = operation.value;
       } else {
         throw new HttpException(
           `Chemin non supporté: ${operation.path}`,

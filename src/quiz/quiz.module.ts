@@ -6,6 +6,7 @@ import { UserModule } from '../users/user.module';
 
 import { MongoQuiz } from './adapters/mongo/mongo-quiz';
 import { QuizController } from './controllers/quiz.controller';
+import { PublicQuizController } from './controllers/public-quiz.controller';
 import { I_QUIZ_REPOSITORY } from './ports/quiz-repository.interface';
 
 
@@ -25,6 +26,8 @@ import { StartQuizQuery } from './queries/start-quiz-query';
 import { QuizGateway } from './gateways/quiz.gateway';
 import { I_QUIZ_GATEWAY } from './ports/quiz-gateway.interface';
 import { GetQuizByExecutionIdQuery } from './queries/get-quiz-by-executionId';
+import { GetPublicQuizzes } from './queries/get-public-quizzes';
+import { GetPublicQuizById } from './queries/get-public-quiz-by-id';
 
 function resolveQuizRepositoryClass() {
   switch (variables.database) {
@@ -58,7 +61,7 @@ const mongoQuizFeatureImports =
     UserModule,
     ...mongoQuizFeatureImports,
   ],
-  controllers: [QuizController],
+  controllers: [QuizController, PublicQuizController],
   providers: [
     {
       provide: I_QUIZ_REPOSITORY,
@@ -131,6 +134,16 @@ const mongoQuizFeatureImports =
       provide: GetQuizByExecutionIdQuery,
       inject : [I_QUIZ_REPOSITORY],
       useFactory: (repository) => { return new GetQuizByExecutionIdQuery(repository)}
+    },
+    {
+      provide: GetPublicQuizzes,
+      inject: [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => new GetPublicQuizzes(repository),
+    },
+    {
+      provide: GetPublicQuizById,
+      inject: [I_QUIZ_REPOSITORY],
+      useFactory: (repository) => new GetPublicQuizById(repository),
     },
     {
       provide: DeleteQuizByIdQuery,

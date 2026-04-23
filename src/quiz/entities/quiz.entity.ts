@@ -34,6 +34,9 @@ export class QuizEntity {
 
   @ApiProperty()
   userId: string;
+
+  @ApiProperty({ required: false, default: false })
+  isPublic?: boolean;
 }
 
 export class Quiz extends QuizEntity {
@@ -44,5 +47,6 @@ export class Quiz extends QuizEntity {
     this.description = data.description;
     this.questions = data.questions;
     this.userId = data.userId;
+    this.isPublic = data.isPublic ?? false;
   }
 }

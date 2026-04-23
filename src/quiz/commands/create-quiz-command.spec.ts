@@ -13,6 +13,8 @@ describe('CreateQuizCommand', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const command = new CreateQuizCommand(repository);
     const payload = { title: 'Quiz', description: 'Desc', userId: 'uid-1' };

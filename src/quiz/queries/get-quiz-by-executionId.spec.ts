@@ -20,6 +20,8 @@ describe('GetQuizByExecutionIdQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn().mockResolvedValue(quiz),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new GetQuizByExecutionIdQuery(repository);
 
@@ -40,6 +42,8 @@ describe('GetQuizByExecutionIdQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn().mockResolvedValue(null),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new GetQuizByExecutionIdQuery(repository);
 

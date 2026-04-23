@@ -5,6 +5,7 @@ export type UserQuizListItem = {
   title: string;
   description: string;
   questions: Question[];
+  isPublic?: boolean;
   _links?: { start: string };
 };
 

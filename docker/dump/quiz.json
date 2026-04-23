@@ -4,6 +4,7 @@
             "title": "HTML",
             "description": "",
             "userId": "demo-user",
+            "isPublic": true,
             "questions": [
                 {
                     "title": "What does HTML stand for?",
@@ -35,6 +36,7 @@
             "title": "CSS",
             "description": "",
             "userId": "demo-user",
+            "isPublic": false,
             "questions": [
                 {
                     "title": "What does CSS stand for?",
@@ -154,6 +156,7 @@
             "title": "JavaScript",
             "description": "",
             "userId": "demo-user",
+            "isPublic": true,
             "questions": [
                 {
                     "title": "Which syntax is correct to output 'Hello World' in an alert box?",
@@ -273,6 +276,7 @@
             "title": "Accessibility",
             "description": "",
             "userId": "demo-user",
+            "isPublic": false,
             "questions": [
                 {
                     "title": "What does 'WCAG' stand for?",

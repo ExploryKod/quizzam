@@ -13,6 +13,8 @@ describe('UpdateQuizCommand', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const command = new UpdateQuizCommand(repository);
     const payload = {

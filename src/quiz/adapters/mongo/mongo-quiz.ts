@@ -42,6 +42,9 @@ export namespace MongoQuiz {
     @Prop({ default: '' })
     description: string;
 
+    @Prop({ type: Boolean, default: false })
+    isPublic: boolean;
+
     @Prop({ type: [QuestionSchema], default: [] })
     questions: Array<Question>;
 

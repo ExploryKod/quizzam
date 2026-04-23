@@ -41,6 +41,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
         title: quiz.title,
         description: quiz.description || '',
         questions: quiz.questions || [],
+        isPublic: !!quiz.isPublic,
         ...(this.executionIds.has(quiz.id || '') && {
           _links: {
             start: `${baseUrl}/api/quiz/${quiz.id}/start`,
@@ -55,6 +56,20 @@ export class InMemoryQuizRepository implements IQuizRepository {
 
   async findById(id: string): Promise<Quiz | null> {
     return this.quizzes.get(id) || null;
+  }
+
+  async findPublic(): Promise<Quiz[]> {
+    return Array.from(this.quizzes.values())
+      .filter((quiz) => !!quiz.isPublic)
+      .map((quiz) => new Quiz(quiz));
+  }
+
+  async findPublicById(id: string): Promise<Quiz | null> {
+    const quiz = this.quizzes.get(id);
+    if (!quiz || !quiz.isPublic) {
+      return null;
+    }
+    return new Quiz(quiz);
   }
 
   async deleteById(
@@ -101,6 +116,7 @@ export class InMemoryQuizRepository implements IQuizRepository {
       title: data.title || '',
       description : "",
       questions: [],
+      isPublic: false,
     });
 
     this.quizzes.set(id, quiz);
@@ -132,7 +148,22 @@ export class InMemoryQuizRepository implements IQuizRepository {
 
       switch (operation.path) {
         case '/title':
+          if (typeof operation.value !== 'string') {
+            throw new HttpException(
+              'La valeur de /title doit être une string',
+              HttpStatus.BAD_REQUEST
+            );
+          }
           quiz.title = operation.value;
+          break;
+        case '/isPublic':
+          if (typeof operation.value !== 'boolean') {
+            throw new HttpException(
+              'La valeur de /isPublic doit être un booléen',
+              HttpStatus.BAD_REQUEST
+            );
+          }
+          quiz.isPublic = operation.value;
           break;
         default:
           throw new HttpException(

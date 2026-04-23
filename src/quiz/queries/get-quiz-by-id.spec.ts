@@ -22,6 +22,8 @@ describe('GetQuizByIdQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new GetQuizByIdQuery(repository);
 
@@ -42,6 +44,8 @@ describe('GetQuizByIdQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn(),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new GetQuizByIdQuery(repository);
 

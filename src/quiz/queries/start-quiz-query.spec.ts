@@ -14,6 +14,8 @@ describe('StartQuizQuery', () => {
       updateQuestion: jest.fn(),
       startQuiz: jest.fn().mockResolvedValue(executionUrl),
       getQuizByExecutionId: jest.fn(),
+      findPublic: jest.fn(),
+      findPublicById: jest.fn(),
     };
     const query = new StartQuizQuery(repository);
 

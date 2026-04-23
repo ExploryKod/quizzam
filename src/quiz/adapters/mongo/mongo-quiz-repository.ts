@@ -64,6 +64,7 @@ export class MongoQuizRepository implements IQuizRepository {
         title: quizTitle,
         description: quizData.description || '',
         questions: questions,
+        isPublic: !!quizData.isPublic,
       };
 
       // Add HATEOAS links if startable
@@ -99,6 +100,37 @@ export class MongoQuizRepository implements IQuizRepository {
       description: record.description,
       questions: [...record.questions],
       userId: record.userId,
+      isPublic: !!record.isPublic,
+    });
+  }
+
+  async findPublic(): Promise<Quiz[]> {
+    const records = await this.model.find({ isPublic: true }).exec();
+    return records.map(
+      (record) =>
+        new Quiz({
+          id: record._id,
+          title: record.title,
+          description: record.description,
+          questions: [...record.questions],
+          userId: record.userId,
+          isPublic: !!record.isPublic,
+        })
+    );
+  }
+
+  async findPublicById(id: string): Promise<Quiz | null> {
+    const record = await this.model.findOne({ _id: id, isPublic: true }).exec();
+    if (!record) {
+      return null;
+    }
+    return new Quiz({
+      id: record._id,
+      title: record.title,
+      description: record.description,
+      questions: [...record.questions],
+      userId: record.userId,
+      isPublic: !!record.isPublic,
     });
   }
 
@@ -136,6 +168,7 @@ export class MongoQuizRepository implements IQuizRepository {
     const data = {
       _id: id,
       ...quiz,
+      isPublic: false,
     };
 
     const record = new this.model(data);
@@ -169,7 +202,15 @@ export class MongoQuizRepository implements IQuizRepository {
       }
 
       if (operation.path === '/title') {
+        if (typeof operation.value !== 'string') {
+          throw new HttpException('La valeur de /title doit être une string', HttpStatus.BAD_REQUEST);
+        }
         updateMongoData['title'] = operation.value;
+      } else if (operation.path === '/isPublic') {
+        if (typeof operation.value !== 'boolean') {
+          throw new HttpException('La valeur de /isPublic doit être un booléen', HttpStatus.BAD_REQUEST);
+        }
+        updateMongoData['isPublic'] = operation.value;
       } else {
         throw new HttpException(
           `Chemin non supporté: ${operation.path}`,
