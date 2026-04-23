@@ -1,0 +1,26 @@
+import { Inject } from '@nestjs/common';
+import { UserQuizzesList } from '../models';
+import { Executable } from '../../shared/executable';
+import { I_QUIZ_REPOSITORY, IQuizRepository } from '../ports/quiz-repository.interface';
+
+type Request = {
+  userId: string;
+  createUrl: string;
+  baseUrl: string;
+};
+
+type Response = UserQuizzesList;
+
+export class GetUserQuizzes implements Executable<Request, Response> {
+
+  constructor(
+    @Inject(I_QUIZ_REPOSITORY)
+    private readonly quizRepository: IQuizRepository,
+  ) {}
+
+  async execute(query: Request): Promise<Response> {
+    const { userId, createUrl, baseUrl } = query;
+    return this.quizRepository.findAllFromUser(userId, createUrl, baseUrl);
+  }
+
+}

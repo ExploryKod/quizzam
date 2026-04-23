@@ -33,13 +33,17 @@
           "production": {
             "buildTarget": "quizzam:build:production"
           }
-        },
-        "dependsOn": [
-          {
-            "projects": [],
-            "target": "build"
-          }
-        ]
+        }
+      },
+      "test": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{workspaceRoot}/coverage/quizzam"
+        ],
+        "options": {
+          "jestConfig": "jest.config.ts",
+          "passWithNoTests": true
+        }
       }
     }
 }
