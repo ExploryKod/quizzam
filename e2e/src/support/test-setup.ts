@@ -1,5 +1,13 @@
 /* eslint-disable */
+import { config as loadEnv } from 'dotenv';
+import { resolve } from 'node:path';
 import axios from 'axios';
+
+// Load quizzam/.env then e2e/.env (e2e overrides) so E2E_FIREBASE_WEB_API_KEY and friends are available.
+const quizzamRoot = resolve(__dirname, '../../..');
+const e2eRoot = resolve(__dirname, '../..');
+loadEnv({ path: resolve(quizzamRoot, '.env'), quiet: true });
+loadEnv({ path: resolve(e2eRoot, '.env'), override: true, quiet: true });
 
 /**
  * E2E base URL: HOST + PORT (default localhost:3000).

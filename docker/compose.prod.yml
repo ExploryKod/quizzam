@@ -2,7 +2,7 @@
 # Remplace `ton-github-owner` par ton user ou org GitHub (même owner que le package ghcr.io).
 services:
   app:
-    image: ghcr.io/ton-github-owner/quizzam:latest
+    image: ghcr.io/explorykod/quizzam:latest
     container_name: quizzam-api
     restart: unless-stopped
     env_file:

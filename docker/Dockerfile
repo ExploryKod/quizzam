@@ -1,8 +1,11 @@
 # Aligné sur package.json > packageManager (pnpm@9.9.0).
 
-# Development stage
-FROM node:20 AS development
+# Development stage (Node LTS / actuel : https://hub.docker.com/_/node)
+FROM node:24 AS development
 ARG PNPM_VERSION=9.9.0
+# Nx in Docker/CI: deep pnpm paths can exceed default socket path length; disable daemon in image builds
+ENV NX_DAEMON=false
+ENV NX_SOCKET_DIR=/tmp/nx
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 WORKDIR /usr/src/app
 COPY pnpm-lock.yaml ./
@@ -12,8 +15,10 @@ RUN pnpm install
 USER node
 
 # Build stage
-FROM node:20 AS build
+FROM node:24 AS build
 ARG PNPM_VERSION=9.9.0
+ENV NX_DAEMON=false
+ENV NX_SOCKET_DIR=/tmp/nx
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 WORKDIR /usr/src/app
 COPY pnpm-lock.yaml ./
@@ -25,7 +30,7 @@ RUN pnpm install --prod
 USER node
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:24-alpine AS production
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist

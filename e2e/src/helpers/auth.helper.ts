@@ -1,5 +1,9 @@
 import request from 'supertest';
-import { defaultUrl } from '../constants';
+import {
+  defaultUrl,
+  getE2eFirebaseSignInUrl,
+  getE2eFirebaseSignUpUrl,
+} from '../constants';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
 export interface TestUser {
@@ -12,9 +16,6 @@ export interface TestUser {
 
 export class AuthHelper {
   private static readonly AUTH_TYPE = (process.env.AUTH_TYPE || 'JWT').trim().toUpperCase();
-  private static readonly FIREBASE_SIGNUP_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
-  
-  private static readonly FIREBASE_SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDwtB8c1BsnVI6R8dwHc9S5yl6DY6IEFWA';
 
   static async createAndLoginUser(userData: Partial<TestUser> = {
     email: 'user@email.com',
@@ -29,7 +30,7 @@ export class AuthHelper {
     };
 
     if (this.AUTH_TYPE === 'FIREBASE') {
-      const authResponse = await request(this.FIREBASE_SIGNUP_URL)
+      const authResponse = await request(getE2eFirebaseSignUpUrl())
         .post('')
         .send({
           email: testUser.email,
@@ -89,7 +90,7 @@ export class AuthHelper {
 
   static async loginExistingUser(email: string, password: string): Promise<string> {
     if (this.AUTH_TYPE === 'FIREBASE') {
-      const authResponse = await request(this.FIREBASE_SIGNIN_URL)
+      const authResponse = await request(getE2eFirebaseSignInUrl())
         .post('')
         .send({
           email,
