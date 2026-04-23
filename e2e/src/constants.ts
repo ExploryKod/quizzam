@@ -5,13 +5,13 @@ export const defaultUrl = `http://${host}:${port}`;
 
 /**
  * Web API key (Firebase client / Identity Toolkit). Set via E2E_FIREBASE_WEB_API_KEY — never commit.
- * Only required when e2e helpers run with AUTH_TYPE=FIREBASE.
+ * Used only when `AUTH_TYPE=FIREBASE` in e2e. With JWT (default), do not set anything — nothing calls this.
  */
 export function getE2eFirebaseWebApiKey(): string {
   const key = process.env.E2E_FIREBASE_WEB_API_KEY?.trim();
   if (!key) {
     throw new Error(
-      'Missing E2E_FIREBASE_WEB_API_KEY. For Firebase e2e: set in quizzam/.env or e2e/.env, or add GitHub secret E2E_FIREBASE_WEB_API_KEY in CI. See e2e/.env.example.'
+      'E2E_FIREBASE_WEB_API_KEY is required only for Firebase e2e (AUTH_TYPE=FIREBASE). Set in .env or GitHub secret, or use JWT e2e without this variable. See e2e/.env.example.'
     );
   }
   return key;

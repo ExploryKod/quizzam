@@ -8,6 +8,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { HttpExceptionBodyDto } from './core/dto/http-exception-body.dto';
 import { HttpValidationErrorDto } from './core/dto/http-validation-error.dto';
+import { getHttpCorsOrigin, isCorsOpenToAll } from './shared/cors.util';
 
 
 async function bootstrap() {
@@ -29,11 +30,8 @@ async function bootstrap() {
   app.setViewEngine('ejs');
   app.setGlobalPrefix(variables.globalPrefix);
 
-  const corsRaw = (process.env.CORS_ORIGIN ?? '*').trim();
-  const openCors = corsRaw === '' || corsRaw === '*';
-  const corsOrigin = openCors
-    ? '*'
-    : corsRaw.split(',').map((s) => s.trim()).filter(Boolean);
+  const openCors = isCorsOpenToAll();
+  const corsOrigin = getHttpCorsOrigin();
 
   app.enableCors({
     origin: corsOrigin,

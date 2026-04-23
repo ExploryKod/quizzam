@@ -1,5 +1,9 @@
-# Image buildée / poussée par .github/workflows/quizzam-image.yml
-# Remplace `ton-github-owner` par ton user ou org GitHub (même owner que le package ghcr.io).
+# Production : image GHCR + Mongo sur le réseau Docker uniquement.
+# Sur le VPS : copie .env à côté de ce fichier (voir .env.example) avec au minimum
+#   JWT_SECRET, MONGO_ROOT_PASSWORD, et optionnellement QUIZZAM_HOST_PORT, CORS_ORIGIN
+#
+# docker compose -f docker/compose.prod.yml --env-file .env up -d
+
 services:
   app:
     image: ghcr.io/explorykod/quizzam:latest
@@ -7,10 +11,21 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      GLOBAL_PREFIX: ${GLOBAL_PREFIX:-api}
+      DATABASE_NAME: MONGODB
+      AUTH_TYPE: ${AUTH_TYPE:-JWT}
+      # Quizzam lit DATABASE_URL (pas MONGO_URL) — voir app.module / Mongoose
+      DATABASE_URL: mongodb://root:${MONGO_ROOT_PASSWORD}@mongo:27017/quizapp?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://quizzy-front.vercel.app,http://localhost:4200}
     ports:
       - "${QUIZZAM_HOST_PORT:-3002}:3000"
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
 
   mongo:
     image: mongo:7
@@ -18,12 +33,17 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: changeme
-      MONGO_INITDB_DATABASE: appdb
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: quizapp
     volumes:
       - mongo_data:/data/db
-    ports:
-      - "27017:27017"
+    # Pas de ports: — Mongo n’est pas exposé sur l’hôte (sécurité prod)
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.runCommand({ ping: 1 })"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   mongo_data:

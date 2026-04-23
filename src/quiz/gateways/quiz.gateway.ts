@@ -10,6 +10,7 @@ import { Server, Socket } from 'socket.io';
 import { Question } from '../entities/quiz.entity';
 import { GetQuizByExecutionIdQuery } from '../queries/get-quiz-by-executionId';
 import { AnswerDto, NextQuestionEventDto } from '../dto/quiz.dto';
+import { getWebSocketCorsOrigin, isCorsOpenToAll } from '../../shared/cors.util';
 
 type QuizStatus = "waiting" | "started" | "completed";
 
@@ -51,7 +52,12 @@ export interface JoinDetailsEvent {
   questions?: Question[];
 }
 
-@WebSocketGateway({ cors: { origin: 'http://localhost:4200' } })
+@WebSocketGateway({
+  cors: {
+    origin: getWebSocketCorsOrigin(),
+    credentials: !isCorsOpenToAll(),
+  },
+})
 export class QuizGateway {
   @WebSocketServer()
   server: Server;
