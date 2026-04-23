@@ -68,6 +68,9 @@ Always builds and runs the **API** from `docker/Dockerfile` via `docker/compose.
    - `api-watch` runs **root** only for `pnpm install` (the `node_modules` named volume is root-owned by default) then **Nx** as user **`node`**. TTY: `docker exec -it quizzam-api-watch sh` (root) or `docker exec -it -u node quizzam-api-watch sh` for a `node` shell.
    - In watch mode, `api-watch` logs are tailed live at the end of the command.
 
+   **Demo quiz import (Mongo):**
+   - `./docker/start.sh dump-quizzes`: imports `docker/dump/data.json` into `quizapp.quizzes` with `--jsonArray --drop` (collection is replaced before import).
+
    The script reads `.env` and adds `--profile mongodb` only when `DATABASE_NAME=MONGODB` (including for `down`, so the right services are targeted).
 
    **Without** the script (Mongo mode):

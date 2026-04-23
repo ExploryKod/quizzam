@@ -1,0 +1,390 @@
+[
+        {
+            "_id": "5de980e9-cc52-40e5-ab1e-dec1f6856bc0",
+            "title": "HTML",
+            "description": "",
+            "userId": "demo-user",
+            "questions": [
+                {
+                    "title": "What does HTML stand for?",
+                    "answers": [
+                        { "title": "Hyper Trainer Marking Language", "isCorrect": false },
+                        { "title": "Hyper Text Marketing Language", "isCorrect": false },
+                        { "title": "Hyper Text Markup Language", "isCorrect": true },
+                        { "title": "Hyper Text Markup Leveler", "isCorrect": false }
+                    ],
+                    "id": "demo-html-q1",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550101"
+                },
+                {
+                    "title": "Which of the following is the correct structure for an HTML document?",
+                    "answers": [
+                        { "title": "<html><head></head><body></body></html>", "isCorrect": true },
+                        { "title": "<head><html></html><body></body></head>", "isCorrect": false },
+                        { "title": "<body><head></head><html></html></body>", "isCorrect": false },
+                        { "title": "<html><body></body><head></head></html>", "isCorrect": false }
+                    ],
+                    "id": "demo-html-q2",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550102"
+                }
+            ],
+            "__v": 2
+        },
+        {
+            "_id": "6ae7c1de-76b8-4d0e-8849-8fb9a5f6a0c2",
+            "title": "CSS",
+            "description": "",
+            "userId": "demo-user",
+            "questions": [
+                {
+                    "title": "What does CSS stand for?",
+                    "answers": [
+                        { "title": "Colorful Style Sheets", "isCorrect": false },
+                        { "title": "Computer Style Sheets", "isCorrect": false },
+                        { "title": "Cascading Style Sheets", "isCorrect": true },
+                        { "title": "Creative Style Sheets", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q1",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550201"
+                },
+                {
+                    "title": "Which HTML attribute is used to define inline styles?",
+                    "answers": [
+                        { "title": "styles", "isCorrect": false },
+                        { "title": "style", "isCorrect": true },
+                        { "title": "class", "isCorrect": false },
+                        { "title": "font-style", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q2",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550202"
+                },
+                {
+                    "title": "How do you insert a comment in a CSS file?",
+                    "answers": [
+                        { "title": "// this is a comment //", "isCorrect": false },
+                        { "title": "/* this is a comment */", "isCorrect": true },
+                        { "title": "-- this is a comment --", "isCorrect": false },
+                        { "title": "<!-- this is a comment -->", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q3",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550203"
+                },
+                {
+                    "title": "Which property is used to change the background color of an element?",
+                    "answers": [
+                        { "title": "color", "isCorrect": false },
+                        { "title": "bgcolor", "isCorrect": false },
+                        { "title": "background-color", "isCorrect": true },
+                        { "title": "background", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q4",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550204"
+                },
+                {
+                    "title": "How do you apply a style to all <p> elements?",
+                    "answers": [
+                        { "title": "p { }", "isCorrect": true },
+                        { "title": ".p { }", "isCorrect": false },
+                        { "title": "#p { }", "isCorrect": false },
+                        { "title": "all.p { }", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q5",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550205"
+                },
+                {
+                    "title": "Which property is used to change the font of an element?",
+                    "answers": [
+                        { "title": "font-style", "isCorrect": false },
+                        { "title": "text-style", "isCorrect": false },
+                        { "title": "font-family", "isCorrect": true },
+                        { "title": "typeface", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q6",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550206"
+                },
+                {
+                    "title": "How do you make each word in a text start with a capital letter?",
+                    "answers": [
+                        { "title": "text-transform: capitalize", "isCorrect": true },
+                        { "title": "text-transform: uppercase", "isCorrect": false },
+                        { "title": "text-style: capital", "isCorrect": false },
+                        { "title": "font-transform: capitalize", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q7",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550207"
+                },
+                {
+                    "title": "How do you select an element with the class name 'header'?",
+                    "answers": [
+                        { "title": ".header", "isCorrect": true },
+                        { "title": "#header", "isCorrect": false },
+                        { "title": "header", "isCorrect": false },
+                        { "title": "*header", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q8",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550208"
+                },
+                {
+                    "title": "What is the default value of the 'position' property?",
+                    "answers": [
+                        { "title": "relative", "isCorrect": false },
+                        { "title": "fixed", "isCorrect": false },
+                        { "title": "absolute", "isCorrect": false },
+                        { "title": "static", "isCorrect": true }
+                    ],
+                    "id": "demo-css-q9",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550209"
+                },
+                {
+                    "title": "What is the purpose of the z-index property in CSS?",
+                    "answers": [
+                        { "title": "To count the number of elements", "isCorrect": false },
+                        { "title": "To set the magnification level of an element", "isCorrect": false },
+                        { "title": "To specify the stack order of an element", "isCorrect": true },
+                        { "title": "To create a zoom effect", "isCorrect": false }
+                    ],
+                    "id": "demo-css-q10",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550210"
+                }
+            ],
+            "__v": 2
+        },
+        {
+            "_id": "7bc932ef-1dd9-4f7d-93da-2e4a76c890d3",
+            "title": "JavaScript",
+            "description": "",
+            "userId": "demo-user",
+            "questions": [
+                {
+                    "title": "Which syntax is correct to output 'Hello World' in an alert box?",
+                    "answers": [
+                        { "title": "alertBox('Hello World');", "isCorrect": false },
+                        { "title": "msg('Hello World');", "isCorrect": false },
+                        { "title": "alert('Hello World');", "isCorrect": true },
+                        { "title": "msgBox('Hello World');", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q1",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550301"
+                },
+                {
+                    "title": "How do you call a function named 'myFunction'?",
+                    "answers": [
+                        { "title": "call function myFunction()", "isCorrect": false },
+                        { "title": "call myFunction()", "isCorrect": false },
+                        { "title": "myFunction()", "isCorrect": true },
+                        { "title": "execute myFunction()", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q2",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550302"
+                },
+                {
+                    "title": "How to write an IF statement in JavaScript?",
+                    "answers": [
+                        { "title": "if i = 5 then", "isCorrect": false },
+                        { "title": "if (i == 5)", "isCorrect": true },
+                        { "title": "if i == 5", "isCorrect": false },
+                        { "title": "if i = 5", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q3",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550303"
+                },
+                {
+                    "title": "How to write an IF statement for executing some code if 'i' is NOT equal to 5?",
+                    "answers": [
+                        { "title": "if (i <> 5)", "isCorrect": false },
+                        { "title": "if i =! 5 then", "isCorrect": false },
+                        { "title": "if (i != 5)", "isCorrect": true },
+                        { "title": "if i not = 5", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q4",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550304"
+                },
+                  {
+                    "title": "How does a FOR loop start?",
+                    "answers": [
+                        { "title": "for (i = 0; i <= 5)", "isCorrect": false },
+                        { "title": "for i = 1 to 5", "isCorrect": false },
+                        { "title": "for (i <= 5; i++)", "isCorrect": false },
+                        { "title": "for (i = 0; i <= 5; i++)", "isCorrect": true }
+                    ],
+                    "id": "demo-js-q5",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550305"
+                },
+                {
+                    "title": "How can you add a single-line comment in JavaScript?",
+                    "answers": [
+                        { "title": "'This is a single-line comment", "isCorrect": false },
+                        { "title": "//This is a single-line comment", "isCorrect": true },
+                        { "title": "<!--This is a single-line comment-->", "isCorrect": false },
+                        { "title": "/* This is a single-line comment */", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q6",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550306"
+                },
+                {
+                    "title": "What is the correct way to write a JavaScript array?",
+                    "answers": [
+                        { "title": "var colors = (1:'red', 2:'green', 3:'blue')", "isCorrect": false },
+                        { "title": "var colors = ['red', 'green', 'blue']", "isCorrect": true },
+                        { "title": "var colors = 'red', 'green', 'blue'", "isCorrect": false },
+                        { "title": "var colors = 1 = ('red'), 2 = ('green'), 3 = ('blue')", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q7",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550307"
+                },
+                {
+                    "title": "How do you find the number with the highest value of x and y?",
+                    "answers": [
+                        { "title": "Math.ceil(x, y)", "isCorrect": false },
+                        { "title": "top(x, y)", "isCorrect": false },
+                        { "title": "Math.max(x, y)", "isCorrect": true },
+                        { "title": "Math.highest(x, y)", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q8",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550308"
+                },
+                {
+                    "title": "Which operator is used to assign a value to a variable?",
+                    "answers": [
+                        { "title": "-", "isCorrect": false },
+                        { "title": "*", "isCorrect": false },
+                        { "title": "=", "isCorrect": true },
+                        { "title": "x", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q9",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550309"
+                },
+                {
+                    "title": "What is the correct way to write a JavaScript object?",
+                    "answers": [
+                        { "title": "var person = {firstName: 'John', lastName: 'Doe'};", "isCorrect": true },
+                        { "title": "var person = {firstName = 'John', lastName = 'Doe'};", "isCorrect": false },
+                        { "title": "var person = (firstName: 'John', lastName: 'Doe');", "isCorrect": false },
+                        { "title": "var person = (firstName = 'John', lastName = 'Doe');", "isCorrect": false }
+                    ],
+                    "id": "demo-js-q10",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550310"
+                }
+            ],
+            "__v": 2
+        },
+        {
+            "_id": "8cd043f0-2eea-41a6-a4eb-3f5b87d9a1e4",
+            "title": "Accessibility",
+            "description": "",
+            "userId": "demo-user",
+            "questions": [
+                {
+                    "title": "What does 'WCAG' stand for?",
+                    "answers": [
+                        { "title": "Web Content Accessibility Guidelines", "isCorrect": true },
+                        { "title": "Web Compliance Accessibility Guide", "isCorrect": false },
+                        { "title": "Web Content Accessibility Goals", "isCorrect": false },
+                        { "title": "Website Compliance and Accessibility Guidelines", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q1",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550401"
+                },
+                {
+                    "title": "Which element is used to provide alternative text for images for screen reader users?",
+                    "answers": [
+                        { "title": "<alt>", "isCorrect": false },
+                        { "title": "<figcaption>", "isCorrect": false },
+                        { "title": "<description>", "isCorrect": false },
+                        { "title": "<img alt='description'>", "isCorrect": true }
+                    ],
+                    "id": "demo-a11y-q2",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550402"
+                },
+                {
+                    "title": "What does ARIA stand for in web development?",
+                    "answers": [
+                        { "title": "Accessible Rich Internet Applications", "isCorrect": true },
+                        { "title": "Advanced Responsive Internet Assistance", "isCorrect": false },
+                        { "title": "Accessible Responsive Internet Applications", "isCorrect": false },
+                        { "title": "Automated Responsive Internet Actions", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q3",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550403"
+                },
+                {
+                    "title": "Which of the following is not a principle of the WCAG?",
+                    "answers": [
+                        { "title": "Perceivable", "isCorrect": false },
+                        { "title": "Dependable", "isCorrect": true },
+                        { "title": "Operable", "isCorrect": false },
+                        { "title": "Understandable", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q4",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550404"
+                },
+                {
+                    "title": "Which of these color contrast ratios defines the minimum WCAG 2.1 Level AA requirement for normal text?",
+                    "answers": [
+                        { "title": "3:1", "isCorrect": false },
+                        { "title": "4.5:1", "isCorrect": true },
+                        { "title": "7:1", "isCorrect": false },
+                        { "title": "2:1", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q5",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550405"
+                },
+                {
+                    "title": "Which of the following elements is inherently focusable, meaning it can receive focus without a 'tabindex' attribute?",
+                    "answers": [
+                        { "title": "<div>", "isCorrect": false },
+                        { "title": "<span>", "isCorrect": false },
+                        { "title": "<a href='...'>", "isCorrect": true },
+                        { "title": "<p>", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q6",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550406"
+                },
+                {
+                    "title": "What is the purpose of the 'lang' attribute in an HTML page?",
+                    "answers": [
+                        { "title": "To specify the scripting language", "isCorrect": false },
+                        { "title": "To define the character set", "isCorrect": false },
+                        { "title": "To indicate the language of the page content", "isCorrect": true },
+                        { "title": "To declare a language pack", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q7",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550407"
+                },
+                {
+                    "title": "Which guideline ensures that content is accessible by keyboard as well as by mouse?",
+                    "answers": [
+                        { "title": "Keyboard Accessible", "isCorrect": true },
+                        { "title": "Mouse Independence", "isCorrect": false },
+                        { "title": "Device Independence", "isCorrect": false },
+                        { "title": "Operable Controls", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q8",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550408"
+                },
+                {
+                    "title": "What is the role of 'skip navigation' links in web accessibility?",
+                    "answers": [
+                        { "title": "To skip over primary navigation to the main content", "isCorrect": true },
+                        { "title": "To provide shortcuts to different sections of the website", "isCorrect": false },
+                        { "title": "To help users skip unwanted sections like advertisements", "isCorrect": false },
+                        { "title": "To bypass broken links in the navigation", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q9",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550409"
+                },
+                {
+                    "title": "Which of these tools can help in checking the accessibility of a website?",
+                    "answers": [
+                        { "title": "W3C Validator", "isCorrect": false },
+                        { "title": "Google Lighthouse", "isCorrect": true },
+                        { "title": "CSS Validator", "isCorrect": false },
+                        { "title": "JavaScript Console", "isCorrect": false }
+                    ],
+                    "id": "demo-a11y-q10",
+                    "_id": "c5a0f1f8-3d3a-4ec8-8e25-7f6e2f550410"
+                }
+            ],
+            "__v": 2
+        }
+]

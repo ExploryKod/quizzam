@@ -19,6 +19,7 @@ API_NAME="quizzam-api"
 MONGO_EXPRESS_PORT="8086"
 MONGO_URI_HOST="mongodb://localhost:27017"
 MONGO_URI_DOCKER="mongodb://mongodb:27017"
+QUIZZES_DUMP_FILE="${PROJECT_DIR}/dump/data.json"
 API_PORT="${QUIZZAM_HOST_PORT:-3002}"
 API_LOGS_UP_COMMAND="docker compose -f compose.dev.yaml logs -f"
 FOLLOW_API_LOGS="${QUIZZAM_FOLLOW_API_LOGS:-1}"
@@ -100,7 +101,7 @@ case "$ACTION" in
     fi
     if [[ "$USE_MONGO" == true ]]; then
       info "DATABASE_NAME=MONGODB → start MongoDB + api-watch."
-      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" up -d --build mongodb api-watch "$@"; then
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" up -d --build mongodb mongo-express api-watch "$@"; then
         error "docker compose up watch mode failed"
         exit 1
       fi
@@ -119,7 +120,7 @@ case "$ACTION" in
     shift || true
     info "Stopping API watch mode…"
     if [[ "$USE_MONGO" == true ]]; then
-      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" stop api-watch mongodb "$@"; then
+      if ! "${compose[@]}" -f "$COMPOSE_BASE" "${WATCH_PROFILE_ARGS[@]}" stop api-watch mongo-express mongodb "$@"; then
         error "docker compose stop api-watch mongodb failed"
         exit 1
       fi
@@ -140,6 +141,32 @@ case "$ACTION" in
     else
       "${compose[@]}" -f "$COMPOSE_BASE" logs -f api "$@"
     fi
+    exit 0
+    ;;
+  dump-quizzes)
+    shift || true
+    if [[ "$USE_MONGO" != true ]]; then
+      error "DATABASE_NAME must be MONGODB to import quizzes dump."
+      exit 1
+    fi
+    if [[ ! -f "$QUIZZES_DUMP_FILE" ]]; then
+      error "Dump file not found: $QUIZZES_DUMP_FILE"
+      exit 1
+    fi
+
+    info "Ensuring MongoDB container is running…"
+    if ! "${compose[@]}" -f "$COMPOSE_BASE" "${PROFILE_ARGS[@]}" up -d mongodb; then
+      error "Unable to start mongodb service"
+      exit 1
+    fi
+
+    info "Importing quizzes dump into quizapp.quizzes (drop + jsonArray)…"
+    if ! docker exec -i "$SERVICE_NAME" mongoimport --db quizapp --collection quizzes --jsonArray --drop < "$QUIZZES_DUMP_FILE"; then
+      error "mongoimport failed"
+      exit 1
+    fi
+
+    ok "Quizzes dump imported successfully into quizapp.quizzes."
     exit 0
     ;;
   api-stop|stop-api)
@@ -199,7 +226,7 @@ case "$ACTION" in
     exit 0
     ;;
   -h|--help|help)
-    echo "Usage: $0 [up|down|api-restart|api-stop|logs|watch-up|watch-stop] [options]"
+    echo "Usage: $0 [up|down|api-restart|api-stop|logs|watch-up|watch-stop|dump-quizzes] [options]"
     echo ""
     echo "  up (default)   Démarre la stack (build si besoin)."
     echo "  down             Arrête tout (y compris api-watch), supprime le réseau, --remove-orphans."
@@ -209,6 +236,7 @@ case "$ACTION" in
     echo "  logs             Suit les logs API uniquement."
     echo "  watch-up         Démarre API en mode watch (bind mount + hot reload dans le conteneur)."
     echo "  watch-stop       Stoppe API watch (et MongoDB si DATABASE_NAME=MONGODB)."
+    echo "  dump-quizzes     Importe docker/dump/data.json dans quizapp.quizzes (--drop --jsonArray)."
     echo ""
     echo "Depuis le dossier quizzam : ./docker/start.sh   ou   ./docker/start"
     exit 0
@@ -217,7 +245,7 @@ case "$ACTION" in
     [[ -n "${1:-}" ]] && shift
     ;;
   *)
-    error "Commande inconnue : $ACTION — utilisation : $0 [up|down] (ou $0 --help)"
+    error "Commande inconnue : $ACTION — utilisation : $0 [up|down|dump-quizzes] (ou $0 --help)"
     exit 1
     ;;
 esac

@@ -40,3 +40,8 @@ Les **exemples** (« avec questions » / « sans questions ») sont visibles dan
 
 - **`executionId`** n’est **pas** défini à la création du document : il est écrit **uniquement** lors de `POST /api/quiz/:id/start` (code alphanumérique **6 caractères**), et sert à `/api/execution/:executionId` et au WebSocket.
 - Si d’anciens documents ont reçu par erreur un **UUID** à la création, supprimez ce champ en base pour les brouillons (ou corrigez l’index) : en **mongosh**, par ex. `db.quizzes.updateMany({ executionId: { $regex: /^[0-9a-f-]{36}$/ } }, { $unset: { executionId: "" } })` (adapter le filtre à votre cas). Après changement d’index Mongoose (`sparse` sur `executionId`), un redémarrage peut recréer l’index ; en cas de conflit, supprimez l’ancien index `executionId` sur la collection puis relancez l’API.
+
+### Prochaine tâche (backlog)
+
+- **Côté Quizzam (REST)** : ajouter des routes pour **(1) récupérer le score** d'une session / participant et **(2) enregistrer le choix utilisateur et/ou le score** (complément du scoring uniquement côté client, ex. `localStorage` sur la page join, qui ne persiste pas côté serveur).
+- À préciser au design : identité du participant (anonyme vs utilisateur authentifié), clé de session (`executionId`), modèle de persistance (collection dédiée aux réponses / scores, champs sur la session, etc.) et DTOs Swagger.

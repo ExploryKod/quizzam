@@ -69,6 +69,9 @@ Nous utilisons les profiles dans compose pour réaliser cette séparation.
    - Le service `api-watch` tourne d’abord en **root** le temps du `pnpm install` (le volume `node_modules` appartient à root par défaut) puis **Nx** en utilisateur **`node`**. TTY : `docker exec -it quizzam-api-watch sh` (root) ou `docker exec -it -u node quizzam-api-watch sh` pour un shell en `node`.
    - En mode watch, les logs `api-watch` sont suivis en live à la fin de la commande.
 
+   **Import des quiz de démo (Mongo) :**
+   - `./docker/start.sh dump-quizzes` : importe `docker/dump/data.json` dans `quizapp.quizzes` avec `--jsonArray --drop` (écrase la collection avant import).
+
    Le script lit `.env` et n’ajoute `--profile mongodb` que lorsque `DATABASE_NAME=MONGODB` (y compris pour `down`, pour cibler les bons services).
 
    **Sans** le script (mode Mongo) :
