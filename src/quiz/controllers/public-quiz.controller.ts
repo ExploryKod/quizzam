@@ -75,7 +75,16 @@ export class PublicQuizController {
           id: quiz.id,
           title: quiz.title,
           description: quiz.description,
-          questions: quiz.questions,
+          // Build explicit plain question payload to avoid class-transformer issues
+          // with nested Mongo subdocuments.
+          questions: (quiz.questions ?? []).map((question) => ({
+            id: question?.id,
+            title: question?.title ?? '',
+            answers: (question?.answers ?? []).map((answer) => ({
+              title: answer?.title ?? '',
+              isCorrect: !!answer?.isCorrect,
+            })),
+          })),
           isPublic: quiz.isPublic ?? false,
         },
         { excludeExtraneousValues: true }
